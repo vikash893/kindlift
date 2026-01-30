@@ -3,6 +3,9 @@ const express = require('express');
 const connectDb = require('./config/db');
 const cors = require('cors');
 const router = require('./routers/auth');
+const adminRouter = require('./routers/admin');
+const rideRoutes = require("./routers/ride.routes");
+
 
 
 const app = express();
@@ -18,6 +21,9 @@ app.use(express.json());
 //routers
 app.use("/api/auth" , router);
 app.use("/uploads", express.static("uploads"));
+app.use("/api/admin",adminRouter);
+app.use("/api/ride", rideRoutes);
+// app.use("/api/ride/find" , findRouter);
 
 
 app.listen( port , ()=>{

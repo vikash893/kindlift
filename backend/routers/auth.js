@@ -51,10 +51,21 @@ router.post("/login", async (req, res) => {
 /* ================= REGISTER ================= */
 router.post("/register", upload.single("image"), async (req, res) => {
   try {
-    const { name, phone, email, aadharNumber, location, password } = req.body;
+    const {
+      name,
+      phone,
+      email,
+      aadharNumber,
+      password,
+      lat,
+      lng,
+      city,
+      state
+    } = req.body;
+
     const image = req.file ? req.file.path : null;
 
-    if (!name || !phone || !email || !aadharNumber || !password || !location || !image) {
+    if (!name || !phone || !email || !aadharNumber || !password || !lat || !lng || !image) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
@@ -66,9 +77,15 @@ router.post("/register", upload.single("image"), async (req, res) => {
       phone,
       email,
       aadharNumber: hashedAadhar,
-      location,
+      password: hashedPassword,
       image,
-      password: hashedPassword
+
+      location: {
+        type: "Point",
+        coordinates: [parseFloat(lng), parseFloat(lat)],
+        city,
+        state
+      }
     });
 
     await user.save();

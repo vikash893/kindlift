@@ -5,6 +5,7 @@ import Contact from './pages/contact';
 import Login from './auth/login';
 import Register from './auth/register';
 import Userdashboard from './dashboard/userdashboard';
+import FindRides from './dashboard/FindRides';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/userdashboard" element={<Userdashboard />} />
+         <Route path="/find-rides" element={<FindRides />} />
       </Routes>
     </Router>
   );

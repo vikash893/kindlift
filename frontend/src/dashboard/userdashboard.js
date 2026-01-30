@@ -43,14 +43,13 @@ function Userdashboard() {
       setUser(userData);
 
       // Check if user has location stored
-      if (userData.location) {
-        const [city, state, country] = userData.location.split(', ');
-        setLocation({
-          city: city || 'Unknown',
-          state: state || '',
-          country: country || ''
-        });
-      }
+     if (userData.location?.coordinates) {
+  setLocation({
+    city: userData.location.city || "",
+    state: userData.location.state || "",
+    country: "India"
+  });
+}
     }
   }, []);
 

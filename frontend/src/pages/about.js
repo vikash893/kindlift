@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import '../css/home.css';
 import vikash from '../public/vikash.png';
+import vishnu from '../public/vishnu.png';
 // At the top of About.jsx
 import { 
   Car, 
@@ -145,7 +146,7 @@ function About() {
                     <div className="team-member">
                         <div className="member-image">
                             <img 
-                                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+                                src={vishnu} 
                                 alt="Vishnu Singh Rajput" 
                             />
                         </div>

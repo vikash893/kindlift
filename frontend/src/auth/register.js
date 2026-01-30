@@ -1,38 +1,21 @@
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  IdCard, 
-  Lock, 
-  MapPin, 
-  Car, 
-  Shield, 
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Loader2
+import {
+  User, Phone, Mail, IdCard, Lock, MapPin, Car, Shield, Users,
+  CheckCircle, AlertCircle, Eye, EyeOff, Loader2
 } from 'lucide-react';
 import '../css/home.css';
 import '../css/auth.css';
 
 function Register() {
   const navigate = useNavigate();
+
   const [image, setImage] = useState(null);
-const [preview, setPreview] = useState(null);
+  const [preview, setPreview] = useState(null);
 
-
-const handleImage = (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  setImage(file);
-  setPreview(URL.createObjectURL(file));
-};
-
+  const [coords, setCoords] = useState({ lat: null, lng: null });
+  const [cityState, setCityState] = useState({ city: "", state: "" });
 
   const [user, setUser] = useState({
     name: "",
@@ -40,8 +23,9 @@ const handleImage = (e) => {
     email: "",
     aadharNumber: "",
     password: "",
-    location: ""  
+    location: ""
   });
+
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,139 +36,110 @@ const handleImage = (e) => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
-  // Password strength calculator
+  const handleImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
   useEffect(() => {
-    const calculateStrength = () => {
-      let strength = 0;
-      if (user.password.length >= 8) strength += 25;
-      if (/[A-Z]/.test(user.password)) strength += 25;
-      if (/[0-9]/.test(user.password)) strength += 25;
-      if (/[^A-Za-z0-9]/.test(user.password)) strength += 25;
-      setPasswordStrength(strength);
-    };
-    calculateStrength();
+    let strength = 0;
+    if (user.password.length >= 8) strength += 25;
+    if (/[A-Z]/.test(user.password)) strength += 25;
+    if (/[0-9]/.test(user.password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(user.password)) strength += 25;
+    setPasswordStrength(strength);
   }, [user.password]);
 
-  // BigDataCloud reverse geo
   async function getAddress(lat, lon) {
     const res = await fetch(
       `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
     );
     const data = await res.json();
-    return `${data.city || data.locality}, ${data.principalSubdivision}, ${data.countryName}`;
+    return {
+      address: `${data.city || data.locality}, ${data.principalSubdivision}, ${data.countryName}`,
+      city: data.city || data.locality,
+      state: data.principalSubdivision
+    };
   }
 
   const detectLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation not supported");
+      setError("Geolocation not supported");
       return;
     }
 
     setLoadingLocation(true);
-    setError("");
-
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
+        const addressData = await getAddress(lat, lon);
 
-        try {
-          const address = await getAddress(lat, lon);
-          setUser((prev) => ({
-            ...prev,
-            location: address
-          }));
-          setSuccess("Location detected successfully!");
-        } catch (err) {
-          setError("Failed to detect location. Please enter manually.");
-        } finally {
-          setLoadingLocation(false);
-        }
+        setUser((prev) => ({ ...prev, location: addressData.address }));
+        setCoords({ lat, lng: lon });
+        setCityState({ city: addressData.city, state: addressData.state });
+
+        setSuccess("Location detected!");
+        setLoadingLocation(false);
       },
       () => {
-        setError("Location access denied. Please enable location services.");
+        setError("Location permission denied");
         setLoadingLocation(false);
       }
     );
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUser({
-      ...user,
-      [name]: value
-    });
+    setUser({ ...user, [e.target.name]: e.target.value });
     setError("");
   };
 
   const validateForm = () => {
-    if (user.password !== confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
-    if (user.password.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return false;
-    }
-    if (!agreeToTerms) {
-      setError("You must agree to the terms and conditions");
-      return false;
-    }
+    if (user.password !== confirmPassword) return setError("Passwords do not match"), false;
+    if (user.password.length < 8) return setError("Password too short"), false;
+    if (!agreeToTerms) return setError("Accept terms"), false;
+    if (!coords.lat || !coords.lng) return setError("Please detect location"), false;
     return true;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  if (!validateForm()) return;
-
-  if (!image) {
-    setError("Please select a profile image");
-    return;
-  }
-
-  setLoading(true);
-  setError("");
-
-  try {
     const formData = new FormData();
+    Object.keys(user).forEach((key) => formData.append(key, user[key]));
 
-    Object.keys(user).forEach((key) => {
-      formData.append(key, user[key]);
-    });
-
+    formData.append("lat", coords.lat);
+    formData.append("lng", coords.lng);
+    formData.append("city", cityState.city);
+    formData.append("state", cityState.state);
     formData.append("image", image);
 
-    await axios.post(
-      "http://localhost:8000/api/auth/register",
-      formData,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-
-    setSuccess("Registration successful! Redirecting to login...");
-    setTimeout(() => navigate("/login"), 2000);
-
-  } catch (err) {
-    console.log(err);
-    setError(err.response?.data?.error || "Registration failed");
-  } finally {
-    setLoading(false);
-  }
+    setLoading(true);
+    try {
+      await axios.post("http://localhost:8000/api/auth/register", formData);
+      setSuccess("Registered successfully!");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      setError(err.response?.data?.error || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const getStrengthText = () => {
+  if (passwordStrength >= 75) return "Strong";
+  if (passwordStrength >= 50) return "Medium";
+  if (passwordStrength >= 25) return "Weak";
+  return "Very Weak";
 };
 
-
-  const getStrengthText = () => {
-    if (passwordStrength >= 75) return "Strong";
-    if (passwordStrength >= 50) return "Medium";
-    if (passwordStrength >= 25) return "Weak";
-    return "Very Weak";
-  };
-
-  const getStrengthColor = () => {
-    if (passwordStrength >= 75) return "strong";
-    if (passwordStrength >= 50) return "medium";
-    return "";
-  };
+const getStrengthColor = () => {
+  if (passwordStrength >= 75) return "strong";
+  if (passwordStrength >= 50) return "medium";
+  return "";
+};
 
   return (
     <div className="auth-container">
@@ -198,10 +153,10 @@ const handleSubmit = async (e) => {
             </Link>
             <h1>Join Our Travel Community</h1>
             <p>
-              Create an account to start sharing rides, connecting with fellow travelers, 
+              Create an account to start sharing rides, connecting with fellow travelers,
               and making every journey more affordable and enjoyable.
             </p>
-            
+
             <div className="auth-features">
               <div className="auth-feature">
                 <Shield />
@@ -325,7 +280,7 @@ const handleSubmit = async (e) => {
                   disabled={loading}
                 />
 
-               
+
 
                 <button
                   type="button"
@@ -347,7 +302,7 @@ const handleSubmit = async (e) => {
               {user.password && (
                 <div className="password-strength">
                   <div className="strength-bar">
-                    <div 
+                    <div
                       className={`strength-fill ${getStrengthColor()}`}
                       style={{ width: `${passwordStrength}%` }}
                     />
@@ -390,7 +345,7 @@ const handleSubmit = async (e) => {
                 </button>
               </div>
             </div>
-            
+
             <div className="form-group">
               <label htmlFor="location">Location</label>
               <div className="location-input-group">
@@ -425,33 +380,33 @@ const handleSubmit = async (e) => {
               </div>
             </div>
 
-             <div className="form-group">
-  <label htmlFor="image">Profile Image</label>
-  <div className="input-with-icon">
-    <User />
-    <input
-      type="file"
-      id="image"
-      accept="image/*"
-      onChange={handleImage}
-      disabled={loading}
-    />
-  </div>
+            <div className="form-group">
+              <label htmlFor="image">Profile Image</label>
+              <div className="input-with-icon">
+                <User />
+                <input
+                  type="file"
+                  id="image"
+                  accept="image/*"
+                  onChange={handleImage}
+                  disabled={loading}
+                />
+              </div>
 
-  {preview && (
-    <img
-      src={preview}
-      alt="preview"
-      style={{
-        width: "80px",
-        height: "80px",
-        borderRadius: "50%",
-        objectFit: "cover",
-        marginTop: "10px"
-      }}
-    />
-  )}
-</div>
+              {preview && (
+                <img
+                  src={preview}
+                  alt="preview"
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginTop: "10px"
+                  }}
+                />
+              )}
+            </div>
 
             <div className="terms-agreement">
               <input

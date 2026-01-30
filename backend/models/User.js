@@ -17,10 +17,19 @@ const userSchema = mongoose.Schema({
         type : String , 
         required : true 
     }, 
-    location : {
-        type : String , 
-        required : true 
-    },
+    location: {
+  type: {
+    type: String,
+    enum: ["Point"],
+    default: "Point"
+  },
+  coordinates: {
+    type: [Number], // [lng, lat]
+    required: true
+  },
+  city: String,
+  state: String
+},
     image : {
         type : String , 
         required : true
