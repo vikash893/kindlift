@@ -35,7 +35,7 @@ function FindRides() {
         userLocation.lng,
         ride.lat,
         ride.lng
-      ).toFixed(2),
+      ), // ✅ NUMBER ONLY
     }));
 
     setRides(withDistance);
@@ -46,28 +46,19 @@ function FindRides() {
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
+    <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
       <h2 style={{ marginBottom: "10px" }}>
         Find Free Rides Near You
       </h2>
 
-      {/* MAP AREA */}
-     <div
-  style={{
-    height: "500px",
-    width: "100%",
-    borderRadius: "12px",
-    overflow: "hidden"
-  }}
->
-
+      <div
+        style={{
+          height: "500px",
+          width: "100%",
+          borderRadius: "12px",
+          overflow: "hidden",
+        }}
+      >
         <RideMap userLocation={userLocation} rides={rides} />
       </div>
     </div>

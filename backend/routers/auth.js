@@ -7,8 +7,6 @@ const path = require("path");
 const router = express.Router();
 
 /* ================= MULTER CONFIG ================= */
-
-
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -17,6 +15,61 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+/* ================= REGISTER ================= */
+router.post("/register", upload.single("image"), async (req, res) => {
+  try {
+    const {
+      name,
+      phone,
+      email,
+      aadharNumber,
+      password,
+      lat,
+      lng,
+      city,
+      state
+    } = req.body;
+
+    if (!name || !phone || !email || !password) {
+      return res.status(400).json({ error: "Required fields missing" });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedAadhar = aadharNumber
+      ? await bcrypt.hash(aadharNumber, 10)
+      : null;
+
+    const image = req.file ? req.file.path : null;
+
+    const user = new User({
+      name,
+      phone,
+      email,
+      password: hashedPassword,
+      aadharNumber: hashedAadhar,
+      image,
+      location: {
+        type: "Point",
+        coordinates: lat && lng ? [parseFloat(lng), parseFloat(lat)] : [0, 0],
+        city: city || "",
+        state: state || ""
+      }
+    });
+
+    await user.save();
+    res.status(201).json({ message: "User registered successfully" });
+
+  } catch (err) {
+    console.error("REGISTER ERROR:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 /* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
@@ -37,98 +90,28 @@ router.post("/login", async (req, res) => {
     const userData = user.toObject();
     delete userData.password;
 
-    res.status(200).json({
-      message: "Login successfully",
-      user: userData
-    });
+    res.json({ message: "Login successful", user: userData });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/* ================= REGISTER ================= */
-router.post("/register", upload.single("image"), async (req, res) => {
-  console.log("🔥 REGISTER ROUTE HIT");
-
-  try {
-    const {
-      name,
-      phone,
-      email,
-      aadharNumber,
-      password,
-      lat,
-      lng,
-      city,
-      state
-    } = req.body;
-
-    const image = req.file ? req.file.path : null;
-
-    if (!name || !phone || !email || !aadharNumber || !password || !lat || !lng || !image) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const hashedAadhar = await bcrypt.hash(aadharNumber, 10);
-
-    const user = new User({
-      name,
-      phone,
-      email,
-      aadharNumber: hashedAadhar,
-      password: hashedPassword,
-      image,
-
-      location: {
-        type: "Point",
-        coordinates: [parseFloat(lng), parseFloat(lat)],
-        city,
-        state
-      }
-    });
-
-    await user.save();
-    res.status(201).json({ message: "Registered", user });
-  } catch (err) {
-    console.log(err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-
 /* ================= TOTAL USERS ================= */
 router.get("/getuser", async (req, res) => {
-  try {
-    const countUser = await User.countDocuments();
-    res.json({ success: true, countUser });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
+  const countUser = await User.countDocuments();
+  res.json({ countUser });
 });
 
-/* ================= GET USER IMAGE ================= */
+/* ================= USER IMAGE ================= */
 router.get("/photo", async (req, res) => {
-  try {
-    const { email } = req.query;
+  const { email } = req.query;
+  const user = await User.findOne({ email }).select("image");
 
-    if (!email)
-      return res.status(400).json({ message: "Email is required" });
+  if (!user || !user.image)
+    return res.status(404).json({ message: "Image not found" });
 
-    const user = await User.findOne({ email }).select("image");
-
-    if (!user || !user.image)
-      return res.status(404).json({ message: "Image not found" });
-
-    res.json({ image: user.image });
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
+  res.json({ image: user.image });
 });
 
 module.exports = router;
