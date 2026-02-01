@@ -50,6 +50,8 @@ router.post("/login", async (req, res) => {
 
 /* ================= REGISTER ================= */
 router.post("/register", upload.single("image"), async (req, res) => {
+  console.log("🔥 REGISTER ROUTE HIT");
+
   try {
     const {
       name,

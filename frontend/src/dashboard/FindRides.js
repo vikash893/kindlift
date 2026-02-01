@@ -1,75 +1,77 @@
-import { useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import RideMap from "./RideMap";
+import { getDistance } from "../utils/distance";
 
-export default function FindRides() {
-  const stored = localStorage.getItem("user");
-  const user = stored ? JSON.parse(stored) : null;
+function FindRides() {
+  const [userLocation, setUserLocation] = useState(null);
+  const [rides, setRides] = useState([]);
 
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // Get user location
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => alert("Location permission denied")
+    );
+  }, []);
 
-  const findRide = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  // Mock nearby rides
+  useEffect(() => {
+    if (!userLocation) return;
 
-      if (!user?.location?.coordinates) {
-        setError("Location not found. Please login again.");
-        return;
-      }
+    const availableRides = [
+      { name: "Aman", lat: 27.50, lng: 77.67 },
+      { name: "Rohit", lat: 27.48, lng: 77.70 },
+    ];
 
-      const [lng, lat] = user.location.coordinates;
+    const withDistance = availableRides.map((ride) => ({
+      ...ride,
+      distance: getDistance(
+        userLocation.lat,
+        userLocation.lng,
+        ride.lat,
+        ride.lng
+      ).toFixed(2),
+    }));
 
-      const res = await axios.post("http://localhost:8000/api/ride/find", {
-        lat,
-        lng,
-        from,
-        to
-      });
+    setRides(withDistance);
+  }, [userLocation]);
 
-      setMatches(res.data.nearbyUsers || []);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to find riders.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!userLocation) {
+    return <p style={{ padding: "20px" }}>Fetching your location…</p>;
+  }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Find Riders</h2>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <h2 style={{ marginBottom: "10px" }}>
+        Find Free Rides Near You
+      </h2>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* MAP AREA */}
+     <div
+  style={{
+    height: "500px",
+    width: "100%",
+    borderRadius: "12px",
+    overflow: "hidden"
+  }}
+>
 
-      <input
-        placeholder="From"
-        value={from}
-        onChange={e => setFrom(e.target.value)}
-      />
-      <input
-        placeholder="To"
-        value={to}
-        onChange={e => setTo(e.target.value)}
-      />
-
-      <button onClick={findRide} disabled={loading}>
-        {loading ? "Searching..." : "Find"}
-      </button>
-
-      <div>
-        {matches.length === 0 && !loading && <p>No riders found</p>}
-
-        {matches.map(u => (
-          <div key={u._id || u.id} style={{ border: "1px solid #ccc", margin: 10, padding: 10 }}>
-            <h4>{u.name}</h4>
-            <p>{u.phone}</p>
-          </div>
-        ))}
+        <RideMap userLocation={userLocation} rides={rides} />
       </div>
     </div>
   );
 }
+
+export default FindRides;

@@ -97,12 +97,29 @@ function Register() {
   };
 
   const validateForm = () => {
-    if (user.password !== confirmPassword) return setError("Passwords do not match"), false;
-    if (user.password.length < 8) return setError("Password too short"), false;
-    if (!agreeToTerms) return setError("Accept terms"), false;
-    if (!coords.lat || !coords.lng) return setError("Please detect location"), false;
-    return true;
-  };
+  if (user.password !== confirmPassword) {
+    setError("Passwords do not match");
+    return false;
+  }
+
+  if (user.password.length < 8) {
+    setError("Password too short");
+    return false;
+  }
+
+  if (!agreeToTerms) {
+    setError("Accept terms");
+    return false;
+  }
+
+  if (!coords.lat || !coords.lng) {
+    setError("Please detect location");
+    return false;
+  }
+
+  return true;
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,7 +136,17 @@ function Register() {
 
     setLoading(true);
     try {
-      await axios.post("http://localhost:8000/api/auth/register", formData);
+     await axios.post(
+  "http://localhost:5000/api/auth/register",
+  formData,
+  {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  }
+);
+
+
       setSuccess("Registered successfully!");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {

@@ -21,7 +21,7 @@ function Home() {
     const [userCount, setUserCount] = useState(0);
 
     useEffect(() => {
-  axios.get("http://localhost:8000/api/auth/getuser")
+  axios.get("http://localhost:5000/api/auth/getuser")
     .then((res) => {
       setUserCount(res.data.countUser);
     })

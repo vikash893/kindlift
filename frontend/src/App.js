@@ -6,6 +6,8 @@ import Login from './auth/login';
 import Register from './auth/register';
 import Userdashboard from './dashboard/userdashboard';
 import FindRides from './dashboard/FindRides';
+import "leaflet/dist/leaflet.css";
+
 
 function App() {
   return (
