@@ -1,0 +1,159 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+/* PAGE */
+.register-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+
+/* CARD */
+.register-card {
+  width: 100%;
+  max-width: 1100px;
+  min-height: 650px;
+  background: white;
+  border-radius: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+.register-left {
+  background: linear-gradient(160deg, #2563eb, #1e3a8a);
+  color: white;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.register-right {
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* LEFT PANEL */
+.register-left {
+  background: linear-gradient(135deg, #2563eb, #1e3a8a);
+  color: white;
+  padding: 48px;
+}
+
+.register-left h1 {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.register-left p {
+  opacity: 0.9;
+  margin-bottom: 32px;
+}
+
+.feature {
+  margin-bottom: 12px;
+  font-size: 15px;
+}
+
+/* RIGHT PANEL */
+.register-right {
+  padding: 48px;
+}
+
+.register-right h2 {
+  margin-bottom: 20px;
+}
+
+/* FORM */
+.register-form input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5f5;
+  outline: none;
+}
+
+.register-form input:focus {
+  border-color: #2563eb;
+}
+
+.register-form button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.register-form button:hover {
+  background: #1e40af;
+}
+
+.register-form .secondary {
+  background: #e5e7eb;
+  color: #111;
+  margin-bottom: 12px;
+}
+
+.register-form label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #475569;
+  margin: 10px 0 20px;
+}
+.register-form input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb; /* modern blue */
+  cursor: pointer;
+}
+
+.message-error {
+  color: #dc2626;
+  margin-bottom: 12px;
+}
+
+.message-success {
+  color: #16a34a;
+  margin-bottom: 12px;
+}
+
+.register-footer {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.register-form input {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #c7d2fe;
+  font-size: 14px;
+}
+
+.register-form input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.register-form button {
+  border-radius: 12px;
+  font-weight: 600;
+}
+
