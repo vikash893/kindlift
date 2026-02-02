@@ -21,6 +21,7 @@ app.use("/api/auth", router);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/admin", adminRouter);
 app.use("/api/ride", rideRoutes);
+app.use("/api/admin" , adminRouter);
 
 // start server
 app.listen(port, async () => {

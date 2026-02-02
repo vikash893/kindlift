@@ -16,10 +16,10 @@ import {
 import '../css/home.css'; // Include your main CSS
 import '../css/auth.css'; // Include the new auth CSS
 
-function Login() {
+function AdminLogin() {
   const navigate = useNavigate();
   const [user, setUser] = useState({
-    email: "",
+    name: "",
     password: ""
   });
   const [error, setError] = useState("");
@@ -43,7 +43,7 @@ function Login() {
 
     try {
       const res = await axios.post(
-  "http://localhost:8000/api/auth/login",
+  "http://localhost:8000/api/admin/login",
   user
 );
 
@@ -56,8 +56,15 @@ function Login() {
         localStorage.setItem("rememberMe", "true");
       }
 
+
+    //   if(user.name == "yash"){
+    //     alert("chal ht...... bc");
+    //     navigate("/adminlogin");
+    //   }else {
+
       // Show success message and navigate
-      navigate("/userdashboard");
+      navigate("/admindashboard");
+    //   }
 
     } catch (error) {
       setError(error.response?.data?.error || "Invalid email or password. Please try again.");
@@ -79,8 +86,7 @@ function Login() {
             </Link>
             <h1>Welcome Back!</h1>
             <p>
-              Sign in to connect with fellow travelers, find your perfect ride companion, 
-              and make every journey more enjoyable.
+              Sign in as admin 
             </p>
             
             <div className="auth-features">
@@ -103,7 +109,7 @@ function Login() {
         {/* Right Side - Login Form */}
         <div className="auth-right">
           <div className="auth-header">
-            <h2>Sign In to Your Account</h2>
+            <h2 color="red">Sign In to Admin</h2>
             <p>Enter your credentials to access your dashboard</p>
           </div>
 
@@ -116,14 +122,14 @@ function Login() {
 
           <form className="auth-form" onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="email">Email Address</label>
+              <label htmlFor="email">User name </label>
               <div className="input-with-icon">
                 <Mail />
                 <input
-                  type="email"
+                  type="text"
                   id="email"
-                  name="email"
-                  value={user.email}
+                  name="name"
+                  value={user.name}
                   onChange={handleChange}
                   placeholder="Enter your email"
                   required
@@ -165,7 +171,7 @@ function Login() {
               </div>
             </div>
 
-            <div className="form-footer">
+            {/* <div className="form-footer">
               <label className="remember-me">
                 <input
                   type="checkbox"
@@ -178,16 +184,16 @@ function Login() {
               <Link to="/forgot-password" className="forgot-password">
                 Forgot password?
               </Link>
-            </div>
+            </div> */}
 
             <button type="submit" className="submit-btn" disabled={loading}>
               {loading ? "Signing In..." : "Sign In"}
             </button>
 
-            <div className="auth-switch">
+            {/* <div className="auth-switch">
               Don't have an account?
               <Link to="/register">Sign up now</Link>
-            </div>
+            </div> */}
           </form>
         </div>
       </div>
@@ -195,4 +201,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default AdminLogin;

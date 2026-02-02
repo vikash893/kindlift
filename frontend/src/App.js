@@ -7,6 +7,8 @@ import Register from './auth/register';
 import Userdashboard from './dashboard/userdashboard';
 import FindRides from './dashboard/FindRides';
 import "leaflet/dist/leaflet.css";
+import AdminLogin from './admin/Login';
+import Admindashboard from './dashboard/admindashboard';
 
 
 function App() {
@@ -19,7 +21,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/userdashboard" element={<Userdashboard />} />
-         <Route path="/find-rides" element={<FindRides />} />
+        <Route path="/find-rides" element={<FindRides />} />
+        <Route path="/adminlogin" element={<AdminLogin/>} />
+        <Route path="/admindashboard" element={<Admindashboard/>} />
       </Routes>
     </Router>
   );
