@@ -43,7 +43,7 @@ function AdminLogin() {
 
     try {
       const res = await axios.post(
-  "http://localhost:8000/api/admin/login",
+  "http://localhost:5000/api/admin/login",
   user
 );
 

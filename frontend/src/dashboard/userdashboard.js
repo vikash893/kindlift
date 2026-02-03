@@ -17,6 +17,7 @@ import {
 
 import FindRides from "./FindRides";
 import "../css/dashboard.css";
+import "../css/home.css";
 
 function Userdashboard() {
   const navigate = useNavigate();

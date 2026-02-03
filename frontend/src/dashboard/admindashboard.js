@@ -11,7 +11,7 @@ function Admindashboard() {
 
   useEffect(() => {
     setLoading(true);
-    axios.get("http://localhost:8000/api/admin/getusers")
+    axios.get("http://localhost:5000/api/admin/getusers")
       .then(res => {
         setCount(res.data.userCount);
         setLoading(false);
@@ -28,7 +28,7 @@ function Admindashboard() {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/admin/get-user/${email}`
+        `http://localhost:5000/api/admin/get-user/${email}`
       );
       setUser(res.data);
       setName(res.data.name);
@@ -49,7 +49,7 @@ function Admindashboard() {
     setLoading(true);
     try {
       await axios.put(
-        `http://localhost:8000/api/admin/update-user/${email}`,
+        `http://localhost:5000/api/admin/update-user/${email}`,
         { name }
       );
       alert("User Updated Successfully!");
@@ -68,7 +68,7 @@ function Admindashboard() {
     setLoading(true);
     try {
       await axios.delete(
-        `http://localhost:8000/api/admin/delete-user/${email}`
+        `http://localhost:5000/api/admin/delete-user/${email}`
       );
       alert("User Deleted Successfully!");
       setUser(null);
