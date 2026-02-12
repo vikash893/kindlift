@@ -19,13 +19,22 @@ try {
         const {name , phone , password , email} = req.body 
         const hashpassword = await bcrypt.hash("password" , 10);
 
+    const sameadmin = await AdminUser.findOne({email});
+
+    if (sameadmin) {
+      res.status(400).json({
+        error : "Admin already register please login or signup with new mail"
+      })
+    }
+
+
     if (!name || ! phone || ! password || ! email){
         res.status(400).json({
             error :"All fields are required"
         })
     }
 
-    if (password.length != 6){
+    if (password.length < 6){
         res.status(400).json({
             error : "Password should be of length 6"
         })
