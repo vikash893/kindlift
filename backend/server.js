@@ -8,6 +8,7 @@ import connectDb from "./config/db.js";
 import router from "./routers/auth.js";
 import adminRouter from "./routers/admin.js";
 import rideRoutes from "./routers/ride.routes.js";
+import myriderRouter from "./routers/myride.js";
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -16,11 +17,12 @@ const port = process.env.PORT || 8000;
 app.use(cors());
 app.use(express.json());
 
+
 // routes
 app.use("/api/auth", router);
 app.use("/uploads", express.static("uploads"));
-app.use("/api/admin", adminRouter);
 app.use("/api/ride", rideRoutes);
+app.use("/api/ride" , myriderRouter);
 app.use("/api/admin" , adminRouter);
 
 // start server

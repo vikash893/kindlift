@@ -23,7 +23,7 @@ function Register() {
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [cityState, setCityState] = useState({ city: "", state: "" });
 
-  const [agreeToTerms, setAgreeToTerms] = useState(false); // ✅ FIX
+  const [agreeToTerms, setAgreeToTerms] = useState(false); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");

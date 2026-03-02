@@ -58,7 +58,7 @@ function AdminLogin() {
 
 
     //   if(user.name == "yash"){
-    //     alert("chal ht...... bc");
+    //     alert("chal ht");
     //     navigate("/adminlogin");
     //   }else {
 

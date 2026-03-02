@@ -9,6 +9,7 @@ import FindRides from './dashboard/FindRides';
 import "leaflet/dist/leaflet.css";
 import AdminLogin from './admin/Login';
 import Admindashboard from './dashboard/admindashboard';
+import Myride from './dashboard/myride';
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/userdashboard" element={<Userdashboard />} />
         <Route path="/find-rides" element={<FindRides />} />
+        <Route path="/myride" element={<Myride />} />
         <Route path="/adminlogin" element={<AdminLogin/>} />
         <Route path="/admindashboard" element={<Admindashboard/>} />
       </Routes>
