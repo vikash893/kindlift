@@ -81,6 +81,9 @@ router.post("/register", upload.single("image"), async (req, res) => {
 
   } catch (err) {
     console.error("REGISTER ERROR:", err);
+    console.error("MESSAGE:", err.message);
+  console.error("STACK:", err.stack);
+  console.error("FULL ERROR:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
