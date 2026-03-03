@@ -1,6 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config();
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 
@@ -13,25 +14,37 @@ const myriderRouter = require("./routers/myride");
 const app = express();
 const port = process.env.PORT || 8000;
 
-// middleware
+/* ================= MIDDLEWARE ================= */
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    // "https://your-frontend-domain.com"
-  ],
+  origin: true,
   credentials: true
 }));
+
 app.use(express.json());
 
-// routes
-app.use("/api/auth", router);
+/* ================= STATIC ================= */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+/* ================= ROUTES ================= */
+app.use("/api/auth", router);
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
 app.use("/api/admin", adminRouter);
 
-// start server
-app.listen(port, async () => {
-  console.log(`server is running on the port ${port}`);
-  await connectDb();
-});
+/* ================= START SERVER ================= */
+const startServer = async () => {
+  try {
+    await connectDb();
+    console.log("MongoDB Connected");
+
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+
+  } catch (err) {
+    console.error("Database connection failed:", err);
+    process.exit(1);
+  }
+};
+
+startServer();
