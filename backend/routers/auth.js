@@ -7,6 +7,7 @@ const path = require("path");
 const router = express.Router();
 
 /* ================= MULTER CONFIG ================= */
+const fs = require("fs");
 
 const uploadDir = path.join(__dirname, "../uploads");
 
