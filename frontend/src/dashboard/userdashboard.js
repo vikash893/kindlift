@@ -39,13 +39,16 @@ function Userdashboard() {
 
   /* ---------------- LOAD PROFILE IMAGE ---------------- */
   useEffect(() => {
-    if (!user?.email) return;
+  if (!user?.email) return;
 
-    fetch(`https://kindlift.onrender.com/api/auth/photo?email=${user.email}`)
-      .then(res => res.json())
-      .then(data => setProfileImg(data.image))
-      .catch(() => {});
-  }, [user]);
+  fetch(`https://kindlift.onrender.com/api/auth/photo?email=${user.email}`)
+    .then(res => res.json())
+    .then(data => {
+      console.log("Photo API:", data);
+      setProfileImg(data.image);
+    })
+    .catch(err => console.log(err));
+}, [user]);
 
   /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {

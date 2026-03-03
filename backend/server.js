@@ -25,7 +25,7 @@ app.use(express.json());
 
 // routes
 app.use("/api/auth", router);
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
 app.use("/api/admin", adminRouter);

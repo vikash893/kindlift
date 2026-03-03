@@ -4,8 +4,7 @@ const API = axios.create({
   baseURL: "https://kindlift.onrender.com",
   headers: {
     "Content-Type": "application/json",
-  },
-  withCredentials: true, // if using cookies
+  }
 });
 
 export default API;
