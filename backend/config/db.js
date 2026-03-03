@@ -1,8 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDb = async () => {
+  console.log("MONGO URI IS:", process.env.MONGO_URI);
+
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const conn = await mongoose.connect(process.env.MONGO_URI, {
+      family: 4
+    });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
@@ -11,4 +15,4 @@ const connectDb = async () => {
   }
 };
 
-module.exports=connectDb;
+module.exports = connectDb;
