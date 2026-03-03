@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useEffect } from "react";
-import axios from 'axios';
+import API from "../api/axios";
 import '../css/home.css';
 import logo from '../public/logo.png';
 import { 
@@ -21,7 +21,7 @@ function Home() {
     const [userCount, setUserCount] = useState(0);
 
     useEffect(() => {
-  axios.get("http://localhost:5000/api/auth/getuser")
+  API.get("http://localhost:5000/api/auth/getuser")
     .then((res) => {
       setUserCount(res.data.countUser);
     })

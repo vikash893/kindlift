@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from '../api/axios'
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
@@ -42,8 +42,8 @@ function Login() {
     setError("");
 
     try {
-      const res = await axios.post(
-  "https://kindlift.onrender.com/api/auth/login",
+      const res = await api.post(
+  "/api/auth/login",
   user
 );
 

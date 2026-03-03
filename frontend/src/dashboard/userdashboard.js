@@ -41,7 +41,7 @@ function Userdashboard() {
   useEffect(() => {
     if (!user?.email) return;
 
-    fetch(`http://localhost:5000/api/auth/photo?email=${user.email}`)
+    fetch(`https://kindlift.onrender.com/api/auth/photo?email=${user.email}`)
       .then(res => res.json())
       .then(data => setProfileImg(data.image))
       .catch(() => {});
@@ -87,7 +87,7 @@ function Userdashboard() {
             >
               {profileImg ? (
                 <img
-                  src={`http://localhost:5000/${profileImg}`}
+                  src={`https://kindlift.onrender.com/${profileImg}`}
                   className="avatar"
                   alt="profile"
                 />

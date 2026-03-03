@@ -35,7 +35,7 @@ function FindRides() {
         userLocation.lng,
         ride.lat,
         ride.lng
-      ), // ✅ NUMBER ONLY
+      ), 
     }));
 
     setRides(withDistance);
