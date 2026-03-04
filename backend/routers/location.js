@@ -34,4 +34,21 @@ locationRouter.post("/add", async (req, res) => {
   }
 });
 
+
+locationRouter.get("/get", async (req, res) => {
+  try {
+
+    const locationNames = await locations.find({}, "name");
+
+    res.status(200).json({
+      locations: locationNames
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "internal server error"
+    });
+  }
+});
+
 module.exports = locationRouter;

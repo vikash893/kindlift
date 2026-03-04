@@ -10,6 +10,7 @@ import "leaflet/dist/leaflet.css";
 import AdminLogin from './admin/Login';
 import Admindashboard from './dashboard/admindashboard';
 import Myride from './dashboard/myride';
+import AddLocation from './dashboard/addlocation';
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/myride" element={<Myride />} />
         <Route path="/adminlogin" element={<AdminLogin/>} />
         <Route path="/admindashboard" element={<Admindashboard/>} />
+        <Route path='/addlocation' element={<AddLocation/>}/>
       </Routes>
     </Router>
   );

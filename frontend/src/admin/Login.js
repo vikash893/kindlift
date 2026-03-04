@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import css from '../css/adminlogin.css';
 import { 
   Mail, 
   Lock, 
@@ -13,8 +14,6 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import '../css/home.css'; // Include your main CSS
-import '../css/auth.css'; // Include the new auth CSS
 
 function AdminLogin() {
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ function AdminLogin() {
 
     try {
       const res = await axios.post(
-  "http://localhost:5000/api/admin/login",
+  "https://kindlift.onrender.com/api/admin/login",
   user
 );
 
