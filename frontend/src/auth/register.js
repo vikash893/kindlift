@@ -3,8 +3,8 @@ import axios from "axios";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
-
 function Register() {
+
   const navigate = useNavigate();
 
   const [user, setUser] = useState({
@@ -27,38 +27,58 @@ function Register() {
   const [success, setSuccess] = useState("");
 
   /* ================= HANDLE INPUT ================= */
+
   const handleChange = (e) => {
-    setUser({ ...user, [e.target.name]: e.target.value });
+
+    setUser({
+      ...user,
+      [e.target.name]: e.target.value
+    });
+
     setError("");
   };
 
   /* ================= DETECT LOCATION ================= */
+
   const detectLocation = () => {
+
     if (!navigator.geolocation) {
       setError("Geolocation not supported");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
+
       (pos) => {
+
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
         setCoords({ lat, lng });
-        setCityState({ city: "Detected", state: "Detected" });
+
+        setCityState({
+          city: "Detected",
+          state: "Detected"
+        });
+
         setUser((prev) => ({
           ...prev,
           location: "Location detected"
         }));
 
         setSuccess("Location detected!");
+
       },
+
       () => setError("Location permission denied")
+
     );
   };
 
   /* ================= VALIDATION ================= */
+
   const validateForm = () => {
+
     if (user.password !== confirmPassword) {
       setError("Passwords do not match");
       return false;
@@ -83,7 +103,9 @@ function Register() {
   };
 
   /* ================= SUBMIT ================= */
+
   const handleSubmit = async (e) => {
+
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -102,17 +124,13 @@ function Register() {
     formData.append("image", image);
 
     try {
+
       setLoading(true);
       setError("");
 
       await axios.post(
-        `https://kindlift.onrender.com/api/auth/register`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data"
-          }
-        }
+        "https://kindlift.onrender.com/api/auth/register",
+        formData
       );
 
       setSuccess("Registered successfully!");
@@ -122,10 +140,15 @@ function Register() {
       }, 1500);
 
     } catch (err) {
+
       console.log("Register Error:", err);
+
       setError(err.response?.data?.error || "Registration failed");
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
@@ -133,7 +156,6 @@ function Register() {
     <div className="register-page">
       <div className="register-card">
 
-        {/* LEFT SECTION */}
         <div className="register-left">
           <h1>Join KindLift</h1>
           <p>Share rides with trusted college students.</p>
@@ -142,8 +164,8 @@ function Register() {
           <div className="feature">✔ Smart matching</div>
         </div>
 
-        {/* RIGHT SECTION */}
         <div className="register-right">
+
           <h2>Create Account</h2>
 
           {error && <div className="message-error">{error}</div>}
@@ -151,65 +173,23 @@ function Register() {
 
           <form className="register-form" onSubmit={handleSubmit}>
 
-            <input
-              name="name"
-              placeholder="Name"
-              onChange={handleChange}
-              required
-            />
+            <input name="name" placeholder="Name" onChange={handleChange} required />
 
-            <input
-              name="phone"
-              placeholder="Phone"
-              onChange={handleChange}
-              required
-            />
+            <input name="phone" placeholder="Phone" onChange={handleChange} required />
 
-            <input
-              name="email"
-              type="email"
-              placeholder="Email"
-              onChange={handleChange}
-              required
-            />
+            <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
 
-            <input
-              name="aadharNumber"
-              placeholder="Aadhar Number"
-              maxLength="12"
-              onChange={handleChange}
-              required
-            />
+            <input name="aadharNumber" placeholder="Aadhar Number" maxLength="12" onChange={handleChange} required />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              onChange={handleChange}
-              required
-            />
+            <input type="password" name="password" placeholder="Password" onChange={handleChange} required />
 
-            <input
-              type="password"
-              placeholder="Confirm Password"
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
+            <input type="password" placeholder="Confirm Password" onChange={(e) => setConfirmPassword(e.target.value)} required />
 
-            <button
-              type="button"
-              className="secondary"
-              onClick={detectLocation}
-            >
+            <button type="button" className="secondary" onClick={detectLocation}>
               Detect Location
             </button>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImage(e.target.files[0])}
-              required
-            />
+            <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files[0])} required />
 
             <label>
               <input
@@ -229,6 +209,7 @@ function Register() {
             </div>
 
           </form>
+
         </div>
 
       </div>

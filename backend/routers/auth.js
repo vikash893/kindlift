@@ -3,25 +3,26 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 const router = express.Router();
 
 /* ================= MULTER CONFIG ================= */
-const fs = require("fs");
 
 const uploadDir = path.join(__dirname, "../uploads");
 
-// 🔥 Create uploads folder if not exists
+// create uploads folder if not exists
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
   }
 });
 
@@ -30,6 +31,7 @@ const upload = multer({ storage });
 /* ================= REGISTER ================= */
 router.post("/register", upload.single("image"), async (req, res) => {
   try {
+
     const {
       name,
       phone,
@@ -42,11 +44,12 @@ router.post("/register", upload.single("image"), async (req, res) => {
       state
     } = req.body;
 
-    if (!name || !phone || !email || !password) {
+    if (!name || !phone || !email || !password || !aadharNumber) {
       return res.status(400).json({ error: "Required fields missing" });
     }
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
     }
@@ -54,20 +57,22 @@ router.post("/register", upload.single("image"), async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const imagePath = req.file
-      ? `/uploads/${req.file.filename}`   // ✅ ONLY RELATIVE PATH
+      ? `/uploads/${req.file.filename}`
       : null;
 
     const user = new User({
       name,
       phone,
       email,
+      aadharNumber,
       password: hashedPassword,
       image: imagePath,
       location: {
         type: "Point",
-        coordinates: lat && lng
-          ? [parseFloat(lng), parseFloat(lat)]
-          : [0, 0],
+        coordinates:
+          lat && lng
+            ? [parseFloat(lng), parseFloat(lat)]
+            : [0, 0],
         city: city || "",
         state: state || ""
       }
@@ -80,29 +85,37 @@ router.post("/register", upload.single("image"), async (req, res) => {
     });
 
   } catch (err) {
+
     console.error("REGISTER ERROR:", err);
     console.error("MESSAGE:", err.message);
-  console.error("STACK:", err.stack);
-  console.error("FULL ERROR:", err);
+    console.error("STACK:", err.stack);
+
     res.status(500).json({ error: "Server error" });
   }
 });
 
+
 /* ================= LOGIN ================= */
 router.post("/login", async (req, res) => {
   try {
+
     const { email, password } = req.body;
 
-    if (!email || !password)
+    if (!email || !password) {
       return res.status(400).json({ error: "All fields required" });
+    }
 
     const user = await User.findOne({ email });
-    if (!user)
+
+    if (!user) {
       return res.status(400).json({ error: "User not found" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
+
+    if (!isMatch) {
       return res.status(400).json({ error: "Invalid password" });
+    }
 
     const userData = user.toObject();
     delete userData.password;
@@ -113,13 +126,19 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
+
+    console.error("LOGIN ERROR:", err);
+
     res.status(500).json({ error: "Server error" });
   }
 });
 
+
 /* ================= GET USER IMAGE ================= */
 router.get("/photo", async (req, res) => {
+
   try {
+
     const { email } = req.query;
 
     const user = await User.findOne({ email }).select("image");
@@ -129,18 +148,32 @@ router.get("/photo", async (req, res) => {
     }
 
     res.json({
-      image: user.image   // ✅ returns "/uploads/filename.png"
+      image: user.image
     });
 
   } catch (err) {
+
+    console.error("PHOTO ERROR:", err);
+
     res.status(500).json({ error: "Server error" });
   }
 });
 
+
 /* ================= TOTAL USERS ================= */
 router.get("/getuser", async (req, res) => {
-  const countUser = await User.countDocuments();
-  res.json({ countUser });
+
+  try {
+
+    const countUser = await User.countDocuments();
+
+    res.json({ countUser });
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Server error" });
+  }
+
 });
 
 module.exports = router;
