@@ -39,16 +39,16 @@ function Userdashboard() {
 
   /* ---------------- LOAD PROFILE IMAGE ---------------- */
   useEffect(() => {
-  if (!user?.email) return;
+    if (!user?.email) return;
 
-  fetch(`https://kindlift.onrender.com/api/auth/photo?email=${user.email}`)
-    .then(res => res.json())
-    .then(data => {
-      console.log("Photo API:", data);
-      setProfileImg(data.image);
-    })
-    .catch(err => console.log(err));
-}, [user]);
+    fetch(`https://kindlift.onrender.com/api/auth/photo?email=${user.email}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Photo API:", data);
+        setProfileImg(data.image);
+      })
+      .catch(err => console.log(err));
+  }, [user]);
 
   /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
@@ -90,9 +90,12 @@ function Userdashboard() {
             >
               {profileImg ? (
                 <img
-                  src={`https://kindlift.onrender.com/${profileImg}`}
+                  src={`https://kindlift.onrender.com${profileImg}`}
                   className="avatar"
                   alt="profile"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
                 />
               ) : (
                 <div className="avatar">
@@ -113,6 +116,39 @@ function Userdashboard() {
               <button onClick={() => setShowProfilePopup(false)}>
                 <X />
               </button>
+            </div>
+
+            {/* PROFILE IMAGE */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: "15px" }}>
+              {profileImg ? (
+                <img
+                  src={`https://kindlift.onrender.com${profileImg}`}
+                  alt="profile"
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    objectFit: "cover"
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    background: "#4f46e5",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "28px",
+                    fontWeight: "bold"
+                  }}
+                >
+                  {user.name[0]}
+                </div>
+              )}
             </div>
 
             <p>{user.name}</p>
@@ -151,8 +187,11 @@ function Userdashboard() {
             <Search /> Find Rides
           </div>
 
-          <div className="menu-item">
-            <Car /> My Rides
+          <div
+            className="menu-item"
+            onClick={() => navigate("/myride")}
+          >
+            <Search /> offer a ride
           </div>
 
           <div className="menu-item">
