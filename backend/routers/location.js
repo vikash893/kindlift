@@ -51,4 +51,17 @@ locationRouter.get("/get", async (req, res) => {
   }
 });
 
+
+locationRouter.get("/search", async (req, res) => {
+
+  const query = req.query.query;
+
+  const locations = await Location.find({
+    name: { $regex: query, $options: "i" }
+  }).limit(10);
+
+  res.json({ locations });
+
+});
+
 module.exports = locationRouter;

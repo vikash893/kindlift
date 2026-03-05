@@ -1,54 +1,94 @@
 import React, { useState } from "react";
-import { LoadScript, Autocomplete } from "@react-google-maps/api";
-
-const LIBRARIES = ["places"];
+import axios from "axios";
 
 export default function MyRide() {
+
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
 
-  const handlePlaceSelect = (autocomplete, type) => {
-    const place = autocomplete.getPlace();
-    if (!place) return;
+  const [sourceSuggestions, setSourceSuggestions] = useState([]);
+  const [destSuggestions, setDestSuggestions] = useState([]);
 
-    const location = place.formatted_address || place.name || "";
+  const handleSearch = async (value, type) => {
 
-    if (type === "source") {
-      setSource(location);
-    } else {
-      setDestination(location);
+    if (type === "source") setSource(value);
+    else setDestination(value);
+
+    if (value.length < 1) return;
+
+    try {
+
+      const res = await axios.get(`/api/location/search?query=${value}`);
+
+      if (type === "source") {
+        setSourceSuggestions(res.data.locations);
+      } else {
+        setDestSuggestions(res.data.locations);
+      }
+
+    } catch (err) {
+      console.log(err);
     }
   };
 
+  const selectLocation = (value, type) => {
+
+    if (type === "source") {
+      setSource(value);
+      setSourceSuggestions([]);
+    } else {
+      setDestination(value);
+      setDestSuggestions([]);
+    }
+
+  };
+
   return (
-    <LoadScript googleMapsApiKey="AIzaSyA9oTOgPJ5BQ4_EFtk4jBhFrfq-aTmUP6M" libraries={LIBRARIES}>
+    <div>
+
       <h2>Offer Ride</h2>
 
-      <Autocomplete
-        onLoad={(auto) => (window.sourceAuto = auto)}
-        onPlaceChanged={() =>
-          handlePlaceSelect(window.sourceAuto, "source")
-        }
-      >
+      {/* SOURCE */}
+      <div>
         <input
           type="text"
           placeholder="Enter Source"
-          value={source || ""}
+          value={source}
+          onChange={(e) => handleSearch(e.target.value, "source")}
         />
-      </Autocomplete>
 
-      <Autocomplete
-        onLoad={(auto) => (window.destAuto = auto)}
-        onPlaceChanged={() =>
-          handlePlaceSelect(window.destAuto, "destination")
-        }
-      >
+        {sourceSuggestions.map((loc, index) => (
+          <div
+            key={index}
+            onClick={() => selectLocation(loc.name, "source")}
+            style={{ cursor: "pointer", background: "#eee", padding: "5px" }}
+          >
+            {loc.name}
+          </div>
+        ))}
+      </div>
+
+
+      {/* DESTINATION */}
+      <div>
         <input
           type="text"
           placeholder="Enter Destination"
-          value={destination || ""}
+          value={destination}
+          onChange={(e) => handleSearch(e.target.value, "destination")}
         />
-      </Autocomplete>
-    </LoadScript>
+
+        {destSuggestions.map((loc, index) => (
+          <div
+            key={index}
+            onClick={() => selectLocation(loc.name, "destination")}
+            style={{ cursor: "pointer", background: "#eee", padding: "5px" }}
+          >
+            {loc.name}
+          </div>
+        ))}
+      </div>
+
+    </div>
   );
 }
