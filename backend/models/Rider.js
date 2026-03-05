@@ -1,7 +1,11 @@
 const mongoose = require("mongoose");
 
 const riderSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+
+  name: {
+    type: String,
+    required: true
+  },
 
   startLocation: String,
   startLat: Number,
@@ -9,7 +13,10 @@ const riderSchema = new mongoose.Schema({
 
   endLocation: String,
   endLat: Number,
-  endLng: Number
+  endLng: Number,
+
+  distance: Number
+
 });
 
-module.exports = mongoose.model("myrider", riderSchema);
+module.exports = mongoose.model("Rider", riderSchema);

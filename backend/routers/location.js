@@ -72,4 +72,66 @@ locationRouter.get("/search", async (req, res) => {
   }
 });
 
+
+locationRouter.get("/get-coordinates", async (req, res) => {
+  try {
+
+    const { name } = req.query;
+
+    if (!name) {
+      return res.status(400).json({
+        error: "Location name is required"
+      });
+    }
+
+    const location = await locations.findOne({ name });
+
+    if (!location) {
+      return res.status(404).json({
+        error: "Location not found"
+      });
+    }
+
+    res.status(200).json({
+      name: location.name,
+      lat: location.lat,
+      lng: location.lng
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Internal server error"
+    });
+  }
+});
+
+
+locationRouter.get("/get-coordinates", async (req, res) => {
+
+  try {
+
+    const { name } = req.query;
+
+    const location = await locations.findOne({ name });
+
+    if (!location) {
+      return res.status(404).json({
+        error: "Location not found"
+      });
+    }
+
+    res.json({
+      lat: location.lat,
+      lng: location.lng
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: "Internal server error"
+    });
+
+  }
+
+});
 module.exports = locationRouter;

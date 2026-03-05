@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
+import API from "../api/axios";
+import "../css/MyRide.css";
 
 export default function MyRide() {
 
@@ -8,6 +9,9 @@ export default function MyRide() {
 
   const [sourceSuggestions, setSourceSuggestions] = useState([]);
   const [destSuggestions, setDestSuggestions] = useState([]);
+
+  const [sourceLatLng, setSourceLatLng] = useState(null);
+  const [destLatLng, setDestLatLng] = useState(null);
 
   const handleSearch = async (value, type) => {
 
@@ -18,7 +22,7 @@ export default function MyRide() {
 
     try {
 
-      const res = await axios.get(`/api/location/search?query=${value}`);
+      const res = await API.get(`/api/location/search?query=${value}`);
 
       if (type === "source") {
         setSourceSuggestions(res.data.locations);
@@ -31,64 +35,150 @@ export default function MyRide() {
     }
   };
 
-  const selectLocation = (value, type) => {
+  const selectLocation = async (value, type) => {
 
-    if (type === "source") {
-      setSource(value);
-      setSourceSuggestions([]);
-    } else {
-      setDestination(value);
-      setDestSuggestions([]);
+    try {
+
+      const res = await API.get(`/api/location/get-coordinates?name=${value}`);
+
+      if (type === "source") {
+
+        setSource(value);
+        setSourceSuggestions([]);
+        setSourceLatLng(res.data);
+
+      } else {
+
+        setDestination(value);
+        setDestSuggestions([]);
+        setDestLatLng(res.data);
+
+      }
+
+    } catch (err) {
+      console.log(err);
+    }
+
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+
+    const R = 6371;
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+
+  };
+
+  const submitRide = async () => {
+
+    if (!sourceLatLng || !destLatLng) {
+      alert("Please select both locations");
+      return;
+    }
+
+    const distance = calculateDistance(
+      sourceLatLng.lat,
+      sourceLatLng.lng,
+      destLatLng.lat,
+      destLatLng.lng
+    );
+
+    try {
+
+      await API.post("/api/rides/create", {
+
+        name: "Vikash",
+
+        startLocation: source,
+        startLat: sourceLatLng.lat,
+        startLng: sourceLatLng.lng,
+
+        endLocation: destination,
+        endLat: destLatLng.lat,
+        endLng: destLatLng.lng,
+
+        distance
+
+      });
+
+      alert("Ride Created Successfully");
+
+    } catch (error) {
+
+      console.log(error);
+
     }
 
   };
 
   return (
-    <div>
 
-      <h2>Offer Ride</h2>
+    <div className="my-ride-container">
 
-      {/* SOURCE */}
-      <div>
+      <div className="my-ride-card">
+
+        <h2>Offer Ride</h2>
+
+        {/* SOURCE */}
+
         <input
           type="text"
-          placeholder="Enter Source"
+          placeholder="Enter source"
           value={source}
           onChange={(e) => handleSearch(e.target.value, "source")}
         />
 
         {sourceSuggestions.map((loc, index) => (
+
           <div
             key={index}
             onClick={() => selectLocation(loc.name, "source")}
-            style={{ cursor: "pointer", background: "#eee", padding: "5px" }}
           >
             {loc.name}
           </div>
+
         ))}
-      </div>
 
+        {/* DESTINATION */}
 
-      {/* DESTINATION */}
-      <div>
         <input
           type="text"
-          placeholder="Enter Destination"
+          placeholder="Enter destination"
           value={destination}
           onChange={(e) => handleSearch(e.target.value, "destination")}
         />
 
         {destSuggestions.map((loc, index) => (
+
           <div
             key={index}
             onClick={() => selectLocation(loc.name, "destination")}
-            style={{ cursor: "pointer", background: "#eee", padding: "5px" }}
           >
             {loc.name}
           </div>
+
         ))}
+
+        <button onClick={submitRide}>
+          Offer Ride
+        </button>
+
       </div>
 
     </div>
+
   );
+
 }
