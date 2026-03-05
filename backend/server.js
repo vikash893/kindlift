@@ -8,7 +8,6 @@ const cors = require("cors");
 const connectDb = require("./config/db");
 
 const authRouter = require("./routers/auth");
-const adminRouter = require("./routers/admin");
 const rideRoutes = require("./routers/ride.routes");
 const myriderRouter = require("./routers/myride");
 const locationRouter = require("./routers/location");
@@ -35,7 +34,6 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRouter);
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
-app.use("/api/admin", adminRouter);
 app.use("/api/location" , locationRouter);
 
 /* ================= START SERVER ================= */
