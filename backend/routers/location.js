@@ -53,15 +53,23 @@ locationRouter.get("/get", async (req, res) => {
 
 
 locationRouter.get("/search", async (req, res) => {
+  try {
 
-  const query = req.query.query;
+    const query = req.query.query;
 
-  const locations = await Location.find({
-    name: { $regex: query, $options: "i" }
-  }).limit(10);
+    const results = await locations.find({
+      name: { $regex: query, $options: "i" }
+    }).limit(10);
 
-  res.json({ locations });
+    res.status(200).json({
+      locations: results
+    });
 
+  } catch (error) {
+    res.status(500).json({
+      error: "Internal server error"
+    });
+  }
 });
 
 module.exports = locationRouter;
