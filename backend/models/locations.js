@@ -1,19 +1,23 @@
 const mongoose = require("mongoose");
 
-const locationSchema = new mongoose.Schema({
+const locationSchema = new mongoose.Schema(
+{
   name: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   city: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   state: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   lat: {
@@ -26,6 +30,10 @@ const locationSchema = new mongoose.Schema({
     required: true
   }
 
-});
+},
+{
+  timestamps: true
+}
+);
 
 module.exports = mongoose.model("locations", locationSchema);

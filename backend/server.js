@@ -15,6 +15,7 @@ const locationRouter = require("./routers/location");
 const app = express();
 const port = process.env.PORT || 8000;
 
+
 /* ================= MIDDLEWARE ================= */
 
 app.use(cors({
@@ -25,16 +26,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 /* ================= STATIC FILES ================= */
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 /* ================= ROUTES ================= */
 
 app.use("/api/auth", authRouter);
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
-app.use("/api/location" , locationRouter);
+app.use("/api/location", locationRouter);
+
 
 /* ================= START SERVER ================= */
 

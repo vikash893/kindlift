@@ -1,10 +1,11 @@
 const express = require("express");
-const Locations = require("../models/locations");
+const Locations = require("../models/location");
 
 const locationRouter = express.Router();
 
 
-// ADD LOCATION
+/* ================= ADD LOCATION ================= */
+
 locationRouter.post("/add", async (req, res) => {
   try {
 
@@ -13,6 +14,14 @@ locationRouter.post("/add", async (req, res) => {
     if (!name || !city || !state || !lat || !lng) {
       return res.status(400).json({
         error: "All fields are required"
+      });
+    }
+
+    const existingLocation = await Locations.findOne({ name });
+
+    if (existingLocation) {
+      return res.status(400).json({
+        error: "Location already exists"
       });
     }
 
@@ -26,11 +35,14 @@ locationRouter.post("/add", async (req, res) => {
 
     await newLocation.save();
 
-    res.status(200).json({
-      message: "Location added successfully"
+    res.status(201).json({
+      message: "Location added successfully",
+      location: newLocation
     });
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: "Internal server error"
@@ -40,7 +52,8 @@ locationRouter.post("/add", async (req, res) => {
 });
 
 
-// GET ALL LOCATION NAMES
+/* ================= GET ALL LOCATION NAMES ================= */
+
 locationRouter.get("/get", async (req, res) => {
 
   try {
@@ -53,6 +66,8 @@ locationRouter.get("/get", async (req, res) => {
 
   } catch (error) {
 
+    console.error(error);
+
     res.status(500).json({
       error: "Internal server error"
     });
@@ -62,12 +77,19 @@ locationRouter.get("/get", async (req, res) => {
 });
 
 
-// SEARCH LOCATION (for suggestion dropdown)
+/* ================= SEARCH LOCATION ================= */
+
 locationRouter.get("/search", async (req, res) => {
 
   try {
 
     const query = req.query.query;
+
+    if (!query) {
+      return res.status(400).json({
+        error: "Search query required"
+      });
+    }
 
     const results = await Locations.find({
       name: { $regex: query, $options: "i" }
@@ -79,6 +101,8 @@ locationRouter.get("/search", async (req, res) => {
 
   } catch (error) {
 
+    console.error(error);
+
     res.status(500).json({
       error: "Internal server error"
     });
@@ -88,7 +112,8 @@ locationRouter.get("/search", async (req, res) => {
 });
 
 
-// GET COORDINATES BY LOCATION NAME
+/* ================= GET COORDINATES ================= */
+
 locationRouter.get("/get-coordinates", async (req, res) => {
 
   try {
@@ -117,6 +142,8 @@ locationRouter.get("/get-coordinates", async (req, res) => {
 
   } catch (error) {
 
+    console.error(error);
+
     res.status(500).json({
       error: "Internal server error"
     });
@@ -124,5 +151,6 @@ locationRouter.get("/get-coordinates", async (req, res) => {
   }
 
 });
+
 
 module.exports = locationRouter;
