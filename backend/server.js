@@ -11,6 +11,7 @@ const authRouter = require("./routers/auth");
 const rideRoutes = require("./routers/ride.routes");
 const myriderRouter = require("./routers/myride");
 const locationRouter = require("./routers/location");
+const rideSearch = require("./routers/rideSearch");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -38,7 +39,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
 app.use("/api/location", locationRouter);
-
+app.use("/api/ride" , rideSearch)
 
 /* ================= START SERVER ================= */
 
