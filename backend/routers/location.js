@@ -1,5 +1,5 @@
 const express = require("express");
-const Locations = require("../models/location");
+const Locations = require("../models/locations");
 
 const locationRouter = express.Router();
 

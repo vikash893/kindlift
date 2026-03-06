@@ -10,7 +10,7 @@ const connectDb = require("./config/db");
 const authRouter = require("./routers/auth");
 const rideRoutes = require("./routers/ride.routes");
 const myriderRouter = require("./routers/myride");
-const locationRouter = require("./routers/location");
+const locationRouter = require("./routers/locations");
 
 const app = express();
 const port = process.env.PORT || 8000;
