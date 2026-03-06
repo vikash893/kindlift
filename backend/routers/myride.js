@@ -1,5 +1,5 @@
 const express = require("express");
-const Rider = require("../models/rider");
+const Rider = require('../models/Rider');
 
 const myriderRouter = express.Router();
 
@@ -46,4 +46,4 @@ myriderRouter.post("/create", async (req, res) => {
 
 });
 
-module.exports = router;
+module.exports = myriderRouter;
