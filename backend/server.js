@@ -7,11 +7,12 @@ const cors = require("cors");
 
 const connectDb = require("./config/db");
 
-const authRouter = require("./routers/auth");
+// const authRouter = require("./routers/auth");
 const rideRoutes = require("./routers/ride.routes");
 const myriderRouter = require("./routers/myride");
 const locationRouter = require("./routers/location");
 const rideSearch = require("./routers/rideSearch");
+const router = require("./routers/auth");
 
 const app = express();
 const port = process.env.PORT || 8000;
@@ -35,7 +36,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* ================= ROUTES ================= */
 
-app.use("/api/auth", authRouter);
+app.use("/api/auth", router);
 app.use("/api/ride", rideRoutes);
 app.use("/api/ride", myriderRouter);
 app.use("/api/location", locationRouter);
