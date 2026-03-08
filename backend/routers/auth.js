@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const multer = require("multer");
+const sendOTP = require("../utils/sendMail");
 const path = require("path");
 const fs = require("fs");
 
@@ -28,6 +29,39 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// otp temp store 
+const otpStore = {};
+
+
+
+// otp router 
+router.post("/send-otp", async (req, res) => {
+
+  try {
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    otpStore[email] = otp;
+
+    await sendOTP(email, otp);
+
+    res.json({ message: "OTP sent to email" });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+
+});
+
 /* ================= REGISTER ================= */
 router.post("/register", upload.single("image"), async (req, res) => {
   try {
@@ -41,12 +75,15 @@ router.post("/register", upload.single("image"), async (req, res) => {
       lat,
       lng,
       city,
-      state
+      state,
+      otp
     } = req.body;
 
-    if (!name || !phone || !email || !password || !aadharNumber) {
-      return res.status(400).json({ error: "Required fields missing" });
+    if (!otp || otpStore[email] != otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
     }
+
+    delete otpStore[email];
 
     const existingUser = await User.findOne({ email });
 
@@ -86,13 +123,14 @@ router.post("/register", upload.single("image"), async (req, res) => {
 
   } catch (err) {
 
-    console.error("REGISTER ERROR:", err);
-    console.error("MESSAGE:", err.message);
-    console.error("STACK:", err.stack);
+    console.error(err);
 
     res.status(500).json({ error: "Server error" });
   }
 });
+
+
+
 
 
 /* ================= LOGIN ================= */

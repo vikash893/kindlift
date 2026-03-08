@@ -16,6 +16,9 @@ function Register() {
     location: ""
   });
 
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
   const [confirmPassword, setConfirmPassword] = useState("");
   const [image, setImage] = useState(null);
   const [coords, setCoords] = useState({ lat: null, lng: null });
@@ -36,6 +39,38 @@ function Register() {
     });
 
     setError("");
+  };
+
+  /* ================= SEND OTP ================= */
+
+  const sendOTP = async () => {
+
+    if (!user.email) {
+      setError("Enter email first");
+      return;
+    }
+
+    try {
+
+      setLoading(true);
+
+      await axios.post(
+        "https://kindlift.onrender.com/api/auth/send-otp",
+        { email: user.email }
+      );
+
+      setOtpSent(true);
+      setSuccess("OTP sent to your email");
+
+    } catch (err) {
+
+      setError("Failed to send OTP");
+
+    } finally {
+
+      setLoading(false);
+
+    }
   };
 
   /* ================= DETECT LOCATION ================= */
@@ -78,6 +113,16 @@ function Register() {
   /* ================= VALIDATION ================= */
 
   const validateForm = () => {
+
+    if (!otpSent) {
+      setError("Please verify email first");
+      return false;
+    }
+
+    if (!otp) {
+      setError("Enter OTP");
+      return false;
+    }
 
     if (user.password !== confirmPassword) {
       setError("Passwords do not match");
@@ -122,6 +167,7 @@ function Register() {
     formData.append("city", cityState.city);
     formData.append("state", cityState.state);
     formData.append("image", image);
+    formData.append("otp", otp);
 
     try {
 
@@ -177,7 +223,34 @@ function Register() {
 
             <input name="phone" placeholder="Phone" onChange={handleChange} required />
 
-            <input name="email" type="email" placeholder="Email" onChange={handleChange} required />
+            {/* EMAIL + OTP */}
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                name="email"
+                type="email"
+                placeholder="Email"
+                onChange={handleChange}
+                required
+              />
+
+              <button
+                type="button"
+                className="secondary"
+                onClick={sendOTP}
+                disabled={loading}
+              >
+                Send OTP
+              </button>
+            </div>
+
+            {otpSent && (
+              <input
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+              />
+            )}
 
             <input name="aadharNumber" placeholder="Aadhar Number" maxLength="12" onChange={handleChange} required />
 
