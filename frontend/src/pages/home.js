@@ -21,7 +21,7 @@ function Home() {
     const [userCount, setUserCount] = useState(0);
 
     useEffect(() => {
-  API.get("http://localhost:5000/api/auth/getuser")
+  API.get("/api/auth/getuser")
     .then((res) => {
       setUserCount(res.data.countUser);
     })
