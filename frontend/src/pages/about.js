@@ -2,18 +2,14 @@ import { useNavigate } from "react-router-dom";
 import '../css/home.css';
 import vikash from '../public/vikash.png';
 import vishnu from '../public/vishnu.png';
+import yash from '../public/yash.png';
+
 // At the top of About.jsx
 import { 
   Car, 
-  Target, 
   Users, 
   Shield, 
   Globe, 
-  Heart,
-  MapPin,
-  User,
-  Star,
-  TrendingUp,
   Phone,  // Add these imports for the footer
   Mail,
   Map,
@@ -151,7 +147,7 @@ function About() {
                             />
                         </div>
                         <h3>Vishnu Singh Rajput</h3>
-                        <p>CEO & Founder</p>
+                        <p>frontend/UI developer</p>
                     </div>
                     <div className="team-member">
                         <div className="member-image">
@@ -161,9 +157,21 @@ function About() {
                             />
                         </div>
                         <h3>Vikash Bhardwaj</h3>
-                        <p>Head of Product</p>
+                        <p>backend developer </p>
+                    </div>
+                    <div className="team-member">
+                        <div className="member-image">
+                            <img 
+                                src={yash}
+                                alt="yash gupta" 
+                            />
+
+                             </div>
+                             <h3>Yash gupta</h3>
+                        <p>security developer </p>
                     </div>
                 </div>
+                
             </section>
 
             {/* Our Story */}
