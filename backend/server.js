@@ -1,69 +1,31 @@
-const dotenv = require("dotenv");
-dotenv.config();
-
-const path = require("path");
-const express = require("express");
-const cors = require("cors");
-
+const dotenv = require("dotenv").config();
+const express = require("express"); 
 const connectDb = require("./config/db");
-
-// const authRouter = require("./routers/auth");
-const rideRoutes = require("./routers/ride.routes");
-const myriderRouter = require("./routers/myride");
-const locationRouter = require("./routers/location");
-const rideSearch = require("./routers/rideSearch");
-const router = require("./routers/auth");
-
-const app = express();
-const port = process.env.PORT || 8000;
+const cors = require("cors");
+const authRouter = require("./router/auth");
+const offerRiderRouter = require("./router/offerRideRouter");
+const bookRiderRouter = require("./router/bookRiderRouter");
+const app = express(); 
 
 
-/* ================= MIDDLEWARE ================= */
+const port = process.env.PORT || 8000 ; 
 
-app.use(cors({
-  origin: ["http://localhost:3000"],
-  methods: ["GET","POST","PUT","DELETE"],
-  credentials: true
-}));
-
+// middlewares 
+app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 
-/* ================= STATIC FILES ================= */
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// router 
+app.use("/api/auth",authRouter);
+app.use("/api/rider" , offerRiderRouter);
+app.use("/api/bookrider" , bookRiderRouter);
 
 
-/* ================= ROUTES ================= */
+// database connection 
+connectDb();
 
-app.use("/api/auth", router);
-app.use("/api/ride", rideRoutes);
-app.use("/api/ride", myriderRouter);
-app.use("/api/location", locationRouter);
-app.use("/api/ride" , rideSearch)
 
-/* ================= START SERVER ================= */
-
-const startServer = async () => {
-
-  try {
-
-    await connectDb();
-
-    console.log("MongoDB Connected");
-
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-
-  } catch (err) {
-
-    console.error("Database connection failed:", err);
-    process.exit(1);
-
-  }
-
-};
-
-startServer();
+app.listen(port , ()=>{
+    console.log(`server running on the port ${port}`);
+})

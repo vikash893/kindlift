@@ -9,6 +9,7 @@ import FindRides from './dashboard/FindRides';
 import "leaflet/dist/leaflet.css";
 import Myride from './dashboard/myride';
 import AddLocation from './dashboard/addlocation';
+import BookRide from './dashboard/bookRide';
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/find-rides" element={<FindRides />} />
         <Route path="/myride" element={<Myride />} />
         <Route path='/addlocation' element={<AddLocation/>}/>
+        <Route path="/book-ride" element={<BookRide />} />
       </Routes>
     </Router>
   );
