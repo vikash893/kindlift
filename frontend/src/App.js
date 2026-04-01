@@ -1,33 +1,115 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Home from './pages/home';
-import About from './pages/about';
-import Contact from './pages/contact';
-import Login from './auth/login';
-import Register from './auth/register';
-import Userdashboard from './dashboard/userdashboard';
-import FindRides from './dashboard/FindRides';
-import "leaflet/dist/leaflet.css";
-import Myride from './dashboard/myride';
-import AddLocation from './dashboard/addlocation';
-import BookRide from './dashboard/bookRide';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Navbar } from './components/Navbar';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { Dashboard } from './pages/Dashboard';
+import { OfferRide } from './pages/OfferRide';
+import { BookRide } from './pages/BookRide';
+import { RideDetails } from './pages/RideDetails';
 
+const PrivateRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" />;
+
+  return children;
+};
+
+const PublicRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
+  return !user ? children : <Navigate to="/dashboard" />;
+};
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/userdashboard" element={<Userdashboard />} />
-        <Route path="/find-rides" element={<FindRides />} />
-        <Route path="/myride" element={<Myride />} />
-        <Route path='/addlocation' element={<AddLocation/>}/>
-        <Route path="/book-ride" element={<BookRide />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Navbar />
+
+          <main className="flex-1">
+            <Routes>
+
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <Login />
+                  </PublicRoute>
+                }
+              />
+
+              <Route
+                path="/register"
+                element={
+                  <PublicRoute>
+                    <Register />
+                  </PublicRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/offer-ride"
+                element={
+                  <PrivateRoute>
+                    <OfferRide />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/book-ride"
+                element={
+                  <PrivateRoute>
+                    <BookRide />
+                  </PrivateRoute>
+                }
+              />
+
+              <Route
+                path="/ride/:id"
+                element={
+                  <PrivateRoute>
+                    <RideDetails />
+                  </PrivateRoute>
+                }
+              />
+
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

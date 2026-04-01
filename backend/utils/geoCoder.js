@@ -1,36 +1,54 @@
-const axios = require("axios");
+const axios = require('axios');
 
-const getCoordinates = async (address) => {
-    try {
-        const response = await axios.get(
-            "https://nominatim.openstreetmap.org/search",
-            {
-                params: {
-                    q: address,
-                    format: "json",
-                    limit: 1
-                },
-                headers: {
-                    "User-Agent": "kindlift-app/1.0 (vikashbhardwaj430@gmail.com)",
-                    "Accept": "application/json",
-                },
-                timeout: 5000
-            }
-        );
+// Geocode function
+const geocode = async (address) => {
+  try {
+    const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        q: address,
+        format: 'json',
+        limit: 1,
+      },
+      headers: {
+        'User-Agent': 'RideSharingApp/1.0',
+      },
+    });
 
-        if (!response.data || response.data.length === 0) {
-            throw new Error("Location not found");
-        }
-
-        return {
-            lat: parseFloat(response.data[0].lat),
-            lng: parseFloat(response.data[0].lon)
-        };
-
-    } catch (error) {
-        console.error("Geocoding error:", error.response?.status, error.response?.data);
-        throw new Error("Failed to get coordinates");
+    if (response.data && response.data.length > 0) {
+      return {
+        lat: parseFloat(response.data[0].lat),
+        lng: parseFloat(response.data[0].lon),
+      };
     }
+
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
+  }
 };
 
-module.exports = getCoordinates;
+// Haversine distance calculation
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth radius in km
+
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+    Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
+
+const deg2rad = (deg) => {
+  return deg * (Math.PI / 180);
+};
+
+module.exports = { geocode, calculateDistance };

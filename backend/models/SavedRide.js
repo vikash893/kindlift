@@ -1,25 +1,10 @@
 const mongoose = require('mongoose');
 
-const rideRequestSchema = new mongoose.Schema({
-  passengerId: {
+const savedRideSchema = new mongoose.Schema({
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
-  },
-  offerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'RideOffer',
-    required: true
-  },
-  seatsRequested: {
-    type: Number,
-    required: true,
-    min: 1
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending'
   },
   source: {
     name: { type: String, required: true },
@@ -31,8 +16,13 @@ const rideRequestSchema = new mongoose.Schema({
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
   },
+  seats: {
+    type: Number,
+    required: true,
+    default: 1
+  },
 }, { timestamps: true });
 
-const RideRequest = mongoose.model('RideRequest', rideRequestSchema);
+const SavedRide = mongoose.model('SavedRide', savedRideSchema);
 
-module.exports = { RideRequest };
+module.exports = { SavedRide };
