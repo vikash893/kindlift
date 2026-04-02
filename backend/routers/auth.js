@@ -1,0 +1,217 @@
+const express = require("express");
+const bcrypt = require("bcryptjs");
+const User = require("../models/User");
+const multer = require("multer");
+const sendOTP = require("../utils/sendMail");
+const path = require("path");
+const fs = require("fs");
+
+const router = express.Router();
+
+/* ================= MULTER CONFIG ================= */
+
+const uploadDir = path.join(__dirname, "../uploads");
+
+// create uploads folder if not exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ storage });
+
+// otp temp store 
+const otpStore = {};
+
+
+
+// otp router 
+router.post("/send-otp", async (req, res) => {
+
+  try {
+
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+
+    otpStore[email] = otp;
+
+    await sendOTP(email, otp);
+
+    res.json({ message: "OTP sent to email" });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({ error: "Failed to send OTP" });
+  }
+
+});
+
+/* ================= REGISTER ================= */
+router.post("/register", upload.single("image"), async (req, res) => {
+  try {
+
+    const {
+      name,
+      phone,
+      email,
+      aadharNumber,
+      password,
+      lat,
+      lng,
+      city,
+      state,
+      otp
+    } = req.body;
+
+    // if (!otp || otpStore[email] != otp) {
+    //   return res.status(400).json({ error: "Invalid OTP" });
+    // }
+    //
+    // delete otpStore[email];
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const imagePath = req.file
+      ? `/uploads/${req.file.filename}`
+      : null;
+
+    const user = new User({
+      name,
+      phone,
+      email,
+      aadharNumber,
+      password: hashedPassword,
+      image: imagePath,
+      location: {
+        type: "Point",
+        coordinates:
+          lat && lng
+            ? [parseFloat(lng), parseFloat(lat)]
+            : [0, 0],
+        city: city || "",
+        state: state || ""
+      }
+    });
+
+    await user.save();
+
+    res.status(201).json({
+      message: "User registered successfully"
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
+
+
+/* ================= LOGIN ================= */
+router.post("/login", async (req, res) => {
+  try {
+
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "All fields required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+
+    const userData = user.toObject();
+    delete userData.password;
+
+    res.json({
+      message: "Login successful",
+      user: userData
+    });
+
+  } catch (err) {
+
+    console.error("LOGIN ERROR:", err);
+
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+/* ================= GET USER IMAGE ================= */
+router.get("/photo", async (req, res) => {
+
+  try {
+
+    const { email } = req.query;
+
+    const user = await User.findOne({ email }).select("image");
+
+    if (!user || !user.image) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.json({
+      image: user.image
+    });
+
+  } catch (err) {
+
+    console.error("PHOTO ERROR:", err);
+
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+/* ================= TOTAL USERS ================= */
+router.get("/getuser", async (req, res) => {
+
+  try {
+
+    const countUser = await User.countDocuments();
+
+    res.json({ countUser });
+
+  } catch (err) {
+
+    res.status(500).json({ error: "Server error" });
+  }
+
+});
+
+module.exports = router;
