@@ -6,7 +6,7 @@ import { socket } from '../lib/socket';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Send, MapPin, Navigation, ArrowLeft, Phone, Mail, User, Calendar, Clock, MessageCircle, Users } from 'lucide-react';
+import { Send, MapPin, Navigation, ArrowLeft, Phone, Mail, User, Calendar, Clock, MessageCircle, Users, Star, Award, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
 // Fix Leaflet default icon issue
@@ -22,13 +22,17 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 export const RideDetails = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [request, setRequest] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
+  const [isRated, setIsRated] = useState(false);
+  const [inputCode, setInputCode] = useState('');
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -60,6 +64,11 @@ export const RideDetails = () => {
       ]);
       setRequest(reqRes.data);
       setMessages(msgRes.data);
+      
+      const isPass = user.id === reqRes.data.passengerId._id;
+      if (isPass && reqRes.data.isRatedByPassenger) setIsRated(true);
+      if (!isPass && reqRes.data.isRatedByDriver) setIsRated(true);
+
     } catch (error) {
       console.error('Error fetching ride details', error);
       alert('Failed to load ride details');
@@ -86,6 +95,42 @@ export const RideDetails = () => {
     });
 
     setNewMessage('');
+  };
+
+  const handleCompleteRide = async () => {
+    if (!inputCode || inputCode.length !== 4) return alert('Please enter the 4-digit code from the passenger.');
+    
+    try {
+      const res = await api.put(`/requests/${request._id}/complete`, { code: inputCode });
+      updateUser({ coins: (user.coins || 0) + res.data.coinsAllocated });
+      alert(`Ride completed! You earned ${res.data.coinsAllocated} coins.`);
+      fetchRideData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to complete ride');
+    }
+  };
+
+  const handleRatingSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) return alert('Please select a rating');
+
+    try {
+      const isPassenger = user.id === request.passengerId._id;
+      const ratedUserId = isPassenger ? request.offerId.driverId._id : request.passengerId._id;
+
+      await api.post('/ratings', {
+        rideOfferId: request.offerId._id,
+        requestId: request._id,
+        ratedUserId,
+        rating,
+        review,
+        raterRole: isPassenger ? 'passenger' : 'driver'
+      });
+      alert('Thank you for rating!');
+      setIsRated(true);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit rating');
+    }
   };
 
   if (loading) {
@@ -234,6 +279,79 @@ export const RideDetails = () => {
                     </span>
                   </div>
                 </div>
+
+                {request.status === 'accepted' && (
+                  <div className="pt-4 border-t border-gray-100">
+                    {isPassenger ? (
+                      <div className="bg-indigo-50 p-4 rounded-xl text-center border-2 border-indigo-100">
+                        <p className="text-sm text-indigo-800 font-bold mb-1">Your Ride Completion Code</p>
+                        <p className="text-3xl font-black text-indigo-600 tracking-widest">{request.completionCode}</p>
+                        <p className="text-xs text-indigo-500 mt-2">Give this code to your driver when you arrive safely.</p>
+                      </div>
+                    ) : request.offerId.status !== 'completed' && request.status !== 'completed' ? (
+                      <div className="bg-green-50 p-4 rounded-xl border-2 border-green-100">
+                        <p className="text-sm text-green-800 font-bold mb-2">Complete this Ride</p>
+                        <p className="text-xs text-green-600 mb-3">Ask the passenger for their 4-digit completion code to earn coins.</p>
+                        <div className="flex space-x-2">
+                          <input 
+                            type="text" 
+                            maxLength={4}
+                            placeholder="Code" 
+                            value={inputCode}
+                            onChange={(e) => setInputCode(e.target.value)}
+                            className="w-24 text-center font-bold tracking-widest border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                          />
+                          <button
+                            onClick={handleCompleteRide}
+                            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-all shadow-md flex items-center justify-center animate-pulse"
+                          >
+                            <CheckCircle className="h-5 w-5 mr-1" /> Complete
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+                
+                {request.status === 'completed' && !isRated && (
+                  <div className="pt-4 border-t border-gray-100 bg-blue-50 p-4 rounded-xl mt-4">
+                    <h3 className="font-bold text-blue-900 mb-2 flex items-center">
+                      <Star className="h-5 w-5 mr-1 text-yellow-500 fill-current" />
+                      Rate your {roleText.toLowerCase()}
+                    </h3>
+                    <div className="flex space-x-2 mb-3">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setRating(star)}
+                          className={`focus:outline-none transition-transform hover:scale-125 ${rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                        >
+                          <Star className={`h-8 w-8 ${rating >= star ? 'fill-current' : ''}`} />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      placeholder="Leave a short review (optional)"
+                      className="w-full text-sm p-2 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none mb-2"
+                      value={review}
+                      onChange={(e) => setReview(e.target.value)}
+                    ></textarea>
+                    <button
+                      onClick={handleRatingSubmit}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all"
+                    >
+                      Submit Rating
+                    </button>
+                  </div>
+                )}
+                {isRated && (
+                  <div className="pt-4 border-t border-gray-100">
+                     <p className="text-green-600 font-bold flex items-center">
+                       <CheckCircle className="h-5 w-5 mr-2" />
+                       Rating submitted!
+                     </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -156,4 +156,79 @@ router.get('/search', authMiddleware, async (req, res) => {
   }
 });
 
+// Complete a ride
+const { RideRequest } = require('../models/RideRequest');
+
+
+router.put('/:id/complete', authMiddleware, async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    console.log("REQ ID:", req.params.id);
+    console.log("ENTERED CODE:", code);
+
+    // ✅ Populate offerId (IMPORTANT)
+    const request = await RideRequest.findById(req.params.id)
+      .populate('offerId');
+
+    if (!request) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    console.log("REQUEST FOUND:", request);
+
+    // ✅ Safety check
+    if (!request.offerId) {
+      return res.status(400).json({ message: 'Offer not linked' });
+    }
+
+    const driverId = request.offerId.driverId;
+
+    // ✅ Auth check
+    if (driverId.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    // ✅ Code check
+    if (!request.completionCode) {
+      return res.status(400).json({ message: 'No completion code found' });
+    }
+
+    console.log("STORED CODE:", request.completionCode);
+
+    if (request.completionCode.toString() !== code.toString().trim()) {
+      return res.status(400).json({ message: 'Invalid code' });
+    }
+
+    // ✅ Prevent double completion
+    if (request.status === 'completed') {
+      return res.status(400).json({ message: 'Already completed' });
+    }
+
+    // ✅ Mark completed
+    request.status = 'completed';
+    await request.save();
+
+    // ✅ Coins logic
+    const coins = 10;
+
+    await User.findByIdAndUpdate(driverId, {
+      $inc: { coins }
+    });
+
+    await User.findByIdAndUpdate(request.passengerId, {
+      $inc: { coins: Math.floor(coins / 2) }
+    });
+
+    res.json({
+      message: 'Ride completed successfully',
+      coinsAllocated: coins
+    });
+
+  } catch (err) {
+    console.error("🔥 COMPLETE ERROR:", err);   // VERY IMPORTANT
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;

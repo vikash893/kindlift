@@ -16,11 +16,11 @@ const rideRequestSchema = new mongoose.Schema({
     required: true,
     min: 1
   },
-  status: {
-    type: String,
-    enum: ['pending', 'accepted', 'rejected'],
-    default: 'pending'
-  },
+status: {
+  type: String,
+  enum: ['pending', 'accepted', 'rejected', 'completed'], // ✅ ADD THIS
+  default: 'pending'
+},
   source: {
     name: { type: String, required: true },
     lat: { type: Number, required: true },
@@ -31,6 +31,17 @@ const rideRequestSchema = new mongoose.Schema({
     lat: { type: Number, required: true },
     lng: { type: Number, required: true },
   },
+  completionCode: {
+    type: String
+  },
+  isRatedByPassenger: {
+    type: Boolean,
+    default: false
+  },
+  isRatedByDriver: {
+    type: Boolean,
+    default: false
+  }
 }, { timestamps: true });
 
 const RideRequest = mongoose.model('RideRequest', rideRequestSchema);

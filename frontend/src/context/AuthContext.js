@@ -19,7 +19,10 @@ export const AuthProvider = ({ children }) => {
             name: res.data.name, 
             email: res.data.email,
             profilePhoto: res.data.profilePhoto,
-            isDriverVerified: res.data.isDriverVerified
+            isDriverVerified: res.data.isDriverVerified,
+            coins: res.data.coins || 0,
+            ratingSum: res.data.ratingSum || 0,
+            totalRatings: res.data.totalRatings || 0
           });
           
           // Connect socket when user is loaded

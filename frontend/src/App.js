@@ -8,16 +8,16 @@ import { Dashboard } from './pages/Dashboard';
 import { OfferRide } from './pages/OfferRide';
 import { BookRide } from './pages/BookRide';
 import { RideDetails } from './pages/RideDetails';
+import { Home } from './pages/Home';
+import { About } from './pages/About';
+import { Contact } from './pages/Contact';
+import { Loader } from './components/Loader';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loader />;
   }
 
   if (!user) return <Navigate to="/login" />;
@@ -29,11 +29,7 @@ const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+    return <Loader />;
   }
 
   return !user ? children : <Navigate to="/dashboard" />;
@@ -49,7 +45,9 @@ function App() {
           <main className="flex-1">
             <Routes>
 
-              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
 
               <Route
                 path="/login"

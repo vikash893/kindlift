@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const rideRoutes = require('./routes/rides');              
 const requestRoutes = require('./routes/requests');                 
 const savedRideRoutes = require('./routes/savedRides');             
+const ratingRoutes = require('./routes/ratings');
 
 async function startServer() {
   const app = express();
@@ -70,6 +71,7 @@ async function startServer() {
   app.use('/api/rides', rideRoutes);
   app.use('/api/requests', requestRoutes);
   app.use('/api/saved-rides', savedRideRoutes);
+  app.use('/api/ratings', ratingRoutes);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {

@@ -2,6 +2,8 @@ const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { RideRequest } = require('../models/RideRequest');
 const { RideOffer } = require('../models/RideOffer');
+const { User } = require('../models/User');
+const { calculateDistance } = require('../utils/geocoder');
 
 const router = express.Router();
 
@@ -112,6 +114,9 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
         { passengerId: request.passengerId, _id: { $ne: request._id }, status: 'pending' },
         { status: 'rejected' }
       );
+      
+      // Generate unique 4-digit code
+      request.completionCode = Math.floor(1000 + Math.random() * 9000).toString();
     }
 
     request.status = status;
@@ -154,6 +159,69 @@ router.get('/:id/messages', authMiddleware, async (req, res) => {
     const messages = await Message.find({ requestId: req.params.id }).sort({ createdAt: 1 });
     res.json(messages);
   } catch (err) {
+    res.status(500).send('Server error');
+  }
+});
+// Complete specific request
+router.put('/:id/complete', authMiddleware, async (req, res) => {
+  try {
+    const { code } = req.body;
+    const request = await RideRequest.findById(req.params.id).populate('offerId');
+
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    if (request.status !== 'accepted') return res.status(400).json({ message: 'Request is not currently active' });
+    if (request.offerId.driverId.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'Not authorized' });
+    }
+
+    if (request.completionCode !== code) {
+      return res.status(400).json({ message: 'Invalid completion code! Please ask passenger for the 4-digit code.' });
+    }
+
+    request.status = 'completed';
+    await request.save();
+
+    // Check if offer is now fully completed
+    const pendingReqs = await RideRequest.countDocuments({
+      offerId: request.offerId._id,
+      status: { $in: ['pending', 'accepted'] }
+    });
+
+    if (pendingReqs === 0) {
+      const offer = await RideOffer.findById(request.offerId._id);
+      offer.status = 'completed';
+      await offer.save();
+    }
+
+    // Allocate coins based on distance
+    const distance = calculateDistance(
+      request.source.lat, request.source.lng,
+      request.destination.lat, request.destination.lng
+    );
+    const coinsAllocated = Math.max(1, Math.floor(distance));
+
+    // Driver gets coins
+    const driver = await User.findById(request.offerId.driverId);
+    if (driver) {
+      driver.coins = (driver.coins || 0) + coinsAllocated;
+      await driver.save();
+    }
+
+    // Passenger gets half
+    const passenger = await User.findById(request.passengerId);
+    if (passenger) {
+      passenger.coins = (passenger.coins || 0) + Math.floor(coinsAllocated / 2);
+      await passenger.save();
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(request.passengerId.toString()).emit('request_updated', request);
+    }
+
+    res.json({ message: 'Ride completed successfully', coinsAllocated });
+  } catch (err) {
+    console.error(err);
     res.status(500).send('Server error');
   }
 });

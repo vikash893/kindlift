@@ -224,6 +224,12 @@ export const Dashboard = () => {
                             <p className="text-xs text-gray-500">{req.offerId.driverId.phone || req.offerId.driverId.email}</p>
                           </div>
                         </div>
+
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-center mb-3">
+                          <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest mb-1">Your Code</p>
+                          <p className="text-2xl font-black text-indigo-600 tracking-[0.2em]">{req.completionCode}</p>
+                        </div>
+
                         <button
                           onClick={() => navigate(`/ride/${req._id}`)}
                           className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-md"
@@ -241,85 +247,94 @@ export const Dashboard = () => {
       )}
 
       {/* DRIVER TAB */}
-      {activeTab === 'driver' && (
-        <div className="space-y-8 animate-fade-in-up">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Incoming Requests</h2>
-            {incomingRequests.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                <p className="text-gray-500">No incoming requests right now.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {incomingRequests.map(req => (
-                  <div
-                    key={req._id}
-                    className="bg-white rounded-lg shadow-md border border-gray-100 p-5 flex flex-col sm:flex-row justify-between items-center hover:shadow-lg transition-all duration-300"
-                  >
-                    <div className="flex-1 mb-4 sm:mb-0">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                          {req.passengerId.profilePhoto ? (
-                            <img
-                              src={req.passengerId.profilePhoto}
-                              alt={req.passengerId.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <User className="h-5 w-5 text-blue-600" />
-                          )}
-                        </div>
-                        <div>
-                          <span className="font-semibold text-gray-900">{req.passengerId.name}</span>
-                          <p className="text-xs text-gray-500">
-                            requests <span className="font-medium text-blue-600">{req.seatsRequested}</span> seat(s)
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start space-x-2 text-sm text-gray-600">
-                        <MapPin className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                        <span>
-                          {req.source.name} <span className="text-gray-400">→</span> {req.destination.name}
-                        </span>
-                      </div>
-                    </div>
+{activeTab === 'driver' && (
+  <div className="space-y-8 animate-fade-in-up">
+    
+    {/* Incoming Requests */}
+    <div>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">Incoming Requests</h2>
 
-                    {req.status === 'pending' ? (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleRequestStatus(req._id, 'accepted')}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
-                        >
-                          <CheckCircle className="h-4 w-4 inline mr-1" />
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleRequestStatus(req._id, 'rejected')}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-sm"
-                        >
-                          <XCircle className="h-4 w-4 inline mr-1" />
-                          Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          req.status === 'accepted'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {req.status.toUpperCase()}
-                      </span>
-                    )}
+      {incomingRequests.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+          <Users className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+          <p className="text-gray-500">No incoming requests right now.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {incomingRequests.map(req => (
+            <div
+              key={req._id}
+              className="bg-white rounded-lg shadow-md border border-gray-100 p-5 flex flex-col sm:flex-row justify-between items-center hover:shadow-lg transition-all duration-300"
+            >
+              {/* LEFT SIDE */}
+              <div className="flex-1 mb-4 sm:mb-0">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    {req.passengerId?.name?.charAt(0)?.toUpperCase()}
                   </div>
-                ))}
+                  <div>
+                    <span className="font-semibold text-gray-900">
+                      {req.passengerId?.name}
+                    </span>
+                    <p className="text-xs text-gray-500">
+                      {req.seatsRequested} seat(s)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-sm text-gray-600">
+                  {req.source.name} → {req.destination.name}
+                </div>
               </div>
-            )}
-          </div>
+
+              {/* RIGHT SIDE */}
+              <div>
+                {req.status === 'pending' && (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleRequestStatus(req._id, 'accepted')}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleRequestStatus(req._id, 'rejected')}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+
+                {req.status === 'accepted' && (
+                  <div className="flex flex-col items-end space-y-2">
+                    <span className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                      ACCEPTED
+                    </span>
+
+                    <button
+                      onClick={() => navigate(`/ride/${req._id}`)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                    >
+                      View Ride & Chat
+                    </button>
+                  </div>
+                )}
+
+                {req.status === 'rejected' && (
+                  <span className="px-3 py-1 text-xs bg-red-100 text-red-800 rounded-full">
+                    REJECTED
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
+    </div>
+
+  </div>
+)}
 
       {/* SAVED TAB */}
       {activeTab === 'saved' && (

@@ -12,6 +12,13 @@ const userSchema = new mongoose.Schema({
   vehicleNumber: { type: String },
   licenseNumber: { type: String },
   vehiclePhoto: { type: String }, // Base64 string
+
+  // Coin System
+  coins: { type: Number, default: 0 },
+
+  // Rating System
+  ratingSum: { type: Number, default: 0 },
+  totalRatings: { type: Number, default: 0 },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
