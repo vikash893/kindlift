@@ -1,4 +1,7 @@
 import React from 'react';
+import vikash from '../public/vikash.png';
+import yash from '../public/yash.png';
+import vishnu from '../public/vishnu.png';
 
 export const About = () => {
   const developers = [
@@ -6,28 +9,28 @@ export const About = () => {
       name: "Vikash",
       role: "Lead Full Stack Developer",
       description: "Passionate about building scalable applications and creating seamless user experiences.",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
+      image: vikash,
       github: "#",
       linkedin: "#",
-      email: "rajesh@kindlift.com"
+      email: "vikashbhardwaj430@gmail.com"
     },
     {
       name: "Vishnu Singh rajput",
       role: "UI/UX Designer & Frontend Developer",
       description: "Creates beautiful, intuitive interfaces that users love.",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
+      image: vishnu,
       github: "#",
       linkedin: "#",
-      email: "priya@kindlift.com"
+      email: "vishnusingh@gmail.com"
     },
     {
       name: "yash gupta",
       role: "Security Engineer",
       description: "Specializes in AI algorithms and route optimization.",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
+      image: yash,
       github: "#",
       linkedin: "#",
-      email: "amit@kindlift.com"
+      email: "yashgupta@gmail.com"
     }
   ];
 
