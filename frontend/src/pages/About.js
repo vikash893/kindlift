@@ -3,7 +3,7 @@ import React from 'react';
 export const About = () => {
   const developers = [
     {
-      name: "Rajesh Kumar",
+      name: "Vikash",
       role: "Lead Full Stack Developer",
       description: "Passionate about building scalable applications and creating seamless user experiences.",
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop",
@@ -12,7 +12,7 @@ export const About = () => {
       email: "rajesh@kindlift.com"
     },
     {
-      name: "Priya Singh",
+      name: "Vishnu Singh rajput",
       role: "UI/UX Designer & Frontend Developer",
       description: "Creates beautiful, intuitive interfaces that users love.",
       image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop",
@@ -21,8 +21,8 @@ export const About = () => {
       email: "priya@kindlift.com"
     },
     {
-      name: "Amit Sharma",
-      role: "Backend & ML Engineer",
+      name: "yash gupta",
+      role: "Security Engineer",
       description: "Specializes in AI algorithms and route optimization.",
       image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop",
       github: "#",
