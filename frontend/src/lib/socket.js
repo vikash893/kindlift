@@ -1,7 +1,11 @@
 import { io } from 'socket.io-client';
 
-// Connect to the backend server on port 8000
-export const socket = io('http://localhost:8000', {
+const URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://kindlift-1.onrender.com'
+    : 'http://localhost:8000';
+
+export const socket = io(URL, {
   autoConnect: false,
-  transports: ['websocket', 'polling'],
+  transports: ['websocket'],
 });
