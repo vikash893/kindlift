@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { useRef } from 'react';
 
 export const BookRide = () => {
   const [source, setSource] = useState('');
@@ -14,31 +15,35 @@ export const BookRide = () => {
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
 
-const [sourceSuggestions, setSourceSuggestions] = useState([]);
-const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [sourceSuggestions, setSourceSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
 
-let timeout;
+  const [sourceCoords, setSourceCoords] = useState(null);
+  const [destinationCoords, setDestinationCoords] = useState(null);
 
-const fetchLocationSuggestions = (query, type) => {
-  clearTimeout(timeout);
+  const timeoutRef = useRef(null);
 
-  timeout = setTimeout(async () => {
-    if (!query || query.length < 2) return;
-
-    try {
-      const res = await api.get(`/location/search?q=${query}`);
-
-      if (type === "source") {
-        setSourceSuggestions(res.data);
-      } else {
-        setDestinationSuggestions(res.data);
-      }
-    } catch (err) {
-      console.log(err);
+  const fetchLocationSuggestions = (query, type) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-  }, 400);
-};
 
+    timeoutRef.current = setTimeout(async () => {
+      if (!query || query.length < 3) return;
+
+      try {
+        const res = await api.get(`/location/search?q=${query}`);
+
+        if (type === "source") {
+          setSourceSuggestions(res.data);
+        } else {
+          setDestinationSuggestions(res.data);
+        }
+      } catch (err) {
+        console.log("API ERROR:", err.response?.data || err.message);
+      }
+    }, 400);
+  };
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -47,8 +52,19 @@ const fetchLocationSuggestions = (query, type) => {
     setSearched(true);
 
     try {
+      if (!sourceCoords || !destinationCoords) {
+        setError("Please select locations from suggestions");
+        setLoading(false);
+        return;
+      }
       const res = await api.get('/rides/search', {
-        params: { source, destination, seats },
+        params: {
+          sourceLat: sourceCoords.lat,
+          sourceLng: sourceCoords.lng,
+          destLat: destinationCoords.lat,
+          destLng: destinationCoords.lng,
+          seats
+        }
       });
       setSearchResults(res.data);
     } catch (err) {
@@ -63,8 +79,16 @@ const fetchLocationSuggestions = (query, type) => {
       await api.post('/requests', {
         offerId,
         seatsRequested: seats,
-        source: { name: source, lat: 0, lng: 0 },
-        destination: { name: destination, lat: 0, lng: 0 },
+        source: {
+          name: source,
+          lat: sourceCoords.lat,
+          lng: sourceCoords.lng
+        },
+        destination: {
+          name: destination,
+          lat: destinationCoords.lat,
+          lng: destinationCoords.lng
+        },
       });
       alert('Ride requested successfully!');
       navigate('/dashboard');
@@ -103,27 +127,32 @@ const fetchLocationSuggestions = (query, type) => {
               placeholder="Leaving from..."
               value={source}
               onChange={(e) => {
-  setSource(e.target.value);
-  fetchLocationSuggestions(e.target.value, "source");
-}}
-onBlur={() => setTimeout(() => setSourceSuggestions([]), 200)}
+                setSource(e.target.value);
+                setSourceCoords(null); // 🔥 MUST
+                fetchLocationSuggestions(e.target.value, "source");
+              }}
+              onBlur={() => setTimeout(() => setSourceSuggestions([]), 300)}
             />
             {sourceSuggestions.length > 0 && (
-  <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
-    {sourceSuggestions.map((item, index) => (
-      <li
-        key={index}
-        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-        onClick={() => {
-          setSource(item.display_name);
-          setSourceSuggestions([]);
-        }}
-      >
-        {item.display_name}
-      </li>
-    ))}
-  </ul>
-)}
+              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+                {sourceSuggestions.map((item, index) => (
+                  <li
+                    key={index}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    onClick={() => {
+                      setSource(item.display_name);
+                      setSourceCoords({
+                        lat: Number(item.lat),
+                        lng: Number(item.lon),
+                      });
+                      setSourceSuggestions([]);
+                    }}
+                  >
+                    {item.display_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="flex-1 relative">
@@ -136,28 +165,33 @@ onBlur={() => setTimeout(() => setSourceSuggestions([]), 200)}
               className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
               placeholder="Going to..."
               value={destination}
-            onChange={(e) => {
-  setDestination(e.target.value);
-  fetchLocationSuggestions(e.target.value, "destination");
-}}
-onBlur={() => setTimeout(() => setDestinationSuggestions([]), 200)}
+              onChange={(e) => {
+                setDestination(e.target.value);
+                setDestinationCoords(null); // 🔥 IMPORTANT FIX
+                fetchLocationSuggestions(e.target.value, "destination");
+              }}
+              onBlur={() => setTimeout(() => setDestinationSuggestions([]), 200)}
             />
             {destinationSuggestions.length > 0 && (
-  <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
-    {destinationSuggestions.map((item, index) => (
-      <li
-        key={index}
-        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-        onClick={() => {
-          setDestination(item.display_name);
-          setDestinationSuggestions([]);
-        }}
-      >
-        {item.display_name}
-      </li>
-    ))}
-  </ul>
-)}
+              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+                {destinationSuggestions.map((item, index) => (
+                  <li
+                    key={index}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    onClick={() => {
+                      setDestination(item.display_name);
+                      setDestinationCoords({
+                        lat: Number(item.lat),
+                        lng: Number(item.lon),
+                      });
+                      setDestinationSuggestions([]);
+                    }}
+                  >
+                    {item.display_name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="w-full md:w-28 relative">
