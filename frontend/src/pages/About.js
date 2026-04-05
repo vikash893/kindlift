@@ -5,7 +5,7 @@ import vishnu from '../public/vishnu.png';
 
 export const About = () => {
   const developers = [
-    {
+    {               
       name: "Vikash",
       role: "Lead Full Stack Developer",
       description: "Passionate about building scalable applications and creating seamless user experiences.",
