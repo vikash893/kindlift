@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { MapPin, Users, Calendar, Clock, Save, FileText, Hash, Camera, XCircle, ArrowRight } from 'lucide-react';
+import { useRef } from "react";
 
 export const OfferRide = () => {
   const location = useLocation();
@@ -30,8 +31,14 @@ export const OfferRide = () => {
 
 
   // fetch location function 
-  const fetchLocationSuggestions = async (query, type) => {
-    if (!query || query.length < 2) return;
+  const timeoutRef = useRef(null);
+ const fetchLocationSuggestions = (query, type) => {
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+  }
+
+  timeoutRef.current = setTimeout(async () => {
+    if (!query || query.length < 3) return;
 
     try {
       const res = await api.get(`/location/search?q=${query}`);
@@ -42,9 +49,10 @@ export const OfferRide = () => {
         setDestinationSuggestions(res.data);
       }
     } catch (err) {
-      console.log(err);
+      console.log("API ERROR:", err.response?.data || err.message);
     }
-  };
+  }, 800); // 🔥 IMPORTANT (increase delay)
+};
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];

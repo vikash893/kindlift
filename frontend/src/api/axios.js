@@ -11,7 +11,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000", // ✅ FIX
+  baseURL: "https://kindlift-1.onrender.com", // ✅ FIX
 });
 
 export default api;
