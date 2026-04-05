@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, X, Home } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -25,10 +25,14 @@ export const Navbar = () => {
     navigate('/login');
   };
 
-  const navLinks = [
-    { to: '/about', label: 'About' },
-    { to: '/contact', label: 'Contact' },
-  ];
+  // Only show Home, About, and Contact when user is NOT logged in
+  const navLinks = !user
+    ? [
+        { to: '/', label: 'Home', icon: Home },
+        { to: '/about', label: 'About' },
+        { to: '/contact', label: 'Contact' },
+      ]
+    : [];
 
   const authLinks = user
     ? [
@@ -72,12 +76,13 @@ export const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                   location.pathname === link.to
                     ? 'bg-brand-dark text-white'
                     : 'text-brand-dark/70 hover:text-brand-dark hover:bg-brand-warm'
                 }`}
               >
+                {link.icon && <link.icon className="h-4 w-4" />}
                 {link.label}
               </Link>
             ))}
@@ -150,16 +155,17 @@ export const Navbar = () => {
         {/* Mobile Menu */}
         {mobileOpen && (
           <div className="md:hidden mt-2 glass rounded-2xl shadow-glass p-4 space-y-1 animate-fade-in">
-            {navLinks.concat(authLinks).map((link) => (
+            {[...navLinks, ...authLinks].map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                   location.pathname === link.to
                     ? 'bg-brand-dark text-white'
                     : 'text-brand-dark/70 hover:bg-brand-warm'
                 }`}
               >
+                {link.icon && <link.icon className="h-4 w-4" />}
                 {link.label}
               </Link>
             ))}

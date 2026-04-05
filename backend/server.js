@@ -13,6 +13,7 @@ const rideRoutes = require('./routes/rides');
 const requestRoutes = require('./routes/requests');
 const savedRideRoutes = require('./routes/savedRides');
 const ratingRoutes = require('./routes/ratings');
+const locationRoutes = require('./routes/location');
 
 async function startServer() {
   const app = express();
@@ -74,6 +75,7 @@ async function startServer() {
   app.use('/api/requests', requestRoutes);
   app.use('/api/saved-rides', savedRideRoutes);
   app.use('/api/ratings', ratingRoutes);
+  app.use("/api/location", locationRoutes);
 
   // 🔥 FRONTEND + BACKEND HANDLING
 
