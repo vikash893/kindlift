@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
-import { MapPin, Users, Calendar, Search, Navigation } from 'lucide-react';
+import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const BookRide = () => {
@@ -22,7 +22,7 @@ export const BookRide = () => {
 
     try {
       const res = await api.get('/rides/search', {
-        params: { source, destination, seats }
+        params: { source, destination, seats },
       });
       setSearchResults(res.data);
     } catch (err) {
@@ -38,7 +38,7 @@ export const BookRide = () => {
         offerId,
         seatsRequested: seats,
         source: { name: source, lat: 0, lng: 0 },
-        destination: { name: destination, lat: 0, lng: 0 }
+        destination: { name: destination, lat: 0, lng: 0 },
       });
       alert('Ride requested successfully!');
       navigate('/dashboard');
@@ -50,149 +50,145 @@ export const BookRide = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Search Card */}
-      <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6 md:p-8 mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-          <Search className="h-6 w-6 mr-2 text-blue-600" /> Find a Ride
+      <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-6 md:p-8 mb-8">
+        <h1 className="text-2xl font-bold text-brand-dark mb-6 flex items-center gap-2">
+          <div className="w-10 h-10 bg-brand-accent/10 rounded-xl flex items-center justify-center">
+            <Search className="h-5 w-5 text-brand-accent" />
+          </div>
+          Find a Ride
         </h1>
-        
+
         {error && (
-          <div className="mb-6 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md text-sm animate-shake">
+          <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-center gap-2">
+            <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs">!</span>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MapPin className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                required
-                className="pl-10 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 sm:text-sm p-3"
-                placeholder="Leaving from..."
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-              />
+        <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3">
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <MapPin className="h-4 w-4 text-brand-accent" />
             </div>
+            <input
+              type="text"
+              required
+              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              placeholder="Leaving from..."
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+            />
           </div>
 
-          <div className="flex-1">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MapPin className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                required
-                className="pl-10 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 sm:text-sm p-3"
-                placeholder="Going to..."
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-              />
+          <div className="flex-1 relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <MapPin className="h-4 w-4 text-red-400" />
             </div>
+            <input
+              type="text"
+              required
+              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              placeholder="Going to..."
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            />
           </div>
 
-          <div className="w-full md:w-32">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Users className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="number"
-                min="1"
-                max="8"
-                required
-                className="pl-10 block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 sm:text-sm p-3"
-                value={seats}
-                onChange={(e) => setSeats(Number(e.target.value))}
-              />
+          <div className="w-full md:w-28 relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Users className="h-4 w-4 text-brand-muted" />
             </div>
+            <input
+              type="number"
+              min="1"
+              max="8"
+              required
+              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              value={seats}
+              onChange={(e) => setSeats(Number(e.target.value))}
+            />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full md:w-auto flex justify-center py-3 px-6 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
+            className="w-full md:w-auto px-6 py-3 bg-brand-dark text-white rounded-xl text-sm font-semibold hover:bg-brand-charcoal transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
-              <span className="inline-flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <span className="inline-flex items-center gap-2">
+                <div className="loader-spinner !w-4 !h-4 !border-2" />
                 Searching...
               </span>
             ) : (
-              'Search'
+              <>
+                Search
+                <ArrowRight className="h-4 w-4" />
+              </>
             )}
           </button>
         </form>
       </div>
 
-      {/* Results Section */}
+      {/* Results */}
       {searched && (
-        <div className="animate-fade-in-up">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Available Rides</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-brand-dark mb-4">Available Rides</h2>
           {searchResults.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center text-gray-500">
-              <Search className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-              <p>No rides found matching your criteria.</p>
-              <p className="text-sm mt-1">Try adjusting your search.</p>
+            <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-10 text-center">
+              <Search className="h-10 w-10 mx-auto text-brand-muted/40 mb-3" />
+              <p className="text-brand-muted">No rides found matching your criteria.</p>
+              <p className="text-sm text-brand-muted/60 mt-1">Try adjusting your search.</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {searchResults.map(ride => (
-                <div 
-                  key={ride._id} 
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex flex-col md:flex-row justify-between items-center hover:border-blue-300 hover:shadow-md transition-all duration-300"
+              {searchResults.map((ride) => (
+                <div
+                  key={ride._id}
+                  className="bg-white rounded-2xl shadow-card border border-gray-100 p-6 flex flex-col md:flex-row justify-between items-center gap-6 card-lift"
                 >
-                  <div className="flex-1 w-full mb-4 md:mb-0">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-blue-700 font-bold shadow-sm">
+                  <div className="flex-1 w-full">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-brand-cream flex items-center justify-center text-brand-dark font-bold text-sm border border-gray-100">
                           {ride.driverId.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-gray-900">{ride.driverId.name}</p>
-                          <p className="text-xs text-gray-500 flex items-center">
-                            <Navigation className="h-3 w-3 mr-1" /> {ride.distanceToDriver} km away
+                          <p className="font-semibold text-brand-dark text-sm">{ride.driverId.name}</p>
+                          <p className="text-xs text-brand-muted flex items-center gap-1">
+                            <Navigation className="h-3 w-3" /> {ride.distanceToDriver} km away
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900 flex items-center justify-end">
-                          <Users className="h-4 w-4 mr-1 text-gray-400" /> 
-                          <span className="text-blue-600 font-bold">{ride.seatsAvailable}</span> seats left
+                        <p className="text-sm text-brand-muted">
+                          <span className="font-bold text-brand-dark">{ride.seatsAvailable}</span> seats left
                         </p>
                       </div>
                     </div>
-                    
-                    <div className="mt-4 pl-12 relative">
-                      <div className="absolute left-5 top-2 bottom-2 w-0.5 bg-gray-200"></div>
-                      <div className="relative flex items-center mb-4">
-                        <div className="absolute -left-[33px] h-3 w-3 rounded-full border-2 border-blue-500 bg-white shadow-sm"></div>
-                        <p className="text-sm font-medium text-gray-700">{ride.source.name}</p>
+
+                    <div className="ml-12 relative pl-4 border-l-2 border-gray-100 space-y-3">
+                      <div className="relative">
+                        <div className="absolute -left-[21px] h-3 w-3 rounded-full border-2 border-brand-accent bg-white" />
+                        <p className="text-sm text-brand-dark">{ride.source.name}</p>
                       </div>
-                      <div className="relative flex items-center">
-                        <div className="absolute -left-[33px] h-3 w-3 rounded-full border-2 border-red-500 bg-white shadow-sm"></div>
-                        <p className="text-sm font-medium text-gray-700">{ride.destination.name}</p>
+                      <div className="relative">
+                        <div className="absolute -left-[21px] h-3 w-3 rounded-full border-2 border-red-400 bg-white" />
+                        <p className="text-sm text-brand-dark">{ride.destination.name}</p>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="w-full md:w-auto md:ml-6 flex flex-col items-end border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
-                    <div className="flex items-center text-gray-700 mb-4">
-                      <Calendar className="h-5 w-5 mr-2 text-blue-500" />
+
+                  <div className="w-full md:w-auto flex flex-col items-end gap-3 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-6">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-brand-accent" />
                       <div className="text-right">
-                        <p className="font-semibold text-gray-800">{format(new Date(ride.departureTime), 'MMM d, yyyy')}</p>
-                        <p className="text-sm text-gray-500">{format(new Date(ride.departureTime), 'h:mm a')}</p>
+                        <p className="font-semibold text-brand-dark">{format(new Date(ride.departureTime), 'MMM d, yyyy')}</p>
+                        <p className="text-xs text-brand-muted">{format(new Date(ride.departureTime), 'h:mm a')}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => requestRide(ride._id)}
-                      className="w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 shadow-md hover:shadow-lg"
+                      className="w-full md:w-auto px-6 py-2.5 bg-brand-dark text-white rounded-xl text-sm font-semibold hover:bg-brand-charcoal transition-all"
                     >
                       Request Ride
                     </button>

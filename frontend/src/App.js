@@ -39,10 +39,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
           <Navbar />
 
-          <main className="flex-1">
+          <main className="flex-1 pt-20">
             <Routes>
 
               <Route path="/" element={<Home />} />

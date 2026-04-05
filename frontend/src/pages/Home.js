@@ -1,571 +1,485 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Car, Map, Shield, Coins, Star, Users,
-  Compass, Heart, Clock, Route, UserPlus,
-  MessageCircle, ThumbsUp, Sparkles, Battery,
-  Sun, Moon, Coffee, Camera, Music, Gift
+  Compass, Heart, Shield, Coins, Star, Users,
+  Route, MessageCircle, Gift, ArrowRight,
+  MapPin, Phone, Mail, ChevronRight
 } from 'lucide-react';
-import car_video from '../public/car_vedio.mp4';
+import { HeroCar3D } from '../components/HeroCar3D';
+
+/* ── Scroll reveal hook ────────────────────────────── */
+const useReveal = () => {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('visible');
+          obs.unobserve(el);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+};
+
+const RevealSection = ({ children, className = '' }) => {
+  const ref = useReveal();
+  return (
+    <div ref={ref} className={`reveal ${className}`}>
+      {children}
+    </div>
+  );
+};
 
 export const Home = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [scrollY, setScrollY] = useState(0);
-  const [carPosition, setCarPosition] = useState(50);
-  const roadRef = useRef(null);
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-      // Calculate car position based on mouse X relative to window width
-      const position = (e.clientX / window.innerWidth) * 100;
-      setCarPosition(Math.min(Math.max(position, 5), 95)); // Limit to 5-95% to keep car on road
-    };
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-
-  // Features data for staggered animations
   const features = [
     {
-      icon: <Compass className="h-7 w-7 text-white" />,
-      title: "Smart Route Matching",
-      description: "Our AI finds travelers within 5km of your route, not just exact destinations. Perfect for long highway journeys!",
-      badge: "✨ 95% match accuracy",
-      gradient: "from-blue-500 to-indigo-600",
-      bgGradient: "from-blue-50 to-indigo-50",
-      delay: 0
+      icon: <Compass className="h-6 w-6" />,
+      title: 'Smart Route Matching',
+      description: 'Our AI finds travelers within 5km of your route. Perfect for long highway journeys.',
+      stat: '95% accuracy',
+      color: 'bg-blue-50 text-blue-600',
     },
     {
-      icon: <Heart className="h-7 w-7 text-white" />,
-      title: "Companion Preferences",
-      description: "Choose your ideal travel buddy — conversation level, music taste, smoking preference, pet-friendly, and more.",
-      badge: "🎯 Find your vibe",
-      gradient: "from-green-500 to-emerald-600",
-      bgGradient: "from-green-50 to-emerald-50",
-      delay: 0.1
+      icon: <Heart className="h-6 w-6" />,
+      title: 'Companion Preferences',
+      description: 'Choose your ideal travel buddy — conversation level, music taste, and more.',
+      stat: 'Find your vibe',
+      color: 'bg-emerald-50 text-emerald-600',
     },
     {
-      icon: <Shield className="h-7 w-7 text-white" />,
-      title: "Safety First",
-      description: "Verified IDs, driver's license check, vehicle verification, and an emergency SOS button on every journey.",
-      badge: "🛡️ 100% verified users",
-      gradient: "from-purple-500 to-pink-600",
-      bgGradient: "from-purple-50 to-pink-50",
-      delay: 0.2
+      icon: <Shield className="h-6 w-6" />,
+      title: 'Safety First',
+      description: 'Verified IDs, driver\'s license check, vehicle verification, and emergency SOS.',
+      stat: '100% verified',
+      color: 'bg-purple-50 text-purple-600',
     },
     {
-      icon: <Coins className="h-7 w-7 text-white" />,
-      title: "Kindlift Coins",
-      description: "Earn coins on every trip! Redeem for free rides, discounts, or donate to charity.",
-      badge: "💰 10 coins = 1 free km",
-      gradient: "from-amber-500 to-orange-600",
-      bgGradient: "from-amber-50 to-orange-50",
-      delay: 0.3
+      icon: <Coins className="h-6 w-6" />,
+      title: 'Kindlift Coins',
+      description: 'Earn coins on every trip! Redeem for free rides, discounts, or donate to charity.',
+      stat: '10 coins = 1 free km',
+      color: 'bg-amber-50 text-amber-600',
     },
     {
-      icon: <Star className="h-7 w-7 text-white" />,
-      title: "Trusted Ratings",
-      description: "Two-way rating system after each journey. Build your reputation as a great driver or passenger.",
-      badge: "⭐ 4.92 average rating",
-      gradient: "from-cyan-500 to-sky-600",
-      bgGradient: "from-cyan-50 to-sky-50",
-      delay: 0.4
+      icon: <Star className="h-6 w-6" />,
+      title: 'Trusted Ratings',
+      description: 'Two-way rating system after each journey. Build your reputation.',
+      stat: '4.92 avg rating',
+      color: 'bg-cyan-50 text-cyan-600',
     },
     {
-      icon: <Gift className="h-7 w-7 text-white" />,
-      title: "Referral Rewards",
-      description: "Invite friends and get 50 bonus coins each. Build your travel network and earn together!",
-      badge: "🎁 Unlimited referrals",
-      gradient: "from-rose-500 to-red-600",
-      bgGradient: "from-rose-50 to-red-50",
-      delay: 0.5
-    }
+      icon: <Gift className="h-6 w-6" />,
+      title: 'Referral Rewards',
+      description: 'Invite friends and get 50 bonus coins each. Build your travel network!',
+      stat: 'Unlimited referrals',
+      color: 'bg-rose-50 text-rose-600',
+    },
   ];
 
-  const tips = [
-    { icon: "💬", title: "Chat First", desc: "Discuss expectations before meeting", delay: 0 },
-    { icon: "📍", title: "Share Location", desc: "Share live location for pickup", delay: 0.1 },
-    { icon: "🎵", title: "Music Queue", desc: "Take turns with the AUX", delay: 0.2 },
-    { icon: "🍎", title: "Snacks Share", desc: "Bring extra to share!", delay: 0.3 }
+  const steps = [
+    {
+      icon: <Route className="h-7 w-7 text-white" />,
+      title: 'Plan Your Journey',
+      desc: 'Enter your starting point, destination, and travel date.',
+      color: 'bg-brand-dark',
+    },
+    {
+      icon: <Users className="h-7 w-7 text-white" />,
+      title: 'Get Matched',
+      desc: 'Our smart algorithm finds travelers going your way.',
+      color: 'bg-brand-accent',
+    },
+    {
+      icon: <MessageCircle className="h-7 w-7 text-white" />,
+      title: 'Connect & Travel',
+      desc: 'Chat with your match, coordinate details, and hit the road!',
+      color: 'bg-emerald-600',
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: 'Priya Sharma',
+      route: 'Mumbai → Pune',
+      quote: 'I used to dread the 3-hour drive alone. Now I actually look forward to it! Found a regular travel buddy who loves the same podcasts.',
+      rating: 5,
+    },
+    {
+      name: 'Rahul Verma',
+      route: 'Delhi → Jaipur',
+      quote: 'Split fuel costs, great conversation, and even made a business connection. Kindlift is a game-changer for solo travelers.',
+      rating: 5,
+    },
+    {
+      name: 'Anjali Nair',
+      route: 'Bangalore → Coorg',
+      quote: 'Was nervous about sharing a ride at first. But the verification system is solid, and now I\'ve made 3 good friends through Kindlift!',
+      rating: 5,
+    },
   ];
 
   return (
-    <div className="overflow-x-hidden">
-      {/* Hero Section */}
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 text-6xl opacity-10 animate-float">🚗</div>
-          <div className="absolute bottom-20 right-10 text-8xl opacity-10 animate-float-delayed">🛣️</div>
-          <div className="absolute top-1/3 left-1/4 text-5xl opacity-5 animate-pulse-slow">✨</div>
-          <div className="absolute bottom-1/3 right-1/4 text-4xl opacity-5 animate-spin-slow">⭐</div>
-        </div>
+    <div className="overflow-x-hidden -mt-20">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 relative z-10">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-6 animate-slide-down">
-              <span className="text-yellow-300 animate-pulse">🚗💨</span>
-              <span className="text-sm font-medium">Long drive ahead? Feeling lonely?</span>
+      {/* ═══════════════ HERO ═══════════════════════════ */}
+      <section className="relative min-h-screen bg-brand-cream flex items-center overflow-hidden">
+        {/* Subtle background pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, #1a1a2e 1px, transparent 0)',
+          backgroundSize: '40px 40px',
+        }} />
+
+        {/* Warm gradient overlay */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-amber-50/50 to-transparent" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-32 pb-20 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+            {/* Left — Text Content */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-card text-sm font-medium text-brand-dark animate-fade-up">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                Connecting travelers across India
+              </div>
+
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-brand-dark tracking-tight leading-[1.1] animate-fade-up" style={{ animationDelay: '0.1s' }}>
+                Don't Drive{' '}
+                <br className="hidden sm:block" />
+                Alone.{' '}
+                <span className="text-gradient">Find Your Ride Buddy</span>
+              </h1>
+
+              <p className="text-lg text-brand-muted leading-relaxed max-w-lg animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                We connect you with fellow travelers heading the same way — share costs,
+                share stories, and turn a lonely drive into an unforgettable road trip.
+              </p>
+
+              {/* Search-style CTA */}
+              <div className="bg-white rounded-2xl shadow-card p-2 flex flex-col sm:flex-row gap-2 animate-fade-up" style={{ animationDelay: '0.3s' }}>
+                <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-xl bg-brand-cream/50">
+                  <MapPin className="h-4 w-4 text-brand-accent flex-shrink-0" />
+                  <span className="text-sm text-brand-muted">Where are you going?</span>
+                </div>
+                <Link
+                  to="/book-ride"
+                  className="px-6 py-3 bg-brand-dark text-white font-semibold text-sm rounded-xl hover:bg-brand-charcoal transition-all flex items-center justify-center gap-2 group"
+                >
+                  Find a Ride
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex flex-wrap gap-8 pt-4 animate-fade-up" style={{ animationDelay: '0.4s' }}>
+                {[
+                  { value: '10,000+', label: 'Happy Journeys' },
+                  { value: '98%', label: 'Match Accuracy' },
+                  { value: '50+', label: 'Active Cities' },
+                ].map((stat, i) => (
+                  <div key={i} className="text-left">
+                    <p className="text-2xl font-bold text-brand-dark">{stat.value}</p>
+                    <p className="text-sm text-brand-muted">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 animate-slide-up">
-              Don't Drive Alone.{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400 animate-gradient">
-                Find Your Ride Buddy
-              </span>
-            </h1>
+            {/* Right — 3D Car */}
+            <div className="relative h-[400px] lg:h-[500px] animate-fade-up" style={{ animationDelay: '0.3s' }}>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-100/30 to-brand-cream rounded-3xl" />
+              <HeroCar3D />
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <p className="mt-4 max-w-3xl text-xl text-blue-100 mx-auto mb-8 animate-fade-in leading-relaxed">
-              You're planning a long journey, but driving solo feels empty and expensive.
-              We connect you with fellow travelers heading the same way — share costs,
-              share stories, and turn a lonely drive into an unforgettable road trip.
+      {/* ═══════════════ HOW IT WORKS ═══════════════════ */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-brand-accent uppercase tracking-wider mb-3">Simple Process</p>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-brand-dark tracking-tight">
+                How It Works
+              </h2>
+              <p className="mt-4 text-lg text-brand-muted max-w-2xl mx-auto">
+                Whether you're driving or looking for a seat, we make it effortless to connect.
+              </p>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {/* Connecting line (desktop) */}
+            <div className="hidden md:block absolute top-16 left-1/6 right-1/6 h-[2px] bg-gray-100" />
+
+            {steps.map((step, i) => (
+              <RevealSection key={i}>
+                <div className="text-center group" style={{ animationDelay: `${i * 0.15}s` }}>
+                  <div className="relative inline-block mb-6">
+                    <div className={`w-16 h-16 ${step.color} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      {step.icon}
+                    </div>
+                    <div className="absolute -top-2 -right-2 w-7 h-7 bg-white border-2 border-gray-100 rounded-full flex items-center justify-center text-xs font-bold text-brand-dark shadow-sm">
+                      {i + 1}
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-bold text-brand-dark mb-2">{step.title}</h3>
+                  <p className="text-brand-muted">{step.desc}</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ FEATURES ═══════════════════════ */}
+      <section className="py-24 bg-brand-cream">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-brand-accent uppercase tracking-wider mb-3">Features</p>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-brand-dark tracking-tight">
+                Why Travelers Love Kindlift
+              </h2>
+              <p className="mt-4 text-lg text-brand-muted max-w-2xl mx-auto">
+                We've thought of everything to make your shared journey safe, enjoyable, and rewarding.
+              </p>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature, i) => (
+              <RevealSection key={i}>
+                <div className="bg-white rounded-2xl p-7 shadow-card card-lift border border-gray-100/80">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-5 ${feature.color}`}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-bold text-brand-dark mb-2">{feature.title}</h3>
+                  <p className="text-brand-muted text-sm leading-relaxed mb-4">{feature.description}</p>
+                  <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-brand-cream text-brand-dark/70">
+                    {feature.stat}
+                  </span>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ COMPARISON ════════════════════ */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-extrabold text-brand-dark tracking-tight">
+                From Lonely Drive to{' '}
+                <span className="text-gradient">Memorable Journey</span>
+              </h2>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <RevealSection>
+              <div className="bg-red-50/50 border border-red-100 rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-500 font-bold text-lg">✕</div>
+                  <h3 className="text-xl font-bold text-brand-dark">Solo Drive Struggle</h3>
+                </div>
+                <ul className="space-y-3">
+                  {['Boring 5-hour drive with no one to talk to', 'Full fuel cost on just one person', 'No one to share snacks, music, or stories', 'Feeling unsafe driving alone at night', 'No help if your car breaks down', 'Arriving tired and lonely'].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-brand-dark/70 text-sm">
+                      <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-red-400 text-xs">✕</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </RevealSection>
+
+            <RevealSection>
+              <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-8">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-500 font-bold text-lg">✓</div>
+                  <h3 className="text-xl font-bold text-brand-dark">With Kindlift</h3>
+                </div>
+                <ul className="space-y-3">
+                  {['Interesting conversations and new friendships', 'Split fuel costs — save up to 50%', 'Curate the perfect road trip playlist together', 'Safety in numbers during night drives', 'Shared responsibility and peace of mind', 'Arrive energized with new memories'].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-brand-dark/70 text-sm">
+                      <span className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-emerald-500 text-xs">✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </RevealSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ TESTIMONIALS ══════════════════ */}
+      <section className="py-24 bg-brand-cream">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <RevealSection>
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-brand-accent uppercase tracking-wider mb-3">Testimonials</p>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-brand-dark tracking-tight">
+                Real Stories from the Road
+              </h2>
+              <p className="mt-4 text-lg text-brand-muted">See how Kindlift turned lonely drives into lifelong friendships</p>
+            </div>
+          </RevealSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((t, i) => (
+              <RevealSection key={i}>
+                <div className="bg-white rounded-2xl p-7 shadow-card card-lift border border-gray-100/80 h-full flex flex-col">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-brand-accent to-amber-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                      {t.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-brand-dark">{t.name}</h4>
+                      <p className="text-sm text-brand-muted">{t.route}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-0.5 mb-3">
+                    {[...Array(t.rating)].map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-brand-dark/70 text-sm leading-relaxed italic flex-1">"{t.quote}"</p>
+                </div>
+              </RevealSection>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ CTA ═══════════════════════════ */}
+      <section className="py-24 bg-brand-dark text-white relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-brand-accent/5 rounded-full blur-3xl" />
+
+        <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
+          <RevealSection>
+            <h2 className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">
+              Ready for Your Next{' '}
+              <span className="text-brand-accent">Adventure</span>?
+            </h2>
+            <p className="text-lg text-gray-400 mb-10 max-w-2xl mx-auto">
+              Join thousands of travelers who've discovered the joy of shared journeys.
+              Your next road trip friend is just a click away.
             </p>
-
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12 animate-scale-up">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                to="/find-companion"
-                className="group px-8 py-4 border border-transparent text-lg font-bold rounded-full text-slate-900 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 shadow-xl transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl"
+                to="/book-ride"
+                className="px-8 py-4 bg-brand-accent text-brand-dark font-bold rounded-full hover:bg-brand-accent-hover transition-all text-lg group inline-flex items-center justify-center gap-2"
               >
-                <span className="inline-flex items-center gap-2">
-                  🎯 Find a Travel Companion
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </span>
+                Find a Ride
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
               </Link>
               <Link
                 to="/offer-ride"
-                className="group px-8 py-4 border-2 border-white text-lg font-bold rounded-full text-white hover:bg-white hover:text-slate-900 shadow-xl transition-all duration-300 transform hover:-translate-y-2 backdrop-blur-sm"
+                className="px-8 py-4 border-2 border-white/20 text-white font-bold rounded-full hover:bg-white/10 transition-all text-lg inline-flex items-center justify-center gap-2"
               >
-                <span className="inline-flex items-center gap-2">
-                  🙋 I'm Driving — Need Company
-                  <span className="group-hover:translate-x-1 transition-transform">→</span>
-                </span>
+                Offer a Ride
               </Link>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-blue-200 animate-fade-in-up">
-              <span className="flex items-center gap-1">✅ 10,000+ Happy Journeys</span>
-              <span className="flex items-center gap-1">✅ 98% Match Accuracy</span>
-              <span className="flex items-center gap-1">✅ Active in 50+ Cities</span>
-            </div>
-          </div>
+            <p className="mt-8 text-sm text-gray-500">Free to join · No commitment · Cancel anytime</p>
+          </RevealSection>
         </div>
-      </div>
+      </section>
 
-      {/* Road Track Section with Moving Car */}
-      <div className="py-16 bg-gradient-to-b from-gray-900 to-gray-800 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Road Container */}
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl mb-8">
-            {/* Video Background */}
-            <div className="relative w-full h-[500px] overflow-hidden">
-              <video
-                className="absolute top-0 left-0 w-full h-full object-cover"
-                autoPlay
-                loop
-                muted
-                playsInline
-              >
-                <source src={car_video} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-              <div className="absolute inset-0 bg-black/40"></div>
-              
-              {/* Road Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-gray-900 via-gray-900/80 to-transparent"></div>
-              
-              {/* The Road */}
-              <div ref={roadRef} className="absolute bottom-0 left-0 right-0 h-32">
-                {/* Road surface */}
-                <div className="absolute inset-0 bg-gray-800">
-                  {/* Road lines - dashed center line */}
-                  <div className="absolute top-1/2 left-0 right-0 h-1 bg-yellow-400 transform -translate-y-1/2" 
-                       style={{ 
-                         backgroundImage: 'repeating-linear-gradient(90deg, #fbbf24, #fbbf24 40px, transparent 40px, transparent 80px)',
-                         backgroundSize: '80px 100%'
-                       }}>
-                  </div>
-                  {/* Road edges */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-white/30"></div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/30"></div>
+      {/* ═══════════════ FOOTER ════════════════════════ */}
+      <footer className="bg-brand-dark text-gray-400 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H6c-.6 0-1.1.2-1.4.6L3 7.5C2.4 8.1 2 8.8 2 9.5V16c0 .6.4 1 1 1h1" />
+                    <circle cx="7" cy="17" r="2" />
+                    <circle cx="17" cy="17" r="2" />
+                  </svg>
                 </div>
-                
-                {/* Moving Car */}
-                <div 
-                  className="absolute transition-all duration-300 ease-out z-20"
-                  style={{
-                    bottom: '50%',
-                    left: `${carPosition}%`,
-                    transform: 'translate(-50%, 50%)',
-                    transition: 'left 0.1s linear'
-                  }}
-                >
-                  <div className="relative">
-                    {/* Car shadow */}
-                    <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-20 h-3 bg-black/50 rounded-full blur-sm"></div>
-                    {/* Car body */}
-                    <div className="relative">
-                      <div className="text-7xl filter drop-shadow-2xl animate-bounce-subtle">
-                        🚗💨
-                      </div>
-                      {/* Headlight effect */}
-                      <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-yellow-400/30 rounded-full blur-md animate-pulse"></div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Tire marks on road */}
-                <div className="absolute bottom-0 left-0 right-0 h-full pointer-events-none">
-                  <div className="absolute left-1/4 bottom-2 w-32 h-0.5 bg-white/10"></div>
-                  <div className="absolute left-2/4 bottom-2 w-32 h-0.5 bg-white/10"></div>
-                  <div className="absolute left-3/4 bottom-2 w-32 h-0.5 bg-white/10"></div>
-                </div>
+                <span className="font-bold text-lg text-white">Kindlift</span>
               </div>
+              <p className="text-sm leading-relaxed">
+                Connecting travelers across India. Share rides, save costs, and make lifelong friendships.
+              </p>
             </div>
-            
-            {/* Instruction overlay */}
-            <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm rounded-full px-4 py-2 text-white text-sm z-30">
-              <span className="inline-flex items-center gap-2">
-                🖱️ Move your mouse to drive the car →
-              </span>
-            </div>
-          </div>
-          
-          {/* Road caption */}
-          <div className="text-center">
-            <p className="text-gray-300 text-lg">
-              🛣️ <span className="font-semibold text-yellow-400">Move your cursor left and right</span> to drive the car on the road!
-            </p>
-            <p className="text-gray-400 text-sm mt-2">Watch the car follow your every movement</p>
-          </div>
-        </div>
-      </div>
 
-      {/* How It Works */}
-      <div className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <span className="text-blue-600 font-semibold text-sm uppercase tracking-wide animate-pulse">Simple Process</span>
-            <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mt-2 mb-4">
-              Find Your Ride Buddy in{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">3 Easy Steps</span>
-            </h2>
-            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">
-              Whether you're driving or looking for a seat, we make it effortless to connect with fellow travelers.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: <Route className="h-12 w-12 text-white" />, title: "Plan Your Journey", desc: "Enter your starting point, destination, and travel date.", step: "Step 1", gradient: "from-blue-500 to-indigo-600", delay: 0 },
-              { icon: <Users className="h-12 w-12 text-white" />, title: "Get Matched", desc: "Our smart algorithm finds travelers going your way.", step: "Step 2", gradient: "from-indigo-500 to-purple-600", delay: 0.2 },
-              { icon: <MessageCircle className="h-12 w-12 text-white" />, title: "Connect & Travel", desc: "Chat with your match, coordinate details, and hit the road!", step: "Step 3", gradient: "from-purple-500 to-pink-600", delay: 0.4 }
-            ].map((item, i) => (
-              <div 
-                key={i} 
-                className="text-center group animate-slide-up-stagger"
-                style={{ animationDelay: `${item.delay}s`, animationFillMode: 'forwards' }}
-              >
-                <div className="relative">
-                  <div className={`w-28 h-28 bg-gradient-to-br ${item.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl group-hover:scale-110 transition-all duration-500 group-hover:rotate-3`}>
-                    {item.icon}
-                  </div>
-                  <div className="absolute -top-3 -right-3 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-sm font-bold text-gray-900 shadow-lg animate-bounce">
-                    {i + 1}
-                  </div>
-                </div>
-                <div className="text-lg font-bold text-blue-600 mb-2">{item.step}</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                <p className="text-gray-600">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Problem vs Solution */}
-      <div className="py-20 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl">
-              From <span className="text-red-500">Lonely Drive</span> to{' '}
-              <span className="text-green-500">Memorable Journey</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-2xl p-8 border border-red-200 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 bg-red-200 rounded-full flex items-center justify-center animate-shake">
-                  <span className="text-3xl">😔</span>
-                </div>
-                <h3 className="text-2xl font-bold text-red-800">The Solo Drive Struggle</h3>
-              </div>
-              <ul className="space-y-4">
-                {["Boring 5-hour drive with no one to talk to", "Full fuel cost on just one person", "No one to share snacks, music, or stories with", "Feeling unsafe driving alone at night", "No help if your car breaks down", "Arriving tired and lonely at your destination"].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700 animate-slide-left" style={{ animationDelay: `${i * 0.1}s` }}>
-                    <span className="text-red-500 mt-1">❌</span>
-                    <span>{item}</span>
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Quick Links</h4>
+              <ul className="space-y-3">
+                {[
+                  { to: '/book-ride', label: 'Find a Ride' },
+                  { to: '/offer-ride', label: 'Offer a Ride' },
+                  { to: '/about', label: 'About Us' },
+                  { to: '/contact', label: 'Contact' },
+                ].map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} className="text-sm hover:text-white transition-colors flex items-center gap-1 group">
+                      <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-8 border border-green-200 transform hover:scale-105 transition-all duration-500 hover:shadow-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 bg-green-200 rounded-full flex items-center justify-center animate-bounce">
-                  <span className="text-3xl">🎉</span>
-                </div>
-                <h3 className="text-2xl font-bold text-green-800">With Kindlift</h3>
-              </div>
-              <ul className="space-y-4">
-                {["Interesting conversations and new friendships", "Split fuel costs — save up to 50%", "Curate the perfect road trip playlist together", "Safety in numbers during night drives", "Shared responsibility and peace of mind", "Arrive energized with new memories and friends"].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-gray-700 animate-slide-right" style={{ animationDelay: `${i * 0.1}s` }}>
-                    <span className="text-green-500 mt-1">✅</span>
-                    <span>{item}</span>
+            {/* Resources */}
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Resources</h4>
+              <ul className="space-y-3">
+                {['Safety Guidelines', 'FAQs', 'Community Standards', 'Privacy Policy'].map((item) => (
+                  <li key={item}>
+                    <span className="text-sm hover:text-white transition-colors cursor-pointer flex items-center gap-1 group">
+                      <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      {item}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="font-semibold text-white mb-4 text-sm uppercase tracking-wider">Contact</h4>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-brand-accent" />
+                  support@kindlift.in
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-brand-accent" />
+                  +91 (800) 123-4567
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-brand-accent" />
+                  India
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm">© {new Date().getFullYear()} Kindlift. All rights reserved.</p>
+            <p className="text-sm">Built with care by the Kindlift team</p>
           </div>
         </div>
-      </div>
-
-      {/* Features Cards with Staggered Animation */}
-      <div className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
-              Why Travelers{' '}
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Love Kindlift</span>
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We've thought of everything to make your shared journey safe, enjoyable, and rewarding.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className="group opacity-0 animate-card-enter"
-                style={{ animationDelay: `${feature.delay}s`, animationFillMode: 'forwards' }}
-              >
-                <div className={`bg-gradient-to-br ${feature.bgGradient} p-8 rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 border border-gray-100 relative overflow-hidden`}>
-                  <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.gradient} opacity-10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-700`}></div>
-                  <div className={`w-16 h-16 bg-gradient-to-br ${feature.gradient} rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all duration-300 group-hover:rotate-6 shadow-lg`}>
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                  <p className="text-gray-600 mb-4 leading-relaxed">{feature.description}</p>
-                  <div className={`inline-block text-sm font-medium bg-white/60 backdrop-blur-sm px-3 py-1 rounded-full ${feature.badge.includes('✨') ? 'text-blue-600' : feature.badge.includes('🎯') ? 'text-green-600' : feature.badge.includes('🛡️') ? 'text-purple-600' : feature.badge.includes('💰') ? 'text-amber-600' : feature.badge.includes('⭐') ? 'text-cyan-600' : 'text-rose-600'}`}>
-                    {feature.badge}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Testimonials */}
-      <div className="py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
-              Real Stories from the{' '}
-              <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">Road</span>
-            </h2>
-            <p className="text-xl text-gray-600">See how Kindlift turned lonely drives into lifelong friendships</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { name: "Priya Sharma", from: "Mumbai → Pune", quote: "I used to dread the 3-hour drive to Pune alone. Now I actually look forward to it! Found a regular travel buddy who loves the same podcasts as me.", rating: 5, avatar: "👩‍💼", delay: 0 },
-              { name: "Rahul Verma", from: "Delhi → Jaipur", quote: "Split fuel costs, great conversation, and even made a business connection. Kindlift is a game-changer for solo travelers.", rating: 5, avatar: "👨‍💻", delay: 0.2 },
-              { name: "Anjali Nair", from: "Bangalore → Coorg", quote: "Was nervous about sharing a ride at first. But the verification system is solid, and now I've made 3 good friends through Kindlift trips!", rating: 5, avatar: "👩‍🎨", delay: 0.4 }
-            ].map((testimonial, i) => (
-              <div 
-                key={i} 
-                className="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 opacity-0 animate-scale-in"
-                style={{ animationDelay: `${testimonial.delay}s`, animationFillMode: 'forwards' }}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-2xl shadow-lg animate-pulse-gentle">
-                    {testimonial.avatar}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-lg">{testimonial.name}</h4>
-                    <p className="text-sm text-gray-500">{testimonial.from}</p>
-                  </div>
-                </div>
-                <div className="flex mb-3">
-                  {[...Array(testimonial.rating)].map((_, j) => (
-                    <Star key={j} className="h-5 w-5 fill-yellow-400 text-yellow-400 animate-star-pop" style={{ animationDelay: `${j * 0.1}s` }} />
-                  ))}
-                </div>
-                <p className="text-gray-600 italic leading-relaxed">"{testimonial.quote}"</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Travel Tips */}
-      <div className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-extrabold text-gray-900 sm:text-5xl mb-4">
-              Tips for a{' '}
-              <span className="bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">Great Shared Journey</span>
-            </h2>
-            <p className="text-xl text-gray-600">Make every ride comfortable and memorable</p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {tips.map((tip, i) => (
-              <div 
-                key={i} 
-                className="text-center p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 hover:scale-105 opacity-0 animate-slide-up-stagger"
-                style={{ animationDelay: `${tip.delay}s`, animationFillMode: 'forwards' }}
-              >
-                <div className="text-5xl mb-4 inline-block animate-float-subtle">{tip.icon}</div>
-                <h3 className="font-bold text-gray-800 text-lg mb-2">{tip.title}</h3>
-                <p className="text-sm text-gray-500">{tip.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section with 3D Effect */}
-      <div className="relative bg-gradient-to-r from-blue-700 via-indigo-800 to-purple-800 text-white py-20 overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl animate-pulse-slow-delayed"></div>
-        </div>
-        <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
-          <div className="animate-float-3d">
-            <h2 className="text-4xl md:text-6xl font-extrabold mb-6">
-              Ready to Turn Your Next Drive Into an{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">Adventure</span>
-              ?
-            </h2>
-          </div>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
-            Join thousands of travelers who've discovered the joy of shared journeys.
-            Your next road trip friend is just a click away.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/find-companion" className="group px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-slate-900 font-bold rounded-full hover:from-yellow-500 hover:to-orange-600 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 shadow-2xl text-lg">
-              <span className="inline-flex items-center gap-2">
-                🚀 Find My Travel Companion
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </span>
-            </Link>
-            <Link to="/offer-ride" className="group px-8 py-4 border-2 border-white text-white font-bold rounded-full hover:bg-white hover:text-blue-700 transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 text-lg backdrop-blur-sm">
-              <span className="inline-flex items-center gap-2">
-                🙋 I Want to Offer a Ride
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </span>
-            </Link>
-          </div>
-          <p className="mt-8 text-sm text-blue-200">
-            Free to join • No commitment • Cancel anytime
-          </p>
-        </div>
-      </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(5deg); }
-        }
-        @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(20px) rotate(-5deg); }
-        }
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(50px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes slide-down {
-          from { opacity: 0; transform: translateY(-50px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes scale-up {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes card-enter {
-          from { opacity: 0; transform: translateY(30px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        @keyframes spin-slow {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.1); }
-        }
-        @keyframes star-pop {
-          0% { opacity: 0; transform: scale(0); }
-          50% { transform: scale(1.3); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes slide-left {
-          from { opacity: 0; transform: translateX(-30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slide-right {
-          from { opacity: 0; transform: translateX(30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes float-subtle {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-8px); }
-        }
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        .animate-float-delayed { animation: float-delayed 3.5s ease-in-out infinite; }
-        .animate-slide-up { animation: slide-up 0.8s ease-out; }
-        .animate-slide-down { animation: slide-down 0.6s ease-out; }
-        .animate-scale-up { animation: scale-up 0.6s ease-out; }
-        .animate-card-enter { animation: card-enter 0.6s ease-out forwards; }
-        .animate-gradient { background-size: 200% auto; animation: gradient-shift 3s ease infinite; }
-        .animate-bounce-subtle { animation: bounce-subtle 2s ease-in-out infinite; }
-        .animate-spin-slow { animation: spin-slow 20s linear infinite; }
-        .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
-        .animate-pulse-slow-delayed { animation: pulse-slow 4s ease-in-out infinite 2s; }
-        .animate-star-pop { animation: star-pop 0.4s ease-out forwards; }
-        .animate-slide-left { animation: slide-left 0.5s ease-out forwards; opacity: 0; }
-        .animate-slide-right { animation: slide-right 0.5s ease-out forwards; opacity: 0; }
-        .animate-slide-up-stagger { animation: slide-up 0.6s ease-out forwards; opacity: 0; }
-        .animate-scale-in { animation: scale-up 0.5s ease-out forwards; opacity: 0; }
-        .animate-float-3d { animation: float 4s ease-in-out infinite; }
-        .animate-pulse-gentle { animation: pulse-slow 2s ease-in-out infinite; }
-        .animate-float-subtle { animation: float-subtle 3s ease-in-out infinite; }
-        @keyframes sparkle {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.2); }
-        }
-        .animate-sparkle { animation: sparkle 1.5s ease-in-out infinite; }
-      `}</style>
+      </footer>
     </div>
   );
 };
