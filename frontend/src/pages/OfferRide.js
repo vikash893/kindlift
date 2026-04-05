@@ -21,6 +21,29 @@ export const OfferRide = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+
+  // suggestions location 
+  const [sourceSuggestions, setSourceSuggestions] = useState([]);
+const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+
+
+// fetch location function 
+const fetchLocationSuggestions = async (query, type) => {
+  if (!query || query.length < 2) return;
+
+  try {
+    const res = await api.get(`/location/search?q=${query}`);
+
+    if (type === "source") {
+      setSourceSuggestions(res.data);
+    } else {
+      setDestinationSuggestions(res.data);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -73,7 +96,26 @@ export const OfferRide = () => {
             <label className="block text-sm font-medium text-brand-dark mb-2">Leaving from</label>
             <div className="relative">
               <MapPin className="absolute left-4 top-3 h-4 w-4 text-brand-accent" />
-              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter pickup location" value={source} onChange={(e) => setSource(e.target.value)} />
+              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter pickup location" value={source} onChange={(e) => {
+  setSource(e.target.value);
+  fetchLocationSuggestions(e.target.value, "source");
+}} />
+{sourceSuggestions.length > 0 && (
+  <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+    {sourceSuggestions.map((item, index) => (
+      <li
+        key={index}
+        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+        onClick={() => {
+          setSource(item.display_name);
+          setSourceSuggestions([]);
+        }}
+      >
+        {item.display_name}
+      </li>
+    ))}
+  </ul>
+)}
             </div>
           </div>
 
@@ -81,7 +123,26 @@ export const OfferRide = () => {
             <label className="block text-sm font-medium text-brand-dark mb-2">Going to</label>
             <div className="relative">
               <MapPin className="absolute left-4 top-3 h-4 w-4 text-red-400" />
-              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter destination" value={destination} onChange={(e) => setDestination(e.target.value)} />
+              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter destination" value={destination} onChange={(e) => {
+  setDestination(e.target.value);
+  fetchLocationSuggestions(e.target.value, "destination");
+}} />
+{destinationSuggestions.length > 0 && (
+  <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+    {destinationSuggestions.map((item, index) => (
+      <li
+        key={index}
+        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+        onClick={() => {
+          setDestination(item.display_name);
+          setDestinationSuggestions([]);
+        }}
+      >
+        {item.display_name}
+      </li>
+    ))}
+  </ul>
+)}
             </div>
           </div>
 
