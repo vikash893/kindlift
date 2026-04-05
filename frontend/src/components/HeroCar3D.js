@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment, Float, MeshDistortMaterial } from '@react-three/drei';
+import { Environment, Float } from '@react-three/drei';
 import * as THREE from 'three';
 
 /* ── Stylized 3D Car from geometry primitives ─────── */
@@ -161,12 +161,33 @@ function Particles() {
   );
 }
 
+/* ── Responsive Car Model wrapper ────────────────── */
+function ResponsiveCarModel({ isMobile }) {
+  return (
+    <group scale={isMobile ? 0.75 : 1.1}>
+      <CarModel />
+    </group>
+  );
+}
+
 /* ── Exported Hero Canvas ─────────────────────────── */
 export const HeroCar3D = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   return (
-    <div className="w-full h-full" style={{ minHeight: '400px' }}>
+    <div className="w-full h-full" style={{ minHeight: isMobile ? '180px' : '400px' }}>
       <Canvas
-        camera={{ position: [4, 2.5, 4], fov: 40 }}
+        camera={{
+          position: isMobile ? [3, 1.5, 3] : [4, 2.5, 4],
+          fov: isMobile ? 48 : 40,
+        }}
         shadows
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true }}
@@ -184,7 +205,7 @@ export const HeroCar3D = () => {
         <pointLight position={[2, 1, 0]} intensity={0.3} color="#a8d8ea" />
 
         <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.3}>
-          <CarModel />
+          <ResponsiveCarModel isMobile={isMobile} />
         </Float>
 
         <Particles />

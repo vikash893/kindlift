@@ -129,7 +129,7 @@ export const Home = () => {
     <div className="overflow-x-hidden -mt-20">
 
       {/* ═══════════════ HERO ═══════════════════════════ */}
-      <section className="relative min-h-screen bg-brand-cream flex items-center overflow-hidden">
+      <section className="relative lg:min-h-screen bg-brand-cream flex items-center overflow-hidden">
         {/* Subtle background pattern */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: 'radial-gradient(circle at 1px 1px, #1a1a2e 1px, transparent 0)',
@@ -139,24 +139,24 @@ export const Home = () => {
         {/* Warm gradient overlay */}
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-amber-50/50 to-transparent" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-32 pb-20 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-24 sm:pt-32 pb-12 sm:pb-20 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 items-center">
 
-            {/* Left — Text Content */}
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-card text-sm font-medium text-brand-dark animate-fade-up">
+            {/* Text Content — naturally first on mobile, reordered first on desktop too */}
+            <div className="space-y-5 sm:space-y-8">
+              <div className="inline-flex items-center gap-2 bg-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 shadow-card text-xs sm:text-sm font-medium text-brand-dark animate-fade-up">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                 Connecting travelers across India
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-brand-dark tracking-tight leading-[1.1] animate-fade-up" style={{ animationDelay: '0.1s' }}>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-brand-dark tracking-tight leading-[1.1] animate-fade-up" style={{ animationDelay: '0.1s' }}>
                 Don't Drive{' '}
                 <br className="hidden sm:block" />
                 Alone.{' '}
                 <span className="text-gradient">Find Your Ride Buddy</span>
               </h1>
 
-              <p className="text-lg text-brand-muted leading-relaxed max-w-lg animate-fade-up" style={{ animationDelay: '0.2s' }}>
+              <p className="text-base sm:text-lg text-brand-muted leading-relaxed max-w-lg animate-fade-up" style={{ animationDelay: '0.2s' }}>
                 We connect you with fellow travelers heading the same way — share costs,
                 share stories, and turn a lonely drive into an unforgettable road trip.
               </p>
@@ -177,23 +177,23 @@ export const Home = () => {
               </div>
 
               {/* Stats row */}
-              <div className="flex flex-wrap gap-8 pt-4 animate-fade-up" style={{ animationDelay: '0.4s' }}>
+              <div className="flex flex-wrap gap-5 sm:gap-8 pt-2 sm:pt-4 animate-fade-up" style={{ animationDelay: '0.4s' }}>
                 {[
                   { value: '10,000+', label: 'Happy Journeys' },
                   { value: '98%', label: 'Match Accuracy' },
                   { value: '50+', label: 'Active Cities' },
                 ].map((stat, i) => (
                   <div key={i} className="text-left">
-                    <p className="text-2xl font-bold text-brand-dark">{stat.value}</p>
-                    <p className="text-sm text-brand-muted">{stat.label}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-brand-dark">{stat.value}</p>
+                    <p className="text-xs sm:text-sm text-brand-muted">{stat.label}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Right — 3D Car */}
-            <div className="relative h-[400px] lg:h-[500px] animate-fade-up" style={{ animationDelay: '0.3s' }}>
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-100/30 to-brand-cream rounded-3xl" />
+            {/* 3D Car — compact on mobile, large on desktop */}
+            <div className="relative h-[180px] sm:h-[260px] lg:h-[500px] animate-fade-up" style={{ animationDelay: '0.15s' }}>
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-100/30 to-brand-cream rounded-2xl lg:rounded-3xl" />
               <HeroCar3D />
             </div>
           </div>
