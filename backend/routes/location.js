@@ -1,4 +1,5 @@
 const express = require("express");
+const fetch = require("node-fetch"); // ✅ FIXED
 
 const router = express.Router();
 
@@ -14,7 +15,8 @@ router.get("/search", async (req, res) => {
       `https://nominatim.openstreetmap.org/search?format=json&q=${query}`,
       {
         headers: {
-          "User-Agent": "kindlift-app", // IMPORTANT
+          "User-Agent": "kindlift-app",
+          "Accept": "application/json",
         },
       }
     );
@@ -22,7 +24,7 @@ router.get("/search", async (req, res) => {
     const data = await response.json();
     res.json(data);
   } catch (error) {
-    console.error(error);
+    console.error("Location API Error:", error);
     res.status(500).json({ error: "Failed to fetch locations" });
   }
 });
