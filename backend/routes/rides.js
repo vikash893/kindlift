@@ -1,17 +1,19 @@
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { RideOffer } = require('../models/RideOffer');
-const { geocode, calculateDistance } = require('../utils/geocoder');
+const { calculateDistance } = require('../utils/geocoder');
 const { User } = require('../models/User');
+const { RideRequest } = require('../models/RideRequest');
 
 const router = express.Router();
 
-// Create a ride offer
+
+// ================== CREATE RIDE ==================
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const {
-      sourceName,
-      destinationName,
+      source,
+      destination,
       seatsAvailable,
       departureTime,
       vehicleNumber,
@@ -20,14 +22,20 @@ router.post('/', authMiddleware, async (req, res) => {
     } = req.body;
 
     const user = await User.findById(req.user.id);
-
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Driver verification
+    // ✅ Validate coordinates
+    if (!source?.lat || !destination?.lat) {
+      return res.status(400).json({
+        message: 'Please select locations from suggestions'
+      });
+    }
+
+    // ================= DRIVER VERIFICATION =================
     if (!user.isDriverVerified) {
       if (!vehicleNumber || !licenseNumber || !vehiclePhoto) {
         return res.status(400).json({
-          message: 'First time drivers must provide vehicle number, license number, and vehicle photo.'
+          message: 'First time drivers must provide vehicle details'
         });
       }
 
@@ -39,26 +47,18 @@ router.post('/', authMiddleware, async (req, res) => {
       await user.save();
     }
 
-    const sourceCoords = await geocode(sourceName);
-    const destCoords = await geocode(destinationName);
-
-    if (!sourceCoords || !destCoords) {
-      return res.status(400).json({
-        message: 'Could not resolve coordinates for source or destination'
-      });
-    }
-
+    // ================= CREATE RIDE =================
     const newRide = new RideOffer({
       driverId: req.user.id,
       source: {
-        name: sourceName,
-        lat: sourceCoords.lat,
-        lng: sourceCoords.lng
+        name: source.name,
+        lat: Number(source.lat),
+        lng: Number(source.lng)
       },
       destination: {
-        name: destinationName,
-        lat: destCoords.lat,
-        lng: destCoords.lng
+        name: destination.name,
+        lat: Number(destination.lat),
+        lng: Number(destination.lng)
       },
       seatsAvailable,
       departureTime
@@ -66,13 +66,15 @@ router.post('/', authMiddleware, async (req, res) => {
 
     await newRide.save();
     res.status(201).json(newRide);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
+    console.error("🔥 CREATE RIDE ERROR:", err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get my rides
+
+// ================= MY RIDES ==================
 router.get('/my-offers', authMiddleware, async (req, res) => {
   try {
     const rides = await RideOffer.find({ driverId: req.user.id })
@@ -84,25 +86,27 @@ router.get('/my-offers', authMiddleware, async (req, res) => {
   }
 });
 
-// Search rides
+
+// ================= SEARCH RIDES ==================
 router.get('/search', authMiddleware, async (req, res) => {
   try {
-    const { source, destination, seats } = req.query;
+    const { sourceLat, sourceLng, destLat, destLng, seats } = req.query;
 
-    if (!source || !destination || !seats) {
+    if (!sourceLat || !sourceLng || !destLat || !destLng || !seats) {
       return res.status(400).json({
-        message: 'Please provide source, destination, and seats'
+        message: 'Please provide coordinates and seats'
       });
     }
 
-    const sourceCoords = await geocode(source);
-    const destCoords = await geocode(destination);
+    const sourceCoords = {
+      lat: Number(sourceLat),
+      lng: Number(sourceLng)
+    };
 
-    if (!sourceCoords || !destCoords) {
-      return res.status(400).json({
-        message: 'Could not resolve coordinates'
-      });
-    }
+    const destCoords = {
+      lat: Number(destLat),
+      lng: Number(destLng)
+    };
 
     const availableRides = await RideOffer.find({
       status: 'waiting',
@@ -144,30 +148,24 @@ router.get('/search', authMiddleware, async (req, res) => {
         };
       });
 
-    // Sort nearest first
     matchedRides.sort(
       (a, b) => Number(a.distanceToDriver) - Number(b.distanceToDriver)
     );
 
     res.json(matchedRides);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Server error');
+    console.error("🔥 SEARCH ERROR:", err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Complete a ride
-const { RideRequest } = require('../models/RideRequest');
 
-
+// ================= COMPLETE RIDE ==================
 router.put('/:id/complete', authMiddleware, async (req, res) => {
   try {
     const { code } = req.body;
 
-    console.log("REQ ID:", req.params.id);
-    console.log("ENTERED CODE:", code);
-
-    // ✅ Populate offerId (IMPORTANT)
     const request = await RideRequest.findById(req.params.id)
       .populate('offerId');
 
@@ -175,41 +173,31 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Request not found' });
     }
 
-    console.log("REQUEST FOUND:", request);
-
-    // ✅ Safety check
     if (!request.offerId) {
       return res.status(400).json({ message: 'Offer not linked' });
     }
 
     const driverId = request.offerId.driverId;
 
-    // ✅ Auth check
     if (driverId.toString() !== req.user.id) {
       return res.status(401).json({ message: 'Not authorized' });
     }
 
-    // ✅ Code check
     if (!request.completionCode) {
       return res.status(400).json({ message: 'No completion code found' });
     }
-
-    console.log("STORED CODE:", request.completionCode);
 
     if (request.completionCode.toString() !== code.toString().trim()) {
       return res.status(400).json({ message: 'Invalid code' });
     }
 
-    // ✅ Prevent double completion
     if (request.status === 'completed') {
       return res.status(400).json({ message: 'Already completed' });
     }
 
-    // ✅ Mark completed
     request.status = 'completed';
     await request.save();
 
-    // ✅ Coins logic
     const coins = 10;
 
     await User.findByIdAndUpdate(driverId, {
@@ -226,7 +214,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("🔥 COMPLETE ERROR:", err);   // VERY IMPORTANT
+    console.error("🔥 COMPLETE ERROR:", err);
     res.status(500).json({ message: 'Server error' });
   }
 });

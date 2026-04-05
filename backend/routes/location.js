@@ -11,15 +11,15 @@ router.get("/search", async (req, res) => {
   }
 
   try {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${query}`,
-      {
-        headers: {
-          "User-Agent": "kindlift-app",
-          "Accept": "application/json",
-        },
-      }
-    );
+   const response = await fetch(
+  `https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=in&limit=5`,
+  {
+    headers: {
+      "User-Agent": "kindlift-app",
+      "Accept": "application/json",
+    },
+  }
+);
 
     const data = await response.json();
     res.json(data);

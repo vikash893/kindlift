@@ -24,25 +24,27 @@ export const OfferRide = () => {
 
   // suggestions location 
   const [sourceSuggestions, setSourceSuggestions] = useState([]);
-const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+  const [sourceCoords, setSourceCoords] = useState(null);
+  const [destinationCoords, setDestinationCoords] = useState(null);
 
 
-// fetch location function 
-const fetchLocationSuggestions = async (query, type) => {
-  if (!query || query.length < 2) return;
+  // fetch location function 
+  const fetchLocationSuggestions = async (query, type) => {
+    if (!query || query.length < 2) return;
 
-  try {
-    const res = await api.get(`/location/search?q=${query}`);
+    try {
+      const res = await api.get(`/location/search?q=${query}`);
 
-    if (type === "source") {
-      setSourceSuggestions(res.data);
-    } else {
-      setDestinationSuggestions(res.data);
+      if (type === "source") {
+        setSourceSuggestions(res.data);
+      } else {
+        setDestinationSuggestions(res.data);
+      }
+    } catch (err) {
+      console.log(err);
     }
-  } catch (err) {
-    console.log(err);
-  }
-};
+  };
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -59,7 +61,25 @@ const fetchLocationSuggestions = async (query, type) => {
     setLoading(true); setError('');
     try {
       const departureTime = new Date(`${date}T${time}`).toISOString();
-      const payload = { sourceName: source, destinationName: destination, seatsAvailable: seats, departureTime };
+      const payload = {
+        source: {
+          name: source,
+          lat: sourceCoords?.lat,
+          lng: sourceCoords?.lng,
+        },
+        destination: {
+          name: destination,
+          lat: destinationCoords?.lat,
+          lng: destinationCoords?.lng,
+        },
+        seatsAvailable: seats,
+        departureTime
+      };
+      if (!sourceCoords || !destinationCoords) {
+  setError("Please select locations from suggestions");
+  setLoading(false);
+  return;
+}
       if (!user?.isDriverVerified) {
         if (!vehicleNumber || !licenseNumber || !vehiclePhoto) { setError('Please provide all verification details'); setLoading(false); return; }
         payload.vehicleNumber = vehicleNumber; payload.licenseNumber = licenseNumber; payload.vehiclePhoto = vehiclePhoto;
@@ -96,26 +116,32 @@ const fetchLocationSuggestions = async (query, type) => {
             <label className="block text-sm font-medium text-brand-dark mb-2">Leaving from</label>
             <div className="relative">
               <MapPin className="absolute left-4 top-3 h-4 w-4 text-brand-accent" />
-              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter pickup location" value={source} onChange={(e) => {
+              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter pickup location" value={source} 
+             onChange={(e) => {
   setSource(e.target.value);
+  setSourceCoords(null); // ✅ IMPORTANT FIX
   fetchLocationSuggestions(e.target.value, "source");
-}} />
-{sourceSuggestions.length > 0 && (
-  <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
-    {sourceSuggestions.map((item, index) => (
-      <li
-        key={index}
-        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-        onClick={() => {
-          setSource(item.display_name);
-          setSourceSuggestions([]);
-        }}
-      >
-        {item.display_name}
-      </li>
-    ))}
-  </ul>
-)}
+}}/>
+              {sourceSuggestions.length > 0 && (
+                <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+                  {sourceSuggestions.map((item, index) => (
+                    <li
+                      key={index}
+                      className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        setSource(item.display_name);
+                        setSourceCoords({
+                          lat: item.lat,
+                          lng: item.lon,
+                        });
+                        setSourceSuggestions([]);
+                      }}
+                    >
+                      {item.display_name}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
@@ -123,26 +149,32 @@ const fetchLocationSuggestions = async (query, type) => {
             <label className="block text-sm font-medium text-brand-dark mb-2">Going to</label>
             <div className="relative">
               <MapPin className="absolute left-4 top-3 h-4 w-4 text-red-400" />
-              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter destination" value={destination} onChange={(e) => {
+              <input type="text" required className={`pl-11 ${inputCls}`} placeholder="Enter destination" value={destination} 
+              onChange={(e) => {
   setDestination(e.target.value);
+  setDestinationCoords(null); // ✅ IMPORTANT FIX
   fetchLocationSuggestions(e.target.value, "destination");
 }} />
-{destinationSuggestions.length > 0 && (
-  <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
-    {destinationSuggestions.map((item, index) => (
-      <li
-        key={index}
-        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-        onClick={() => {
-          setDestination(item.display_name);
-          setDestinationSuggestions([]);
-        }}
-      >
-        {item.display_name}
-      </li>
-    ))}
-  </ul>
-)}
+              {destinationSuggestions.length > 0 && (
+                <ul className="absolute z-10 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+                  {destinationSuggestions.map((item, index) => (
+                    <li
+                      key={index}
+                      className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      onClick={() => {
+                        setDestination(item.display_name);
+                        setDestinationCoords({
+                          lat: item.lat,
+                          lng: item.lon,
+                        });
+                        setDestinationSuggestions([]);
+                      }}
+                    >
+                      {item.display_name}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 

@@ -14,6 +14,32 @@ export const BookRide = () => {
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
 
+const [sourceSuggestions, setSourceSuggestions] = useState([]);
+const [destinationSuggestions, setDestinationSuggestions] = useState([]);
+
+let timeout;
+
+const fetchLocationSuggestions = (query, type) => {
+  clearTimeout(timeout);
+
+  timeout = setTimeout(async () => {
+    if (!query || query.length < 2) return;
+
+    try {
+      const res = await api.get(`/location/search?q=${query}`);
+
+      if (type === "source") {
+        setSourceSuggestions(res.data);
+      } else {
+        setDestinationSuggestions(res.data);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }, 400);
+};
+
+
   const handleSearch = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -76,8 +102,28 @@ export const BookRide = () => {
               className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
               placeholder="Leaving from..."
               value={source}
-              onChange={(e) => setSource(e.target.value)}
+              onChange={(e) => {
+  setSource(e.target.value);
+  fetchLocationSuggestions(e.target.value, "source");
+}}
+onBlur={() => setTimeout(() => setSourceSuggestions([]), 200)}
             />
+            {sourceSuggestions.length > 0 && (
+  <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+    {sourceSuggestions.map((item, index) => (
+      <li
+        key={index}
+        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+        onClick={() => {
+          setSource(item.display_name);
+          setSourceSuggestions([]);
+        }}
+      >
+        {item.display_name}
+      </li>
+    ))}
+  </ul>
+)}
           </div>
 
           <div className="flex-1 relative">
@@ -90,8 +136,28 @@ export const BookRide = () => {
               className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
               placeholder="Going to..."
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
+            onChange={(e) => {
+  setDestination(e.target.value);
+  fetchLocationSuggestions(e.target.value, "destination");
+}}
+onBlur={() => setTimeout(() => setDestinationSuggestions([]), 200)}
             />
+            {destinationSuggestions.length > 0 && (
+  <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+    {destinationSuggestions.map((item, index) => (
+      <li
+        key={index}
+        className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+        onClick={() => {
+          setDestination(item.display_name);
+          setDestinationSuggestions([]);
+        }}
+      >
+        {item.display_name}
+      </li>
+    ))}
+  </ul>
+)}
           </div>
 
           <div className="w-full md:w-28 relative">
