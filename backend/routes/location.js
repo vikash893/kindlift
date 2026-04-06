@@ -11,7 +11,7 @@ router.get("/search", async (req, res) => {
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5`;
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=25`;
 
     const response = await fetch(url, {
       headers: {
