@@ -15,6 +15,8 @@ export const Register = () => {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -30,24 +32,25 @@ export const Register = () => {
 
   const handleSendOtp = async () => {
     if (!email) { setError('Please enter your email first'); return; }
+    setSendingOtp(true); setError('');
     try {
       await api.post("/auth/send-otp", { email });
       alert("OTP sent 📩");
       setShowOtpField(true);
-      setError('');
     } catch (err) {
       setError(err.response?.data?.message || "Failed to send OTP");
-    }
+    } finally { setSendingOtp(false); }
   };
 
   const handleVerifyOtp = async () => {
+    setVerifyingOtp(true); setError('');
     try {
       await api.post('/auth/verify-otp', { email, otp });
       alert("Email verified ✅");
       navigate('/login');
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP");
-    }
+    } finally { setVerifyingOtp(false); }
   };
 
   const handleSubmit = async (e) => {
@@ -156,18 +159,18 @@ export const Register = () => {
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email <span className="text-red-400">*</span></label>
               <div className="flex gap-2 items-end">
                 <input type="email" required className="input-underline flex-1" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                <button type="button" onClick={handleSendOtp}
-                  className="px-5 py-2.5 bg-brand-dark text-white text-sm font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 whitespace-nowrap">
-                  Verify
+                <button type="button" onClick={handleSendOtp} disabled={sendingOtp}
+                  className="px-5 py-2.5 bg-brand-dark text-white text-sm font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 whitespace-nowrap disabled:opacity-50">
+                  {sendingOtp ? <span className="inline-flex items-center gap-1.5"><div className="loader-spinner !w-3.5 !h-3.5 !border-2" />Sending...</span> : 'Verify'}
                 </button>
               </div>
               {showOtpField && (
                 <div className="flex gap-2 mt-4 items-end">
                   <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)}
                     className="input-underline flex-1" />
-                  <button type="button" onClick={handleVerifyOtp}
-                    className="px-5 py-2.5 bg-green-600 text-white text-sm font-display font-bold rounded-full hover:bg-green-700 transition-all whitespace-nowrap">
-                    Verify OTP
+                  <button type="button" onClick={handleVerifyOtp} disabled={verifyingOtp}
+                    className="px-5 py-2.5 bg-green-600 text-white text-sm font-display font-bold rounded-full hover:bg-green-700 transition-all whitespace-nowrap disabled:opacity-50">
+                    {verifyingOtp ? <span className="inline-flex items-center gap-1.5"><div className="loader-spinner !w-3.5 !h-3.5 !border-2" />Verifying...</span> : 'Verify OTP'}
                   </button>
                 </div>
               )}

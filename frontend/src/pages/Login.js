@@ -10,17 +10,22 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.token, res.data.user);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,9 +130,14 @@ export const Login = () => {
 
             <button
               type="submit"
-              className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500"
+              disabled={loading}
+              className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              {loading ? (
+                <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Signing in...</span>
+              ) : (
+                <>Sign In <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
+              )}
             </button>
 
             <div className="relative py-4">
