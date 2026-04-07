@@ -66,16 +66,24 @@ async function startServer() {
 
     socket.on('send_message', async (data) => {
       try {
+        consle.log("🔥 MESSAGE DATA:", data);
         const { requestId, senderId, receiverId, text } = data;
+        console.log("🔥 SENDER:", senderId, "RECEIVER:", receiverId);
         const { Message } = require('./models/Message');
+        console.log("🔥 MESSAGE MODEL:", Message);
 
         const newMessage = new Message({ requestId, senderId, text });
+        console.log("🔥 NEW MESSAGE:", newMessage);
         await newMessage.save();
+        console.log("🔥 MESSAGE SAVED:", newMessage);
 
         io.to(receiverId).emit('receive_message', newMessage);
+        console.log("🔥 MESSAGE EMITTED TO:", receiverId);
         socket.emit('receive_message', newMessage);
+        console.log("🔥 MESSAGE EMITTED TO SENDER:", senderId);
       } catch (err) {
         console.error('Socket error:', err);
+        console.log("🔥 ERROR SAVING MESSAGE:");
       }
     });
 
