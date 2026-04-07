@@ -22,9 +22,9 @@ export const About = () => {
       role: 'UI/UX Designer & Frontend Developer',
       description: 'Creates beautiful, intuitive interfaces that users love.',
       image: vishnu,
-      github: '#',
-      linkedin: '#',
-      email: 'vishnusingh@gmail.com',
+      github: 'https://github.com/vish3456',
+      linkedin: 'https://www.linkedin.com/in/vishnu-singh-098033324/',
+      email: 'rajputvishnu2513@gmail.com',
     },
     {
       name: 'Yash Gupta',
@@ -33,7 +33,7 @@ export const About = () => {
       image: yash,
       github: '#',
       linkedin: '#',
-      email: 'yashgupta@gmail.com',
+      email: 'ygupta8875@gmail.com',
     },
   ];
 

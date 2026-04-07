@@ -3,11 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import vedio from '../public/login.webm';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -29,13 +30,7 @@ export const Login = () => {
       <div className="hidden lg:flex lg:w-1/2 section-dark relative overflow-hidden flex-col justify-between p-12 xl:p-16">
         <div className="noise-overlay absolute inset-0" />
         <div className="absolute inset-0 opacity-30">
-          <video
-            className="w-full h-full object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
-          >
+          <video className="w-full h-full object-cover" autoPlay loop muted playsInline>
             <source src={vedio} type="video/webm" />
           </video>
           <div className="absolute inset-0 bg-brand-dark/70" />
@@ -56,12 +51,9 @@ export const Login = () => {
 
         <div className="relative z-10">
           <h1 className="font-display text-display-lg text-white mb-6">
-            Welcome<br />
-            <span className="text-gradient">back.</span>
+            Welcome<br /><span className="text-gradient">back.</span>
           </h1>
-          <p className="text-white/50 text-lg max-w-sm">
-            Your journey to meaningful connections starts here.
-          </p>
+          <p className="text-white/50 text-lg max-w-sm">Your journey to meaningful connections starts here.</p>
         </div>
 
         <div className="relative z-10 flex items-center gap-8 text-sm text-white/30">
@@ -74,7 +66,6 @@ export const Login = () => {
       {/* Right — Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-16 bg-brand-light">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-12">
             <div className="w-9 h-9 bg-brand-accent rounded-xl flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -100,25 +91,26 @@ export const Login = () => {
             <div>
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email</label>
               <input
-                type="email"
-                required
-                className="input-underline"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="email" required className="input-underline" placeholder="you@example.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
             <div>
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Password</label>
-              <input
-                type="password"
-                required
-                className="input-underline"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"} required className="input-underline pr-12"
+                  placeholder="Enter your password"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                />
+                <span
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 cursor-pointer p-2 rounded-lg text-brand-muted hover:text-brand-dark transition-colors"
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-2">
@@ -135,8 +127,7 @@ export const Login = () => {
               type="submit"
               className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500"
             >
-              Sign In
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              Sign In <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </button>
 
             <div className="relative py-4">
@@ -145,10 +136,7 @@ export const Login = () => {
             </div>
 
             <Link to="/register" className="block w-full">
-              <button
-                type="button"
-                className="w-full px-6 py-4 border-2 border-brand-dark/10 text-brand-dark font-display font-bold rounded-full hover:border-brand-dark/30 transition-all"
-              >
+              <button type="button" className="w-full px-6 py-4 border-2 border-brand-dark/10 text-brand-dark font-display font-bold rounded-full hover:border-brand-dark/30 transition-all">
                 Create New Account
               </button>
             </Link>

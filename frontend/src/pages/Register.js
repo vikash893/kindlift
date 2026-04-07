@@ -5,6 +5,8 @@ import api from '../lib/api';
 import { ArrowRight, Camera } from 'lucide-react';
 
 export const Register = () => {
+  const [otp, setOtp] = useState('');
+  const [showOtpField, setShowOtpField] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,49 +21,48 @@ export const Register = () => {
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Photo must be less than 5MB');
-        return;
-      }
+      if (file.size > 5 * 1024 * 1024) { setError('Photo must be less than 5MB'); return; }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePhoto(reader.result);
-      };
+      reader.onloadend = () => { setProfilePhoto(reader.result); };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!email) { setError('Please enter your email first'); return; }
+    try {
+      await api.post("/auth/send-otp", { email });
+      alert("OTP sent 📩");
+      setShowOtpField(true);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      await api.post('/auth/verify-otp', { email, otp });
+      alert("Email verified ✅");
+      navigate('/login');
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid OTP");
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (password !== confirmPassword) { setError('Passwords do not match'); return; }
+    if (!profilePhoto) { setError('Profile photo is required'); return; }
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (!profilePhoto) {
-      setError('Profile photo is required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
+    setLoading(true); setError('');
     try {
-      const res = await api.post('/auth/register', {
-        name,
-        email,
-        password,
-        phone,
-        profilePhoto,
-      });
+      const res = await api.post('/auth/register', { name, email, password, phone, profilePhoto });
       login(res.data.token, res.data.user);
-      navigate('/dashboard');
+      setShowOtpField(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -85,13 +86,9 @@ export const Register = () => {
 
         <div className="relative z-10">
           <h1 className="font-display text-display-lg text-white mb-6">
-            Join the<br />
-            <span className="text-gradient">community.</span>
+            Join the<br /><span className="text-gradient">community.</span>
           </h1>
-          <p className="text-white/50 text-lg max-w-sm">
-            Create your account and start your journey with fellow travelers.
-          </p>
-
+          <p className="text-white/50 text-lg max-w-sm">Create your account and start your journey with fellow travelers.</p>
           <div className="mt-12 space-y-4">
             {['Free to join and use', 'Find travel buddies easily', 'Save on fuel costs', 'Safe & verified community'].map((item, i) => (
               <div key={i} className="flex items-center gap-3 text-white/40 text-sm">
@@ -103,16 +100,13 @@ export const Register = () => {
         </div>
 
         <div className="relative z-10 flex items-center gap-4 text-xs text-white/20">
-          <span>✓ Secure</span>
-          <span>✓ 256-bit SSL</span>
-          <span>✓ Privacy Protected</span>
+          <span>✓ Secure</span><span>✓ 256-bit SSL</span><span>✓ Privacy Protected</span>
         </div>
       </div>
 
       {/* Right — Form */}
       <div className="flex-1 flex items-start justify-center px-6 py-12 lg:px-16 bg-brand-light overflow-y-auto">
         <div className="w-full max-w-md py-8">
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-10">
             <div className="w-9 h-9 bg-brand-accent rounded-xl flex items-center justify-center">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -145,18 +139,10 @@ export const Register = () => {
                     <Camera className="h-8 w-8 text-brand-muted" />
                   )}
                 </div>
-                <label
-                  htmlFor="photo-upload"
-                  className="absolute bottom-0 right-0 bg-brand-dark p-2.5 rounded-full text-white cursor-pointer hover:bg-brand-accent transition-all shadow-lg"
-                >
+                <label htmlFor="photo-upload"
+                  className="absolute bottom-0 right-0 bg-brand-dark p-2.5 rounded-full text-white cursor-pointer hover:bg-brand-accent transition-all shadow-lg">
                   <Camera className="h-3.5 w-3.5" />
-                  <input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                  />
+                  <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
                 </label>
               </div>
             </div>
@@ -168,7 +154,23 @@ export const Register = () => {
 
             <div>
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email <span className="text-red-400">*</span></label>
-              <input type="email" required className="input-underline" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <div className="flex gap-2 items-end">
+                <input type="email" required className="input-underline flex-1" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <button type="button" onClick={handleSendOtp}
+                  className="px-5 py-2.5 bg-brand-dark text-white text-sm font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 whitespace-nowrap">
+                  Verify
+                </button>
+              </div>
+              {showOtpField && (
+                <div className="flex gap-2 mt-4 items-end">
+                  <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)}
+                    className="input-underline flex-1" />
+                  <button type="button" onClick={handleVerifyOtp}
+                    className="px-5 py-2.5 bg-green-600 text-white text-sm font-display font-bold rounded-full hover:bg-green-700 transition-all whitespace-nowrap">
+                    Verify OTP
+                  </button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -186,36 +188,23 @@ export const Register = () => {
               <input type="tel" className="input-underline" placeholder="1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
-            >
+            <button type="submit" disabled={loading}
+              className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4">
               {loading ? (
-                <span className="inline-flex items-center gap-2">
-                  <div className="loader-spinner !w-5 !h-5 !border-2" />
-                  Registering...
-                </span>
+                <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Registering...</span>
               ) : (
-                <>
-                  Sign Up
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </>
+                <>Sign Up <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
               )}
             </button>
 
             <p className="text-center text-sm text-brand-muted">
               Already have an account?{' '}
-              <Link to="/login" className="font-display font-semibold text-brand-accent hover:text-brand-accent-hover link-hover">
-                Sign in here
-              </Link>
+              <Link to="/login" className="font-display font-semibold text-brand-accent hover:text-brand-accent-hover link-hover">Sign in here</Link>
             </p>
           </form>
 
           <div className="mt-6 p-4 bg-brand-dark/5 rounded-xl text-center">
-            <p className="text-xs text-brand-muted">
-              <span className="font-semibold text-brand-dark">Note:</span> Profile photo is required
-            </p>
+            <p className="text-xs text-brand-muted"><span className="font-semibold text-brand-dark">Note:</span> Profile photo is required</p>
           </div>
         </div>
       </div>
