@@ -8,6 +8,7 @@ import { ArrowRight } from 'lucide-react';
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -122,15 +123,30 @@ export const Login = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-brand-dark mb-2">Password</label>
-                  <input
-                    type="password"
-                    required
-                    className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
+                  <label className="block text-sm font-medium text-brand-dark mb-2">
+                    Password
+                  </label>
+
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm focus:ring-2 focus:ring-brand-accent"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+
+                    <span
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer 
+                                bg-gray-100 hover:bg-gray-200 
+                                p-2 rounded-lg 
+                                transition-all duration-200 shadow-sm"
+                    >
+                      {showPassword ? "🙈" : "👁️"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">

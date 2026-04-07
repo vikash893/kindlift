@@ -8,10 +8,13 @@
 // });
 //
 // export default API;
+
+
+
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://kindlift-1.onrender.com", // ✅ FIX
+  baseURL: "https://kindlift-1.onrender.com/"
 });
 
 export default api;

@@ -1,10 +1,12 @@
+import api from "../api/axios";
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
 import { ArrowRight, Camera } from 'lucide-react';
 
 export const Register = () => {
+  const [otp, setOtp] = useState('');
+  const [showOtpField, setShowOtpField] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,36 +33,29 @@ export const Register = () => {
     }
   };
 
+  const handleSendOtp = async () => {
+    try {
+      await api.post("/api/auth/send-otp", { email });
+      alert("OTP sent 📩");
+      setShowOtpField(true);
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to send OTP ❌");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submit clicked");
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (!profilePhoto) {
-      setError('Profile photo is required');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
+    setShowOtpField(true); // 👈 force show
+  };
+  const handleVerifyOtp = async () => {
     try {
-      const res = await api.post('/auth/register', {
-        name,
-        email,
-        password,
-        phone,
-        profilePhoto,
-      });
-      login(res.data.token, res.data.user);
-      navigate('/dashboard');
+      await api.post('/api/auth/verify-otp', { email, otp });
+      alert("Email verified ✅");
+      navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
+      alert(err.response?.data?.message || "Invalid OTP ❌");
     }
   };
 
@@ -169,17 +164,49 @@ export const Register = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-brand-dark mb-1.5">
-                    Email Address <span className="text-red-400">*</span>
+                  <label className="block text-sm font-medium mb-2">
+                    Email Address *
                   </label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+
+                  {/* Email + Send OTP */}
+                  <div className="flex gap-2">
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      className="px-5 py-2 bg-[#1f2937] text-white rounded-xl text-sm hover:bg-black transition-all duration-200 shadow-md"
+                    >
+                      Verify
+                    </button>
+                  </div>
+
+                  {/* OTP FIELD (SHOW AFTER CLICK) */}
+                  {showOtpField && (
+                    <div className="flex gap-2 mt-3">
+                      <input
+                        type="text"
+                        placeholder="Enter OTP"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        className="px-4 bg-green-600 text-white rounded-xl text-sm hover:bg-green-700"
+                      >
+                        Verify OTP
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -240,6 +267,25 @@ export const Register = () => {
                     </>
                   )}
                 </button>
+                {showOtpField && (
+                  <div className="mt-4">
+                    <input
+                      type="text"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleVerifyOtp}
+                      className="mt-3 w-full bg-green-600 text-white py-3 rounded-xl"
+                    >
+                      Verify OTP
+                    </button>
+                  </div>
+                )}
 
                 <div className="text-center">
                   <p className="text-sm text-brand-muted">

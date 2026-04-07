@@ -88,15 +88,15 @@ async function startServer() {
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
-  } else {
+  } //else {
     // Vite dev server (only for local dev)
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
+  //   const vite = await createViteServer({
+  //     server: { middlewareMode: true },
+  //     appType: 'spa',
+  //   });
 
-    app.use(vite.middlewares);
-  }
+  //   app.use(vite.middlewares);
+  // }
 
   // Start server
   server.listen(PORT, '0.0.0.0', () => {
