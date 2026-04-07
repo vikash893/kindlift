@@ -3,8 +3,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const path = require('path');
-const { createServer: createViteServer } = require('vite'); // ✅ FIXED
 const rateLimit = require("express-rate-limit");
 const connectDB = require('./config/db');
 
@@ -23,13 +21,13 @@ async function startServer() {
   // ✅ GLOBAL RATE LIMIT
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 300, // overall limit
+    max: 300,
   });
 
-  // ✅ STRICT LIMIT FOR LOCATION (IMPORTANT)
+  // ✅ STRICT LIMIT FOR LOCATION
   const locationLimiter = rateLimit({
     windowMs: 60 * 1000,
-    max: 60, // stricter for API safety
+    max: 60,
   });
 
   // Connect DB
@@ -40,7 +38,7 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  // ✅ APPLY GLOBAL LIMIT
+  // Apply global limiter
   app.use(globalLimiter);
 
   // Create HTTP server
@@ -66,24 +64,23 @@ async function startServer() {
 
     socket.on('send_message', async (data) => {
       try {
-        consle.log("🔥 MESSAGE DATA:", data);
+        console.log("🔥 MESSAGE DATA:", data);
+
         const { requestId, senderId, receiverId, text } = data;
         console.log("🔥 SENDER:", senderId, "RECEIVER:", receiverId);
+
         const { Message } = require('./models/Message');
-        console.log("🔥 MESSAGE MODEL:", Message);
 
         const newMessage = new Message({ requestId, senderId, text });
-        console.log("🔥 NEW MESSAGE:", newMessage);
         await newMessage.save();
+
         console.log("🔥 MESSAGE SAVED:", newMessage);
 
         io.to(receiverId).emit('receive_message', newMessage);
-        console.log("🔥 MESSAGE EMITTED TO:", receiverId);
         socket.emit('receive_message', newMessage);
-        console.log("🔥 MESSAGE EMITTED TO SENDER:", senderId);
+
       } catch (err) {
-        console.error('Socket error:', err);
-        console.log("🔥 ERROR SAVING MESSAGE:");
+        console.error('❌ Socket error:', err);
       }
     });
 
@@ -98,29 +95,9 @@ async function startServer() {
   app.use('/api/requests', requestRoutes);
   app.use('/api/saved-rides', savedRideRoutes);
   app.use('/api/ratings', ratingRoutes);
-  app.use('/api/location', locationRoutes);
 
-  // ✅ APPLY STRICT LIMIT ONLY TO LOCATION
+  // Location route with stricter limit
   app.use("/api/location", locationLimiter, locationRoutes);
-
-  // 🔥 FRONTEND + BACKEND HANDLING
-  if (process.env.NODE_ENV === 'production') {
-    const distPath = path.join(__dirname, '../frontend/build');
-
-    app.use(express.static(distPath));
-
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  } //else {
-    // Vite dev server (only for local dev)
-  //   const vite = await createViteServer({
-  //     server: { middlewareMode: true },
-  //     appType: 'spa',
-  //   });
-
-  //   app.use(vite.middlewares);
-  // }
 
   // Start server
   server.listen(PORT, '0.0.0.0', () => {

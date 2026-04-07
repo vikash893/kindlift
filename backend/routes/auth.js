@@ -94,7 +94,7 @@ router.post("/send-otp", async (req, res) => {
       from: "Kindlift",
       to: email,
       subject: "OTP Verification",
-      text: `Your OTP is ${otp}`,
+      text: `Use ${otp} as your One-Time Password (OTP) to continue. This code will expire shortly.`,
     });
 
     res.json({ message: "OTP sent" });
