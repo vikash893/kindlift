@@ -1,8 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Base ──────────────────────────────────────────── */
+/* ─── Base Reset ────────────────────────────────────── */
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -12,67 +14,273 @@
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: #faf8f5;
-    color: #1a1a2e;
+    background-color: #fafafa;
+    color: #0a0a0a;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* Restore cursor on mobile */
+  @media (pointer: coarse) {
+    body { cursor: auto; }
   }
 
   ::selection {
-    background-color: rgba(232, 168, 56, 0.25);
-    color: #1a1a2e;
+    background-color: rgba(232, 168, 56, 0.3);
+    color: #0a0a0a;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Syne', system-ui, sans-serif;
+  }
+
+  /* Remove focus outline but keep accessibility */
+  *:focus-visible {
+    outline: 2px solid #e8a838;
+    outline-offset: 2px;
   }
 }
 
-/* ─── Utilities ─────────────────────────────────────── */
+/* ─── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ─── Custom Cursor (Cuberto-style) ─────────────────── */
+.custom-cursor {
+  position: fixed;
+  top: -4px;
+  left: -4px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  mix-blend-mode: difference;
+  will-change: transform;
+  transition: opacity 0.3s ease;
+}
+
+@media (pointer: coarse) {
+  .custom-cursor { display: none !important; }
+  body { cursor: auto !important; }
+}
+
+/* ─── Cuberto Utilities ─────────────────────────────── */
 @layer utilities {
-  .glass {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-
-  .glass-dark {
-    background: rgba(26, 26, 46, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-
   .text-gradient {
-    background: linear-gradient(135deg, #e8a838 0%, #d4962e 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 50%, #ffffff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
-  .animate-delay-100 { animation-delay: 0.1s; }
-  .animate-delay-200 { animation-delay: 0.2s; }
-  .animate-delay-300 { animation-delay: 0.3s; }
-  .animate-delay-400 { animation-delay: 0.4s; }
-  .animate-delay-500 { animation-delay: 0.5s; }
+  /* Accent gradient — use explicitly when gold is intended */
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #e8a838 0%, #f0c060 50%, #d4962e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-light {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  .glass-dark {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
 
-/* ─── Custom Scrollbar ──────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
+/* ─── Scroll Reveal ─────────────────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-::-webkit-scrollbar-track {
-  background: #faf8f5;
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 999px;
+/* Staggered children */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+.reveal-stagger.visible > *:nth-child(1) { transition-delay: 0s; opacity: 1; transform: translateY(0); }
+.reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.08s; opacity: 1; transform: translateY(0); }
+.reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.16s; opacity: 1; transform: translateY(0); }
+.reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.24s; opacity: 1; transform: translateY(0); }
+.reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.32s; opacity: 1; transform: translateY(0); }
+.reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.4s; opacity: 1; transform: translateY(0); }
+
+/* ─── Text Clip Reveal ──────────────────────────────── */
+.text-clip-reveal {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.text-clip-reveal > span {
+  display: inline-block;
+  transform: translateY(100%);
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.text-clip-reveal.visible > span {
+  transform: translateY(0);
+}
+
+/* ─── Magnetic Button ───────────────────────────────── */
+.magnetic-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.magnetic-btn:hover {
+  transform: translate(var(--magnet-x, 0), var(--magnet-y, 0));
+}
+
+/* ─── Link Hover Underline ──────────────────────────── */
+.link-hover {
+  position: relative;
+  display: inline-block;
+}
+
+.link-hover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.link-hover:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ─── Marquee Strip ─────────────────────────────────── */
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.marquee-track > * {
+  flex-shrink: 0;
+}
+
+/* ─── Card Styles ───────────────────────────────────── */
+.card-lift {
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-lift:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── Section transitions ───────────────────────────── */
+.section-dark {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.section-light {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.section-cream {
+  background-color: #f5f5f0;
+  color: #000000;
+}
+
+/* ─── Hero Canvas ───────────────────────────────────── */
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ─── Hero Fallback Animations ─────────────────────── */
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin 25s linear infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 3s ease-in-out infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
 }
 
 /* ─── Loader ────────────────────────────────────────── */
+.loader-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #e8a838, #f0c060);
+  animation: loaderSlide 1.5s ease-in-out infinite;
+  z-index: 99999;
+}
+
+@keyframes loaderSlide {
+  0% { width: 0%; left: 0; }
+  50% { width: 60%; left: 20%; }
+  100% { width: 0%; left: 100%; }
+}
+
 .loader-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #f5f0ea;
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(232, 168, 56, 0.2);
   border-top-color: #e8a838;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -82,32 +290,77 @@
   to { transform: rotate(360deg); }
 }
 
-/* ─── 3D Canvas ─────────────────────────────────────── */
-.hero-canvas {
+/* ─── Form Input Styles (Cuberto minimal) ───────────── */
+.input-underline {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid #e5e5e5;
+  border-radius: 0;
+  padding: 12px 0;
+  font-size: 1rem;
+  color: #0a0a0a;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-underline:focus {
+  border-color: #e8a838;
+}
+
+.input-underline::placeholder {
+  color: #aaa;
+}
+
+/* Dark variant */
+.input-underline-dark {
+  color: #fafafa;
+  border-bottom-color: #333;
+}
+
+.input-underline-dark:focus {
+  border-color: #e8a838;
+}
+
+.input-underline-dark::placeholder {
+  color: #666;
+}
+
+/* Boxed input fallback for complex forms */
+.input-modern {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1.5px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 0.875rem;
+  color: #0a0a0a;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-modern:focus {
+  border-color: #e8a838;
+  box-shadow: 0 0 0 3px rgba(232, 168, 56, 0.1);
+}
+
+.input-modern::placeholder {
+  color: #aaa;
+}
+
+/* ─── Noise texture overlay ─────────────────────────── */
+.noise-overlay::before {
+  content: '';
   position: absolute;
   inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
   z-index: 1;
 }
 
-/* ─── Smooth Section Reveal ─────────────────────────── */
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.reveal.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ─── Card Hover ────────────────────────────────────── */
-.card-lift {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card-lift:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+/* ─── Responsive helpers ────────────────────────────── */
+@media (max-width: 768px) {
+  .text-display-xl {
+    font-size: clamp(2.5rem, 10vw, 4rem);
+  }
 }

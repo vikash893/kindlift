@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
+import { CustomCursor } from './components/CustomCursor';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
@@ -15,94 +16,44 @@ import { Loader } from './components/Loader';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <Loader />;
-  }
-
+  if (loading) return <Loader />;
   if (!user) return <Navigate to="/login" />;
-
   return children;
 };
 
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <Loader />;
-  }
-
+  if (loading) return <Loader />;
   return !user ? children : <Navigate to="/dashboard" />;
+};
+
+/* Hide navbar on login/register pages (they have their own branding) */
+const ConditionalNavbar = () => {
+  const location = useLocation();
+  const hideOn = ['/login', '/register'];
+  if (hideOn.includes(location.pathname)) return null;
+  return <Navbar />;
 };
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-brand-cream flex flex-col font-sans">
-          <Navbar />
+        <div className="min-h-screen bg-brand-light flex flex-col font-sans">
+          <CustomCursor />
+          <ConditionalNavbar />
 
-          <main className="flex-1 pt-20">
+          <main className="flex-1">
             <Routes>
-
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
-
-              <Route
-                path="/login"
-                element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                }
-              />
-
-              <Route
-                path="/register"
-                element={
-                  <PublicRoute>
-                    <Register />
-                  </PublicRoute>
-                }
-              />
-
-              <Route
-                path="/dashboard"
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/offer-ride"
-                element={
-                  <PrivateRoute>
-                    <OfferRide />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/book-ride"
-                element={
-                  <PrivateRoute>
-                    <BookRide />
-                  </PrivateRoute>
-                }
-              />
-
-              <Route
-                path="/ride/:id"
-                element={
-                  <PrivateRoute>
-                    <RideDetails />
-                  </PrivateRoute>
-                }
-              />
-
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/offer-ride" element={<PrivateRoute><OfferRide /></PrivateRoute>} />
+              <Route path="/book-ride" element={<PrivateRoute><BookRide /></PrivateRoute>} />
+              <Route path="/ride/:id" element={<PrivateRoute><RideDetails /></PrivateRoute>} />
             </Routes>
           </main>
         </div>

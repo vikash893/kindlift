@@ -90,9 +90,9 @@ export const RideDetails = () => {
   if (!request) return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">
-        <MapPin className="h-10 w-10 mx-auto text-brand-muted/40 mb-3" />
+        <MapPin className="h-10 w-10 mx-auto text-brand-muted/30 mb-4" />
         <p className="text-brand-muted mb-4">Ride not found</p>
-        <button onClick={() => navigate('/dashboard')} className="px-5 py-2.5 bg-brand-dark text-white rounded-xl text-sm font-medium hover:bg-brand-charcoal transition-all">Back to Dashboard</button>
+        <button onClick={() => navigate('/dashboard')} className="px-6 py-3 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">Back to Dashboard</button>
       </div>
     </div>
   );
@@ -104,74 +104,74 @@ export const RideDetails = () => {
   const destCoords = [request.destination.lat, request.destination.lng];
   const centerCoords = [(sourceCoords[0] + destCoords[0]) / 2, (sourceCoords[1] + destCoords[1]) / 2];
 
-  const statusStyle = (s) => {
-    if (s === 'accepted') return 'bg-emerald-50 text-emerald-700';
-    if (s === 'rejected') return 'bg-red-50 text-red-700';
-    if (s === 'completed') return 'bg-blue-50 text-blue-700';
-    return 'bg-amber-50 text-amber-700';
+  const statusBadge = (s) => {
+    if (s === 'accepted') return 'bg-emerald-500/10 text-emerald-600';
+    if (s === 'rejected') return 'bg-red-500/10 text-red-600';
+    if (s === 'completed') return 'bg-blue-500/10 text-blue-600';
+    return 'bg-amber-500/10 text-amber-600';
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <button onClick={() => navigate('/dashboard')} className="inline-flex items-center px-4 py-2 mb-6 text-brand-accent hover:text-brand-accent-hover font-medium transition-colors group text-sm">
-        <ArrowLeft className="h-4 w-4 mr-1 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
+    <div className="max-w-6xl mx-auto px-6 py-8 pt-28">
+      <button onClick={() => navigate('/dashboard')} className="inline-flex items-center px-4 py-2 mb-8 text-brand-accent hover:text-brand-accent-hover font-display font-semibold transition-colors group text-sm">
+        <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT — Map & Details */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-brand-gray-light overflow-hidden">
             <div className="h-64 sm:h-80 w-full bg-gray-100">
               <MapContainer center={centerCoords} zoom={11} className="h-full w-full" style={{ background: '#f3f4f6' }}>
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
-                <Marker position={sourceCoords}><Popup><p className="font-semibold text-sm">Pickup</p><p className="text-xs text-gray-600">{request.source.name}</p></Popup></Marker>
-                <Marker position={destCoords}><Popup><p className="font-semibold text-sm">Dropoff</p><p className="text-xs text-gray-600">{request.destination.name}</p></Popup></Marker>
+                <Marker position={sourceCoords}><Popup><p className="font-display font-bold text-sm">Pickup</p><p className="text-xs text-gray-600">{request.source.name}</p></Popup></Marker>
+                <Marker position={destCoords}><Popup><p className="font-display font-bold text-sm">Dropoff</p><p className="text-xs text-gray-600">{request.destination.name}</p></Popup></Marker>
                 <Polyline positions={[sourceCoords, destCoords]} color="#e8a838" weight={3} opacity={0.8} />
               </MapContainer>
             </div>
 
-            <div className="p-6 space-y-4">
-              <h2 className="text-lg font-bold text-brand-dark flex items-center gap-2"><Navigation className="h-4 w-4 text-brand-accent" /> Ride Details</h2>
+            <div className="p-6 space-y-5">
+              <h2 className="font-display text-lg font-bold text-brand-dark flex items-center gap-2"><Navigation className="h-4 w-4 text-brand-accent" /> Ride Details</h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-brand-accent flex-shrink-0 mt-1" />
-                  <div><p className="text-xs text-brand-muted">From</p><p className="font-medium text-brand-dark text-sm">{request.source.name}</p></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-brand-accent mt-2 flex-shrink-0" />
+                  <div><p className="text-xs text-brand-muted">From</p><p className="font-display font-semibold text-brand-dark text-sm">{request.source.name}</p></div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-4 w-4 text-red-400 flex-shrink-0 mt-1" />
-                  <div><p className="text-xs text-brand-muted">To</p><p className="font-medium text-brand-dark text-sm">{request.destination.name}</p></div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-red-400 mt-2 flex-shrink-0" />
+                  <div><p className="text-xs text-brand-muted">To</p><p className="font-display font-semibold text-brand-dark text-sm">{request.destination.name}</p></div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3">
                   <Calendar className="h-4 w-4 text-brand-muted flex-shrink-0 mt-1" />
-                  <div><p className="text-xs text-brand-muted">Departure</p><p className="font-medium text-brand-dark text-sm">{format(new Date(request.offerId.departureTime), 'EEE, MMM d, yyyy · h:mm a')}</p></div>
+                  <div><p className="text-xs text-brand-muted">Departure</p><p className="font-display font-semibold text-brand-dark text-sm">{format(new Date(request.offerId.departureTime), 'EEE, MMM d, yyyy · h:mm a')}</p></div>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-3">
                   <Users className="h-4 w-4 text-brand-muted flex-shrink-0 mt-1" />
-                  <div><p className="text-xs text-brand-muted">Seats</p><p className="font-medium text-brand-dark text-sm">{request.seatsRequested} seat(s)</p></div>
+                  <div><p className="text-xs text-brand-muted">Seats</p><p className="font-display font-semibold text-brand-dark text-sm">{request.seatsRequested} seat(s)</p></div>
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
-                <span className={`inline-flex px-3 py-1 text-xs rounded-lg font-semibold ${statusStyle(request.status)}`}>{request.status.toUpperCase()}</span>
+              <div className="pt-4 border-t border-brand-gray-light">
+                <span className={`inline-flex px-3 py-1 text-xs rounded-full font-display font-bold ${statusBadge(request.status)}`}>{request.status.toUpperCase()}</span>
               </div>
 
               {request.status === 'accepted' && (
-                <div className="pt-3 border-t border-gray-100">
+                <div className="pt-4 border-t border-brand-gray-light">
                   {isPassenger ? (
-                    <div className="bg-brand-cream rounded-xl p-4 text-center border border-gray-100">
-                      <p className="text-xs font-bold text-brand-muted uppercase tracking-wider mb-1">Your Ride Code</p>
-                      <p className="text-3xl font-black text-brand-dark tracking-widest">{request.completionCode}</p>
-                      <p className="text-xs text-brand-muted mt-2">Give this code to your driver on arrival.</p>
+                    <div className="bg-brand-dark/5 rounded-xl p-5 text-center">
+                      <p className="text-xs font-display font-bold text-brand-muted uppercase tracking-widest mb-2">Your Ride Code</p>
+                      <p className="text-4xl font-display font-black text-brand-dark tracking-widest">{request.completionCode}</p>
+                      <p className="text-xs text-brand-muted mt-3">Give this code to your driver on arrival.</p>
                     </div>
                   ) : request.offerId.status !== 'completed' && request.status !== 'completed' ? (
-                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-                      <p className="text-sm font-bold text-emerald-800 mb-1">Complete this Ride</p>
-                      <p className="text-xs text-emerald-600 mb-3">Enter the passenger's 4-digit code to earn coins.</p>
+                    <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100">
+                      <p className="font-display font-bold text-emerald-800 mb-1">Complete this Ride</p>
+                      <p className="text-xs text-emerald-600 mb-4">Enter the passenger's 4-digit code to earn coins.</p>
                       <div className="flex gap-2">
                         <input type="text" maxLength={4} placeholder="Code" value={inputCode} onChange={(e) => setInputCode(e.target.value)}
-                          className="w-24 text-center font-bold tracking-widest border border-emerald-200 rounded-xl py-2 focus:ring-2 focus:ring-emerald-400 outline-none text-sm" />
-                        <button onClick={handleCompleteRide} className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:bg-emerald-700 transition-all flex items-center justify-center gap-1">
+                          className="w-28 text-center font-display font-black tracking-widest border border-emerald-200 rounded-xl py-3 focus:ring-2 focus:ring-emerald-400 outline-none" />
+                        <button onClick={handleCompleteRide} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-full text-sm font-display font-bold hover:bg-emerald-700 transition-all flex items-center justify-center gap-2">
                           <CheckCircle className="h-4 w-4" /> Complete
                         </button>
                       </div>
@@ -181,34 +181,34 @@ export const RideDetails = () => {
               )}
 
               {request.status === 'completed' && !isRated && (
-                <div className="pt-3 border-t border-gray-100 bg-brand-cream rounded-xl p-4">
-                  <h3 className="font-bold text-brand-dark mb-2 flex items-center gap-1 text-sm"><Star className="h-4 w-4 text-amber-400" /> Rate your {roleText.toLowerCase()}</h3>
-                  <div className="flex gap-1 mb-3">
+                <div className="pt-4 border-t border-brand-gray-light bg-brand-dark/5 rounded-xl p-5">
+                  <h3 className="font-display font-bold text-brand-dark mb-3 flex items-center gap-2"><Star className="h-4 w-4 text-amber-400" /> Rate your {roleText.toLowerCase()}</h3>
+                  <div className="flex gap-1 mb-4">
                     {[1,2,3,4,5].map(s => (
                       <button key={s} onClick={() => setRating(s)} className={`transition-transform hover:scale-110 ${rating >= s ? 'text-amber-400' : 'text-gray-300'}`}>
                         <Star className={`h-7 w-7 ${rating >= s ? 'fill-current' : ''}`} />
                       </button>
                     ))}
                   </div>
-                  <textarea placeholder="Leave a review (optional)" className="w-full text-sm p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-brand-accent/30 outline-none mb-2 bg-white" value={review} onChange={(e) => setReview(e.target.value)} />
-                  <button onClick={handleRatingSubmit} className="px-4 py-2 bg-brand-dark text-white rounded-xl text-sm font-medium hover:bg-brand-charcoal transition-all">Submit Rating</button>
+                  <textarea placeholder="Leave a review (optional)" className="w-full text-sm p-3 rounded-xl border border-brand-gray-light focus:ring-2 focus:ring-brand-accent/30 outline-none mb-3 bg-white" value={review} onChange={(e) => setReview(e.target.value)} />
+                  <button onClick={handleRatingSubmit} className="px-6 py-3 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">Submit Rating</button>
                 </div>
               )}
-              {isRated && <div className="pt-3 border-t border-gray-100"><p className="text-emerald-600 font-semibold flex items-center gap-1 text-sm"><CheckCircle className="h-4 w-4" /> Rating submitted!</p></div>}
+              {isRated && <div className="pt-4 border-t border-brand-gray-light"><p className="text-emerald-600 font-display font-bold flex items-center gap-2 text-sm"><CheckCircle className="h-4 w-4" /> Rating submitted!</p></div>}
             </div>
           </div>
         </div>
 
         {/* RIGHT — User Info & Chat */}
         <div className="space-y-6 flex flex-col h-[calc(100vh-8rem)]">
-          <div className="bg-white rounded-2xl shadow-card p-6 border border-gray-100">
-            <h3 className="text-sm font-semibold text-brand-dark mb-4">{roleText} Details</h3>
-            <div className="flex items-center gap-3 p-3 bg-brand-cream rounded-xl mb-3">
-              <div className="h-11 w-11 rounded-xl bg-brand-dark flex items-center justify-center text-white font-bold shadow-sm">
+          <div className="bg-white rounded-2xl border border-brand-gray-light p-6">
+            <h3 className="text-sm font-display font-bold text-brand-dark mb-4">{roleText} Details</h3>
+            <div className="flex items-center gap-3 p-3 bg-brand-dark/5 rounded-xl mb-4">
+              <div className="h-11 w-11 rounded-xl bg-brand-dark flex items-center justify-center text-white font-display font-bold">
                 {otherUser.name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-brand-dark text-sm">{otherUser.name}</p>
+                <p className="font-display font-bold text-brand-dark text-sm">{otherUser.name}</p>
                 <p className="text-xs text-brand-muted">@{otherUser.name.toLowerCase().replace(/\s/g, '')}</p>
               </div>
             </div>
@@ -217,40 +217,40 @@ export const RideDetails = () => {
               {otherUser.phone && <div className="flex items-center gap-2 text-sm text-brand-muted"><Phone className="h-3.5 w-3.5" />{otherUser.phone}</div>}
             </div>
             {request.status === 'accepted' && (
-              <div className="mt-3 pt-3 border-t border-gray-100">
-                <div className="bg-emerald-50 rounded-lg p-2 text-center"><p className="text-xs text-emerald-700 font-medium">✓ Ride confirmed</p></div>
+              <div className="mt-4 pt-4 border-t border-brand-gray-light">
+                <div className="bg-emerald-50 rounded-lg p-2 text-center"><p className="text-xs text-emerald-700 font-display font-bold">✓ Ride confirmed</p></div>
               </div>
             )}
           </div>
 
           {/* Chat */}
-          <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-card border border-gray-100 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-white rounded-2xl border border-brand-gray-light overflow-hidden">
             <div className="bg-brand-dark p-4">
-              <h3 className="text-white font-semibold flex items-center gap-2 text-sm"><MessageCircle className="h-4 w-4" /> Chat with {otherUser.name.split(' ')[0]}</h3>
-              <p className="text-gray-400 text-xs mt-0.5">Real-time messages</p>
+              <h3 className="text-white font-display font-bold flex items-center gap-2 text-sm"><MessageCircle className="h-4 w-4" /> Chat with {otherUser.name.split(' ')[0]}</h3>
+              <p className="text-white/40 text-xs mt-1">Real-time messages</p>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-brand-cream/50">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-brand-dark/[0.02]">
               {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center"><MessageCircle className="h-10 w-10 text-brand-muted/30 mb-2" /><p className="text-brand-muted text-sm">No messages yet</p></div>
+                <div className="flex flex-col items-center justify-center h-full text-center"><MessageCircle className="h-10 w-10 text-brand-muted/20 mb-2" /><p className="text-brand-muted text-sm">No messages yet</p></div>
               ) : messages.map((msg, idx) => {
                 const isOwn = msg.senderId === user?.id;
                 return (
                   <div key={idx} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${isOwn ? 'bg-brand-dark text-white' : 'bg-white border border-gray-100 text-brand-dark'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${isOwn ? 'bg-brand-dark text-white' : 'bg-white border border-brand-gray-light text-brand-dark'}`}>
                       <p className="text-sm break-words">{msg.text}</p>
-                      <p className={`text-xs mt-1 ${isOwn ? 'text-gray-400' : 'text-brand-muted'}`}>{format(new Date(msg.createdAt), 'h:mm a')}</p>
+                      <p className={`text-xs mt-1.5 ${isOwn ? 'text-white/40' : 'text-brand-muted'}`}>{format(new Date(msg.createdAt), 'h:mm a')}</p>
                     </div>
                   </div>
                 );
               })}
               <div ref={messagesEndRef} />
             </div>
-            <form onSubmit={sendMessage} className="p-3 bg-white border-t border-gray-100">
+            <form onSubmit={sendMessage} className="p-3 bg-white border-t border-brand-gray-light">
               <div className="flex gap-2">
                 <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..."
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none" />
+                  className="flex-1 px-4 py-3 border border-brand-gray-light rounded-full text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none" />
                 <button type="submit" disabled={!newMessage.trim()}
-                  className="px-4 py-2.5 bg-brand-dark text-white rounded-xl hover:bg-brand-charcoal transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                  className="px-4 py-3 bg-brand-dark text-white rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-30 disabled:cursor-not-allowed">
                   <Send className="h-4 w-4" />
                 </button>
               </div>
