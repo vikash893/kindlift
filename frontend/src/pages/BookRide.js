@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
-import { useRef } from 'react';
 
 export const BookRide = () => {
   const [source, setSource] = useState('');
@@ -21,29 +20,116 @@ export const BookRide = () => {
   const [sourceCoords, setSourceCoords] = useState(null);
   const [destinationCoords, setDestinationCoords] = useState(null);
 
+  // ✅ OPTIMIZATION: Better debounce + abort + cache
   const timeoutRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const cacheRef = useRef(new Map());
 
-  const fetchLocationSuggestions = (query, type) => {
+  // ✅ CLEANUP FUNCTION
+  const cleanupRequests = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  }, []);
+
+  // ✅ OPTIMIZED: Fetch location suggestions
+  const fetchLocationSuggestions = useCallback((query, type) => {
+    // Clear previous timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
 
+    // Don't search for short queries
+    if (!query || query.length < 3) {
+      if (type === "source") {
+        setSourceSuggestions([]);
+      } else {
+        setDestinationSuggestions([]);
+      }
+      return;
+    }
+
+    // Set new timeout (increased to 800ms)
     timeoutRef.current = setTimeout(async () => {
-      if (!query || query.length < 3) return;
+      const key = `${query.toLowerCase()}_${type}`;
+      
+      // ✅ CHECK CACHE FIRST (1 hour expiry)
+      const cached = cacheRef.current.get(key);
+      if (cached && Date.now() - cached.timestamp < 60 * 60 * 1000) {
+        if (type === "source") {
+          setSourceSuggestions(cached.data);
+        } else {
+          setDestinationSuggestions(cached.data);
+        }
+        return;
+      }
+
+      // ✅ CANCEL PREVIOUS REQUEST
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
 
       try {
-        const res = await api.get(`/location/search?q=${query}`);
+        const res = await api.get(`/location/search?q=${encodeURIComponent(query)}`, {
+          signal: abortControllerRef.current.signal,
+          timeout: 10000, // 10 second timeout
+        });
 
-        if (type === "source") {
-          setSourceSuggestions(res.data);
+        // ✅ VALIDATE AND LIMIT RESULTS
+        if (res.data && Array.isArray(res.data)) {
+          const limitedData = res.data.slice(0, 5); // Show only 5 suggestions
+          
+          // ✅ STORE IN CACHE
+          cacheRef.current.set(key, {
+            data: limitedData,
+            timestamp: Date.now()
+          });
+
+          if (type === "source") {
+            setSourceSuggestions(limitedData);
+          } else {
+            setDestinationSuggestions(limitedData);
+          }
         } else {
-          setDestinationSuggestions(res.data);
+          if (type === "source") {
+            setSourceSuggestions([]);
+          } else {
+            setDestinationSuggestions([]);
+          }
         }
       } catch (err) {
-        console.log("API ERROR:", err.response?.data || err.message);
+        // ✅ IGNORE ABORT ERRORS
+        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+          console.log("API ERROR:", err.response?.data || err.message);
+          // Silent fail - don't show error to user
+          if (type === "source") {
+            setSourceSuggestions([]);
+          } else {
+            setDestinationSuggestions([]);
+          }
+        }
+      } finally {
+        if (abortControllerRef.current) {
+          abortControllerRef.current = null;
+        }
       }
-    }, 400);
-  };
+    }, 800); // ✅ Increased from 400ms to 800ms
+  }, []);
+
+  // ✅ CLEANUP ON UNMOUNT
+  useEffect(() => {
+    return () => {
+      cleanupRequests();
+    };
+  }, [cleanupRequests]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -52,11 +138,20 @@ export const BookRide = () => {
     setSearched(true);
 
     try {
+      // ✅ VALIDATE COORDINATES
       if (!sourceCoords || !destinationCoords) {
-        setError("Please select locations from suggestions");
+        setError("Please select valid locations from the suggestions dropdown");
         setLoading(false);
         return;
       }
+
+      // ✅ VALIDATE SEATS
+      if (seats < 1 || seats > 8) {
+        setError("Please select between 1 and 8 seats");
+        setLoading(false);
+        return;
+      }
+
       const res = await api.get('/rides/search', {
         params: {
           sourceLat: sourceCoords.lat,
@@ -64,17 +159,30 @@ export const BookRide = () => {
           destLat: destinationCoords.lat,
           destLng: destinationCoords.lng,
           seats
-        }
+        },
+        timeout: 15000 // 15 second timeout for search
       });
+      
       setSearchResults(res.data);
+      
+      if (res.data.length === 0) {
+        setError("No rides found. Try adjusting your search criteria.");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Search failed');
+      setError(err.response?.data?.message || 'Search failed. Please try again.');
+      setSearchResults([]);
     } finally {
       setLoading(false);
     }
   };
 
   const requestRide = async (offerId) => {
+    // ✅ VALIDATE BEFORE REQUEST
+    if (!sourceCoords || !destinationCoords) {
+      alert("Please select valid locations from suggestions");
+      return;
+    }
+
     try {
       await api.post('/requests', {
         offerId,
@@ -96,6 +204,9 @@ export const BookRide = () => {
       alert(err.response?.data?.message || 'Failed to request ride');
     }
   };
+
+  // Input className for consistency
+  const inputCls = "pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50";
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -123,22 +234,22 @@ export const BookRide = () => {
             <input
               type="text"
               required
-              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              className={inputCls}
               placeholder="Leaving from..."
               value={source}
               onChange={(e) => {
                 setSource(e.target.value);
-                setSourceCoords(null); // 🔥 MUST
+                setSourceCoords(null);
                 fetchLocationSuggestions(e.target.value, "source");
               }}
               onBlur={() => setTimeout(() => setSourceSuggestions([]), 300)}
             />
             {sourceSuggestions.length > 0 && (
-              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
                 {sourceSuggestions.map((item, index) => (
                   <li
-                    key={index}
-                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    key={`source-${index}-${item.place_id || index}`}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-b-0"
                     onClick={() => {
                       setSource(item.display_name);
                       setSourceCoords({
@@ -146,6 +257,7 @@ export const BookRide = () => {
                         lng: Number(item.lon),
                       });
                       setSourceSuggestions([]);
+                      cleanupRequests(); // Clear pending requests
                     }}
                   >
                     {item.display_name}
@@ -162,22 +274,22 @@ export const BookRide = () => {
             <input
               type="text"
               required
-              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              className={inputCls}
               placeholder="Going to..."
               value={destination}
               onChange={(e) => {
                 setDestination(e.target.value);
-                setDestinationCoords(null); // 🔥 IMPORTANT FIX
+                setDestinationCoords(null);
                 fetchLocationSuggestions(e.target.value, "destination");
               }}
               onBlur={() => setTimeout(() => setDestinationSuggestions([]), 200)}
             />
             {destinationSuggestions.length > 0 && (
-              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow">
+              <ul className="absolute top-full left-0 z-20 w-full bg-white border rounded mt-1 max-h-40 overflow-y-auto shadow-lg">
                 {destinationSuggestions.map((item, index) => (
                   <li
-                    key={index}
-                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    key={`dest-${index}-${item.place_id || index}`}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-b-0"
                     onClick={() => {
                       setDestination(item.display_name);
                       setDestinationCoords({
@@ -185,6 +297,7 @@ export const BookRide = () => {
                         lng: Number(item.lon),
                       });
                       setDestinationSuggestions([]);
+                      cleanupRequests(); // Clear pending requests
                     }}
                   >
                     {item.display_name}
@@ -203,9 +316,9 @@ export const BookRide = () => {
               min="1"
               max="8"
               required
-              className="pl-11 block w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent transition-all outline-none bg-brand-cream/50"
+              className={inputCls}
               value={seats}
-              onChange={(e) => setSeats(Number(e.target.value))}
+              onChange={(e) => setSeats(Math.min(8, Math.max(1, Number(e.target.value))))}
             />
           </div>
 
@@ -237,7 +350,7 @@ export const BookRide = () => {
             <div className="bg-white rounded-2xl shadow-card border border-gray-100 p-10 text-center">
               <Search className="h-10 w-10 mx-auto text-brand-muted/40 mb-3" />
               <p className="text-brand-muted">No rides found matching your criteria.</p>
-              <p className="text-sm text-brand-muted/60 mt-1">Try adjusting your search.</p>
+              <p className="text-sm text-brand-muted/60 mt-1">Try adjusting your search or selecting different locations.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -250,13 +363,15 @@ export const BookRide = () => {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-xl bg-brand-cream flex items-center justify-center text-brand-dark font-bold text-sm border border-gray-100">
-                          {ride.driverId.name.charAt(0).toUpperCase()}
+                          {ride.driverId?.name?.charAt(0).toUpperCase() || 'D'}
                         </div>
                         <div>
-                          <p className="font-semibold text-brand-dark text-sm">{ride.driverId.name}</p>
-                          <p className="text-xs text-brand-muted flex items-center gap-1">
-                            <Navigation className="h-3 w-3" /> {ride.distanceToDriver} km away
-                          </p>
+                          <p className="font-semibold text-brand-dark text-sm">{ride.driverId?.name || 'Driver'}</p>
+                          {ride.distanceToDriver && (
+                            <p className="text-xs text-brand-muted flex items-center gap-1">
+                              <Navigation className="h-3 w-3" /> {ride.distanceToDriver} km away
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
@@ -269,11 +384,11 @@ export const BookRide = () => {
                     <div className="ml-12 relative pl-4 border-l-2 border-gray-100 space-y-3">
                       <div className="relative">
                         <div className="absolute -left-[21px] h-3 w-3 rounded-full border-2 border-brand-accent bg-white" />
-                        <p className="text-sm text-brand-dark">{ride.source.name}</p>
+                        <p className="text-sm text-brand-dark">{ride.source?.name || 'Pickup location'}</p>
                       </div>
                       <div className="relative">
                         <div className="absolute -left-[21px] h-3 w-3 rounded-full border-2 border-red-400 bg-white" />
-                        <p className="text-sm text-brand-dark">{ride.destination.name}</p>
+                        <p className="text-sm text-brand-dark">{ride.destination?.name || 'Dropoff location'}</p>
                       </div>
                     </div>
                   </div>
@@ -282,8 +397,12 @@ export const BookRide = () => {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-brand-accent" />
                       <div className="text-right">
-                        <p className="font-semibold text-brand-dark">{format(new Date(ride.departureTime), 'MMM d, yyyy')}</p>
-                        <p className="text-xs text-brand-muted">{format(new Date(ride.departureTime), 'h:mm a')}</p>
+                        <p className="font-semibold text-brand-dark">
+                          {ride.departureTime ? format(new Date(ride.departureTime), 'MMM d, yyyy') : 'Date TBD'}
+                        </p>
+                        <p className="text-xs text-brand-muted">
+                          {ride.departureTime ? format(new Date(ride.departureTime), 'h:mm a') : 'Time TBD'}
+                        </p>
                       </div>
                     </div>
                     <button

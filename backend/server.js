@@ -4,7 +4,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { createServer: createViteServer } = require('vite');
+const { createServer: createViteServer } = require('vite'); // ✅ FIXED
+const rateLimit = require("express-rate-limit");
 const connectDB = require('./config/db');
 
 // Routes
@@ -19,6 +20,18 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 8000;
 
+  // ✅ GLOBAL RATE LIMIT
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300, // overall limit
+  });
+
+  // ✅ STRICT LIMIT FOR LOCATION (IMPORTANT)
+  const locationLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 60, // stricter for API safety
+  });
+
   // Connect DB
   await connectDB();
 
@@ -26,6 +39,9 @@ async function startServer() {
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // ✅ APPLY GLOBAL LIMIT
+  app.use(globalLimiter);
 
   // Create HTTP server
   const server = http.createServer(app);
@@ -46,7 +62,6 @@ async function startServer() {
 
     socket.on('join', (userId) => {
       socket.join(userId);
-      console.log(`User ${userId} joined room`);
     });
 
     socket.on('send_message', async (data) => {
@@ -75,12 +90,13 @@ async function startServer() {
   app.use('/api/requests', requestRoutes);
   app.use('/api/saved-rides', savedRideRoutes);
   app.use('/api/ratings', ratingRoutes);
-  app.use("/api/location", locationRoutes);
+  app.use('/api/location', locationRoutes);
+
+  // ✅ APPLY STRICT LIMIT ONLY TO LOCATION
+  app.use("/api/location", locationLimiter, locationRoutes);
 
   // 🔥 FRONTEND + BACKEND HANDLING
-
   if (process.env.NODE_ENV === 'production') {
-    // Serve React build
     const distPath = path.join(__dirname, '../frontend/build');
 
     app.use(express.static(distPath));
