@@ -100,9 +100,9 @@ async function startServer() {
   app.use("/api/location", locationLimiter, locationRoutes);
 
   // Start server
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-  });
+ server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 }
 
 startServer().catch((err) => {
