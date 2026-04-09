@@ -44,6 +44,8 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:8000',
+  'https://kindlift.in',
+  'https://www.kindlift.in',
   'https://kindlift.onrender.com',
   'https://kindlift-1.onrender.com',
   'https://kindlift-frontend.onrender.com',

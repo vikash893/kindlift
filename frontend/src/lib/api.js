@@ -11,7 +11,7 @@ const getBaseURL = () => {
     return 'http://localhost:8000/api';
   }
   
-  // If deployed on Render or any other platform, use the backend URL
+  // Production — all deployed domains (kindlift.in, *.onrender.com, etc.)
   return 'https://kindlift-1.onrender.com/api';
 };
 
