@@ -1,14 +1,47 @@
+/**
+ * @fileoverview Authentication Routes
+ *
+ * Handles user registration, login, OTP email verification, and
+ * retrieving the current authenticated user's profile.
+ * All routes include express-validator input validation.
+ *
+ * Routes:
+ * - POST /register    — Create a new user account (requires verified email)
+ * - POST /login       — Authenticate and receive a JWT token
+ * - POST /send-otp    — Send a 6-digit OTP to the user's email
+ * - POST /verify-otp  — Verify the OTP code
+ * - GET  /me          — Get the current user's profile (requires auth)
+ *
+ * @requires express    - Router
+ * @requires bcryptjs   - Password hashing
+ * @requires jsonwebtoken - JWT token generation
+ * @requires nodemailer - Email delivery for OTP
+ */
+
+/** @type {Set<string>} Set of emails that have been verified via OTP */
 const verifiedEmails = new Set();
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
-const nodemailer = require("nodemailer"); 
+const nodemailer = require("nodemailer");
+const {
+  validateRegister,
+  validateLogin,
+  validateSendOtp,
+  validateVerifyOtp,
+} = require('../middleware/validate');
 
 const router = express.Router();
 
-// Register
-router.post('/register', async (req, res) => {
+/**
+ * POST /register — Register a new user
+ *
+ * Requires email to be pre-verified via OTP flow.
+ * Passwords are hashed with bcrypt (10 salt rounds).
+ * Returns a JWT token valid for 7 days.
+ */
+router.post('/register', validateRegister, async (req, res) => {
   try {
     const { name, email, password, phone, profilePhoto } = req.body;
 
@@ -52,19 +85,20 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
-// ================= OTP LOGIC =================
 
+// ═══════════════════ OTP EMAIL VERIFICATION ═══════════════════
 
-
-// temporary storage
+/** @type {Object.<string, {otp: string, expires: number}>} In-memory OTP storage */
 const otpStore = {};
 
-// mail config
+/**
+ * Gmail SMTP transporter for sending OTP emails.
+ * Requires EMAIL_USER and EMAIL_PASS environment variables.
+ */
 const transporter = nodemailer.createTransport({
-  //service: "gmail",
   host: "smtp.gmail.com",
   port: 587,
   secure: false,
@@ -73,13 +107,14 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-console.log("EMAIL:", process.env.EMAIL_USER);
-console.log("PASS:", process.env.EMAIL_PASS);
 
-// 👉 SEND OTP
-router.post("/send-otp", async (req, res) => {
-  console.log("🔥 SEND OTP HIT");
-  console.log(req.body);
+/**
+ * POST /send-otp — Send OTP verification email
+ *
+ * Generates a random 6-digit OTP, stores it in memory (5-minute expiry),
+ * and sends it via Gmail SMTP.
+ */
+router.post("/send-otp", validateSendOtp, async (req, res) => {
   const { email } = req.body;
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -104,8 +139,10 @@ router.post("/send-otp", async (req, res) => {
   }
 });
 
-// 👉 VERIFY OTP
-router.post("/verify-otp", (req, res) => {
+/**
+ * POST /verify-otp — Verify the OTP code
+ */
+router.post("/verify-otp", validateVerifyOtp, (req, res) => {
   const { email, otp } = req.body;
 
   const record = otpStore[email];
@@ -115,6 +152,7 @@ router.post("/verify-otp", (req, res) => {
   }
 
   if (Date.now() > record.expires) {
+    delete otpStore[email]; // Clean up expired OTP
     return res.status(400).json({ message: "OTP expired" });
   }
 
@@ -127,8 +165,10 @@ router.post("/verify-otp", (req, res) => {
   res.json({ message: "Verified ✅" });
 });
 
-// Login
-router.post('/login', async (req, res) => {
+/**
+ * POST /login — Authenticate user and return JWT token
+ */
+router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -161,11 +201,13 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get current user
+/**
+ * GET /me — Get current authenticated user's profile
+ */
 router.get('/me', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');

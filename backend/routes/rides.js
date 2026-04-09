@@ -1,15 +1,38 @@
+/**
+ * @fileoverview Ride Routes
+ *
+ * Handles ride offer CRUD operations, coordinate-based search,
+ * and ride completion with OTP verification.
+ * All routes include input validation and authorization checks.
+ *
+ * @requires express          - Router
+ * @requires ../middleware/auth - JWT authentication
+ * @requires ../middleware/validate - Input validation
+ * @requires ../models/RideOffer - RideOffer model
+ * @requires ../utils/geocoder  - Distance calculation
+ */
+
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { RideOffer } = require('../models/RideOffer');
 const { calculateDistance } = require('../utils/geocoder');
 const { User } = require('../models/User');
 const { RideRequest } = require('../models/RideRequest');
+const {
+  validateCreateRide,
+  validateSearchRides,
+  validateCompleteRequest,
+} = require('../middleware/validate');
 
 const router = express.Router();
 
-
-// ================== CREATE RIDE ==================
-router.post('/', authMiddleware, async (req, res) => {
+/**
+ * POST / — Create a new ride offer
+ *
+ * First-time drivers must provide vehicle details for verification.
+ * Coordinates are validated to be within valid latitude/longitude ranges.
+ */
+router.post('/', authMiddleware, validateCreateRide, async (req, res) => {
   try {
     const {
       source,
@@ -24,14 +47,7 @@ router.post('/', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ✅ Validate coordinates
-    if (!source?.lat || !destination?.lat) {
-      return res.status(400).json({
-        message: 'Please select locations from suggestions'
-      });
-    }
-
-    // ================= DRIVER VERIFICATION =================
+    // ─── One-Time Driver Verification ────────────────────
     if (!user.isDriverVerified) {
       if (!vehicleNumber || !licenseNumber || !vehiclePhoto) {
         return res.status(400).json({
@@ -47,7 +63,7 @@ router.post('/', authMiddleware, async (req, res) => {
       await user.save();
     }
 
-    // ================= CREATE RIDE =================
+    // ─── Create Ride Offer ───────────────────────────────
     const newRide = new RideOffer({
       driverId: req.user.id,
       source: {
@@ -73,8 +89,9 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-
-// ================= MY RIDES ==================
+/**
+ * GET /my-offers — Get all ride offers by the current user
+ */
 router.get('/my-offers', authMiddleware, async (req, res) => {
   try {
     const rides = await RideOffer.find({ driverId: req.user.id })
@@ -82,21 +99,16 @@ router.get('/my-offers', authMiddleware, async (req, res) => {
 
     res.json(rides);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-
-// ================= SEARCH RIDES ==================
-router.get('/search', authMiddleware, async (req, res) => {
+/**
+ * GET /search — Search for rides matching coordinates (validated)
+ */
+router.get('/search', authMiddleware, validateSearchRides, async (req, res) => {
   try {
     const { sourceLat, sourceLng, destLat, destLng, seats } = req.query;
-
-    if (!sourceLat || !sourceLng || !destLat || !destLng || !seats) {
-      return res.status(400).json({
-        message: 'Please provide coordinates and seats'
-      });
-    }
 
     const sourceCoords = {
       lat: Number(sourceLat),
@@ -114,34 +126,26 @@ router.get('/search', authMiddleware, async (req, res) => {
       driverId: { $ne: req.user.id }
     }).populate('driverId', 'name email phone');
 
+    /** @constant {number} MAX_DISTANCE_KM - Maximum matching radius */
     const MAX_DISTANCE_KM = 5;
 
     const matchedRides = availableRides
       .filter(ride => {
         const sourceDist = calculateDistance(
-          sourceCoords.lat,
-          sourceCoords.lng,
-          ride.source.lat,
-          ride.source.lng
+          sourceCoords.lat, sourceCoords.lng,
+          ride.source.lat, ride.source.lng
         );
-
         const destDist = calculateDistance(
-          destCoords.lat,
-          destCoords.lng,
-          ride.destination.lat,
-          ride.destination.lng
+          destCoords.lat, destCoords.lng,
+          ride.destination.lat, ride.destination.lng
         );
-
         return sourceDist <= MAX_DISTANCE_KM && destDist <= MAX_DISTANCE_KM;
       })
       .map(ride => {
         const sourceDist = calculateDistance(
-          sourceCoords.lat,
-          sourceCoords.lng,
-          ride.source.lat,
-          ride.source.lng
+          sourceCoords.lat, sourceCoords.lng,
+          ride.source.lat, ride.source.lng
         );
-
         return {
           ...ride.toObject(),
           distanceToDriver: sourceDist.toFixed(1)
@@ -160,9 +164,10 @@ router.get('/search', authMiddleware, async (req, res) => {
   }
 });
 
-
-// ================= COMPLETE RIDE ==================
-router.put('/:id/complete', authMiddleware, async (req, res) => {
+/**
+ * PUT /:id/complete — Complete a ride with OTP verification (validated)
+ */
+router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req, res) => {
   try {
     const { code } = req.body;
 
@@ -179,8 +184,9 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 
     const driverId = request.offerId.driverId;
 
+    // Authorization: only the driver can complete
     if (driverId.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Forbidden: only the driver can complete this ride' });
     }
 
     if (!request.completionCode) {
@@ -200,10 +206,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
 
     const coins = 10;
 
-    await User.findByIdAndUpdate(driverId, {
-      $inc: { coins }
-    });
-
+    await User.findByIdAndUpdate(driverId, { $inc: { coins } });
     await User.findByIdAndUpdate(request.passengerId, {
       $inc: { coins: Math.floor(coins / 2) }
     });

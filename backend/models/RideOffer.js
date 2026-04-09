@@ -1,5 +1,33 @@
+/**
+ * @fileoverview RideOffer Schema — MongoDB Model
+ *
+ * Represents a ride offered by a driver. Contains source/destination
+ * coordinates, available seats, departure time, and ride status.
+ *
+ * @requires mongoose - MongoDB ODM
+ */
+
 const mongoose = require('mongoose');
 
+/**
+ * @typedef {Object} Location
+ * @property {string} name - Human-readable location name
+ * @property {number} lat  - Latitude coordinate
+ * @property {number} lng  - Longitude coordinate
+ */
+
+/**
+ * @typedef {Object} RideOffer
+ * @property {ObjectId}  driverId       - Reference to User who created the ride
+ * @property {Location}  source         - Pickup location with coordinates
+ * @property {Location}  destination    - Drop-off location with coordinates
+ * @property {number}    seatsAvailable - Number of available seats (min: 0)
+ * @property {Date}      departureTime  - Scheduled departure time
+ * @property {string}    status         - Ride lifecycle status
+ *
+ * Status flow: waiting → ongoing → completed
+ *                 ↘ cancelled
+ */
 const rideOfferSchema = new mongoose.Schema({
   driverId: {
     type: mongoose.Schema.Types.ObjectId,

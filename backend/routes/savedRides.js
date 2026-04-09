@@ -1,12 +1,29 @@
+/**
+ * @fileoverview Saved Rides Routes
+ *
+ * Allows users to bookmark frequently used routes.
+ * Includes input validation and ownership authorization.
+ *
+ * @requires express           - Router
+ * @requires ../middleware/auth - JWT authentication
+ * @requires ../middleware/validate - Input validation
+ */
+
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { SavedRide } = require('../models/SavedRide');
 const { geocode } = require('../utils/geocoder');
+const {
+  validateCreateSavedRide,
+  validateMongoId,
+} = require('../middleware/validate');
 
 const router = express.Router();
 
-// Create a saved ride
-router.post('/', authMiddleware, async (req, res) => {
+/**
+ * POST / — Save a new ride/route (validated)
+ */
+router.post('/', authMiddleware, validateCreateSavedRide, async (req, res) => {
   try {
     const { sourceName, destinationName, seats } = req.body;
 
@@ -36,11 +53,13 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json(newSavedRide);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get all saved rides
+/**
+ * GET / — Get all saved rides for the current user
+ */
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const rides = await SavedRide.find({ userId: req.user.id })
@@ -48,12 +67,15 @@ router.get('/', authMiddleware, async (req, res) => {
 
     res.json(rides);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Delete a saved ride
-router.delete('/:id', authMiddleware, async (req, res) => {
+/**
+ * DELETE /:id — Delete a saved ride (validated ID)
+ * Authorization: only the owner can delete their saved ride.
+ */
+router.delete('/:id', authMiddleware, validateMongoId, async (req, res) => {
   try {
     const ride = await SavedRide.findById(req.params.id);
 
@@ -61,14 +83,15 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Saved ride not found' });
     }
 
+    // Authorization: only the owner can delete
     if (ride.userId.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Forbidden: you can only delete your own saved rides' });
     }
 
     await ride.deleteOne();
     res.json({ message: 'Saved ride removed' });
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

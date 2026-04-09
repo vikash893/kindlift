@@ -1,17 +1,38 @@
+/**
+ * @fileoverview Ride Request Routes
+ *
+ * Manages the lifecycle of ride booking requests between passengers and drivers.
+ * Includes input validation, authorization checks, and proper error responses.
+ *
+ * @requires express           - Router
+ * @requires ../middleware/auth - JWT authentication
+ * @requires ../middleware/validate - Input validation
+ */
+
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
 const { RideRequest } = require('../models/RideRequest');
 const { RideOffer } = require('../models/RideOffer');
 const { User } = require('../models/User');
 const { calculateDistance } = require('../utils/geocoder');
+const {
+  validateCreateRequest,
+  validateUpdateStatus,
+  validateCompleteRequest,
+  validateMongoId,
+} = require('../middleware/validate');
 
 const router = express.Router();
 
-// Create a ride request
-router.post('/', authMiddleware, async (req, res) => {
+/**
+ * POST / — Create a ride request (passenger books a ride)
+ * Validates input, prevents duplicates, and notifies driver via Socket.IO.
+ */
+router.post('/', authMiddleware, validateCreateRequest, async (req, res) => {
   try {
     const { offerId, seatsRequested, source, destination } = req.body;
 
+    // Prevent duplicate bookings
     const existingReq = await RideRequest.findOne({
       passengerId: req.user.id,
       offerId,
@@ -24,6 +45,12 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const offer = await RideOffer.findById(offerId);
     if (!offer) return res.status(404).json({ message: 'Ride offer not found' });
+
+    // Authorization: prevent driver from booking their own ride
+    if (offer.driverId.toString() === req.user.id) {
+      return res.status(403).json({ message: 'You cannot book your own ride' });
+    }
+
     if (offer.seatsAvailable < seatsRequested) {
       return res.status(400).json({ message: 'Not enough seats available' });
     }
@@ -38,6 +65,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
     await newRequest.save();
 
+    // Notify driver in real-time
     const io = req.app.get('io');
     if (io) {
       io.to(offer.driverId.toString()).emit('new_request', newRequest);
@@ -46,11 +74,13 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json(newRequest);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get incoming requests for driver
+/**
+ * GET /incoming — Get incoming ride requests for the driver
+ */
 router.get('/incoming', authMiddleware, async (req, res) => {
   try {
     const offers = await RideOffer.find({ driverId: req.user.id });
@@ -63,11 +93,13 @@ router.get('/incoming', authMiddleware, async (req, res) => {
 
     res.json(requests);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get my requests (Passenger)
+/**
+ * GET /my-requests — Get the passenger's own ride requests
+ */
 router.get('/my-requests', authMiddleware, async (req, res) => {
   try {
     const requests = await RideRequest.find({ passengerId: req.user.id })
@@ -79,12 +111,15 @@ router.get('/my-requests', authMiddleware, async (req, res) => {
 
     res.json(requests);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Accept or Reject request
-router.put('/:id/status', authMiddleware, async (req, res) => {
+/**
+ * PUT /:id/status — Accept or reject a ride request (validated)
+ * Authorization: only the ride's driver can update status.
+ */
+router.put('/:id/status', authMiddleware, validateUpdateStatus, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -93,8 +128,9 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
 
     const offer = request.offerId;
 
+    // Authorization: only the driver of this ride can accept/reject
     if (offer.driverId.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Forbidden: only the driver can update request status' });
     }
 
     if (status === 'accepted') {
@@ -110,18 +146,20 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
 
       await offer.save();
 
+      // Reject other pending requests from same passenger
       await RideRequest.updateMany(
         { passengerId: request.passengerId, _id: { $ne: request._id }, status: 'pending' },
         { status: 'rejected' }
       );
-      
-      // Generate unique 4-digit code
+
+      // Generate unique 4-digit completion code
       request.completionCode = Math.floor(1000 + Math.random() * 9000).toString();
     }
 
     request.status = status;
     await request.save();
 
+    // Notify passenger in real-time
     const io = req.app.get('io');
     if (io) {
       io.to(request.passengerId.toString()).emit('request_updated', request);
@@ -130,12 +168,15 @@ router.put('/:id/status', authMiddleware, async (req, res) => {
     res.json(request);
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get specific request details
-router.get('/:id', authMiddleware, async (req, res) => {
+/**
+ * GET /:id — Get specific request details (validated ID)
+ * Authorization: only the passenger or driver involved can view.
+ */
+router.get('/:id', authMiddleware, validateMongoId, async (req, res) => {
   try {
     const request = await RideRequest.findById(req.params.id)
       .populate('passengerId', 'name email phone')
@@ -146,32 +187,60 @@ router.get('/:id', authMiddleware, async (req, res) => {
 
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
+    // Authorization: only involved parties can view request details
+    const isPassenger = request.passengerId._id.toString() === req.user.id;
+    const isDriver = request.offerId?.driverId?._id?.toString() === req.user.id;
+
+    if (!isPassenger && !isDriver) {
+      return res.status(403).json({ message: 'Forbidden: you are not part of this ride' });
+    }
+
     res.json(request);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get messages for a request
-router.get('/:id/messages', authMiddleware, async (req, res) => {
+/**
+ * GET /:id/messages — Get chat messages for a request (validated ID)
+ * Authorization: only the passenger or driver involved can view messages.
+ */
+router.get('/:id/messages', authMiddleware, validateMongoId, async (req, res) => {
   try {
+    // Verify the user is part of this ride request
+    const request = await RideRequest.findById(req.params.id).populate('offerId');
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+
+    const isPassenger = request.passengerId.toString() === req.user.id;
+    const isDriver = request.offerId?.driverId?.toString() === req.user.id;
+
+    if (!isPassenger && !isDriver) {
+      return res.status(403).json({ message: 'Forbidden: you cannot view these messages' });
+    }
+
     const { Message } = require('../models/Message');
     const messages = await Message.find({ requestId: req.params.id }).sort({ createdAt: 1 });
     res.json(messages);
   } catch (err) {
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
-// Complete specific request
-router.put('/:id/complete', authMiddleware, async (req, res) => {
+
+/**
+ * PUT /:id/complete — Complete a specific ride request with OTP (validated)
+ * Authorization: only the ride's driver can complete.
+ */
+router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req, res) => {
   try {
     const { code } = req.body;
     const request = await RideRequest.findById(req.params.id).populate('offerId');
 
     if (!request) return res.status(404).json({ message: 'Request not found' });
     if (request.status !== 'accepted') return res.status(400).json({ message: 'Request is not currently active' });
+
+    // Authorization: only the driver can complete
     if (request.offerId.driverId.toString() !== req.user.id) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Forbidden: only the driver can complete this ride' });
     }
 
     if (request.completionCode !== code) {
@@ -181,7 +250,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
     request.status = 'completed';
     await request.save();
 
-    // Check if offer is now fully completed
+    // Check if all requests for this offer are now complete
     const pendingReqs = await RideRequest.countDocuments({
       offerId: request.offerId._id,
       status: { $in: ['pending', 'accepted'] }
@@ -193,14 +262,14 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
       await offer.save();
     }
 
-    // Allocate coins based on distance
+    // Calculate coins based on distance (1 coin per km)
     const distance = calculateDistance(
       request.source.lat, request.source.lng,
       request.destination.lat, request.destination.lng
     );
     const coinsAllocated = Math.max(1, Math.floor(distance));
 
-    // Driver gets coins
+    // Driver gets full coins
     const driver = await User.findById(request.offerId.driverId);
     if (driver) {
       driver.coins = (driver.coins || 0) + coinsAllocated;
@@ -214,6 +283,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
       await passenger.save();
     }
 
+    // Notify passenger in real-time
     const io = req.app.get('io');
     if (io) {
       io.to(request.passengerId.toString()).emit('request_updated', request);
@@ -222,7 +292,7 @@ router.put('/:id/complete', authMiddleware, async (req, res) => {
     res.json({ message: 'Ride completed successfully', coinsAllocated });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Server error');
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

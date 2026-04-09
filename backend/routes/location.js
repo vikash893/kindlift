@@ -1,41 +1,53 @@
+/**
+ * @fileoverview Location Search Routes
+ *
+ * Provides geocoding search using the Nominatim (OpenStreetMap) API.
+ * Includes input validation, caching, rate limiting, request queuing,
+ * and automatic retry on 429 responses.
+ *
+ * @requires express      - Router
+ * @requires node-fetch   - HTTP client for Nominatim API
+ * @requires node-cache   - In-memory caching
+ * @requires express-rate-limit - Request rate limiting
+ * @requires p-queue      - Request queue
+ */
+
 const express = require("express");
 const fetch = require("node-fetch");
 const NodeCache = require("node-cache");
 const rateLimit = require("express-rate-limit");
 const PQueue = require("p-queue").default;
+const { validateLocationSearch } = require('../middleware/validate');
 
 const router = express.Router();
 
-// ✅ CACHE (1 hour)
+/** @type {NodeCache} In-memory cache with 1-hour TTL */
 const cache = new NodeCache({ stdTTL: 60 * 60 });
 
-// ✅ RATE LIMIT (protect your backend)
+/** Rate limiter: 200 requests per IP per minute */
 const limiter = rateLimit({
-  windowMs: 60 * 1000, // 1 min
-  max: 200, // max 200 requests per IP per minute
-  message: "Too many requests, please try again later",
+  windowMs: 60 * 1000,
+  max: 200,
+  message: { message: "Too many requests, please try again later" },
 });
 
-// ✅ QUEUE (VERY IMPORTANT - prevents API ban)
+/** Request queue: 1 req/sec to Nominatim to prevent bans */
 const queue = new PQueue({
-  interval: 1000,     // 1 second window
-  intervalCap: 1,     // 🔥 only 1 request/sec to Nominatim
+  interval: 1000,
+  intervalCap: 1,
 });
 
-// ✅ APPLY RATE LIMIT
 router.use(limiter);
 
-// ✅ MAIN ROUTE
-router.get("/search", async (req, res) => {
+/**
+ * GET /search — Search for locations by name (validated)
+ */
+router.get("/search", validateLocationSearch, async (req, res) => {
   const query = req.query.q;
-
-  if (!query || query.length < 3) {
-    return res.json([]);
-  }
 
   const key = query.toLowerCase();
 
-  // ✅ CACHE HIT
+  // Return cached results if available
   if (cache.has(key)) {
     return res.json(cache.get(key));
   }
@@ -43,18 +55,14 @@ router.get("/search", async (req, res) => {
   try {
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=10`;
 
-    // ✅ QUEUE WRAPPER (critical fix)
     const data = await queue.add(() => fetchWithRetry(url));
 
-    // ✅ VALIDATION
     if (!Array.isArray(data)) {
       console.error("Invalid API response:", data);
       return res.json([]);
     }
 
-    // ✅ SAVE CACHE
     cache.set(key, data);
-
     res.json(data);
 
   } catch (error) {
@@ -63,8 +71,14 @@ router.get("/search", async (req, res) => {
   }
 });
 
-
-// ✅ RETRY FUNCTION (handles 429 safely)
+/**
+ * Fetches a URL with automatic retry on 429 responses.
+ *
+ * @async
+ * @param {string} url - URL to fetch
+ * @param {number} [retries=3] - Retry attempts remaining
+ * @returns {Promise<Array>} Parsed JSON or empty array
+ */
 async function fetchWithRetry(url, retries = 3) {
   try {
     const response = await fetch(url, {
@@ -74,7 +88,6 @@ async function fetchWithRetry(url, retries = 3) {
       },
     });
 
-    // 🔥 HANDLE RATE LIMIT FROM NOMINATIM
     if (response.status === 429) {
       if (retries > 0) {
         console.log("Retrying due to 429...");

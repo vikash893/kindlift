@@ -87,11 +87,38 @@ export const Footer = () => {
 
           <div className="md:col-span-3">
             <RevealSection>
-              <h4 className="font-display font-semibold text-white text-sm uppercase tracking-widest mb-6">Contact</h4>
-              <ul className="space-y-4">
-                <li className="text-white/50 text-sm">support@kindlift.in</li>
-                <li className="text-white/50 text-sm">+91 (800) 123-4567</li>
-                <li className="text-white/50 text-sm">India</li>
+              <h4 className="font-display font-semibold text-white text-sm uppercase tracking-widest mb-6">
+                Contact
+              </h4>
+
+              <ul className="space-y-5 text-sm">
+
+                {/* Emails */}
+                <li>
+                  <p className="text-white/80 font-medium mb-1">Emails</p>
+                  <div className="flex flex-col gap-1 text-white/50">
+                    <span>rajputvishnu2513@gmail.com</span>
+                    <span>vikash.h24@gla.ac.in</span>
+                    <span>yash.gupta_cs.h24@gla.ac.in</span>
+                  </div>
+                </li>
+
+                {/* Phone Numbers */}
+                <li>
+                  <p className="text-white/80 font-medium mb-1">Phone</p>
+                  <div className="flex flex-col gap-1 text-white/50">
+                    <span>+91 7906990603</span>
+                    <span>+91 7015283332</span>
+                    <span>+91 7877587073</span>
+                  </div>
+                </li>
+
+                {/* Location */}
+                <li>
+                  <p className="text-white/80 font-medium mb-1">Location</p>
+                  <span className="text-white/50">India</span>
+                </li>
+
               </ul>
             </RevealSection>
           </div>

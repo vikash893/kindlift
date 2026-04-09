@@ -1,5 +1,30 @@
+/**
+ * @fileoverview Rating Schema — MongoDB Model
+ *
+ * Stores post-ride ratings between drivers and passengers.
+ * Each user can rate the other exactly once per ride request,
+ * enforced by a unique compound index on {requestId, raterId}.
+ *
+ * @requires mongoose - MongoDB ODM
+ */
+
 const mongoose = require('mongoose');
 
+/**
+ * @typedef {Object} Rating
+ * @property {ObjectId}  rideOfferId  - The RideOffer associated with this rating
+ * @property {ObjectId}  requestId    - The RideRequest associated with this rating
+ * @property {ObjectId}  raterId      - User who submitted the rating
+ * @property {ObjectId}  ratedUserId  - User being rated
+ * @property {number}    rating       - Star rating (1–5)
+ * @property {string}    review       - Optional text review
+ * @property {string}    raterRole    - Role of the rater: 'driver' or 'passenger'
+ *
+ * Business Rules:
+ * - One rating per user per ride request (unique index)
+ * - Submitting a rating updates the rated user's aggregate ratingSum/totalRatings
+ * - When BOTH driver and passenger rate each other, the RideRequest is auto-deleted
+ */
 const ratingSchema = new mongoose.Schema({
   rideOfferId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -38,7 +63,7 @@ const ratingSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Prevent duplicate ratings
+// Prevent duplicate ratings: one rating per rater per ride request
 ratingSchema.index({ requestId: 1, raterId: 1 }, { unique: true });
 
 const Rating = mongoose.model('Rating', ratingSchema);
