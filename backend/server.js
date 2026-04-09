@@ -43,6 +43,7 @@ const adminRouter = require('./admin/getuser');
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:8000',
   'https://kindlift.onrender.com',
   'https://kindlift-1.onrender.com',
   'https://kindlift-frontend.onrender.com',
@@ -73,34 +74,31 @@ async function startServer() {
   // Strict-Transport-Security, Content-Security-Policy, and more.
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "blob:", "https:"],
-        connectSrc: ["'self'", ...ALLOWED_ORIGINS, "https://nominatim.openstreetmap.org"],
-      },
-    },
+    contentSecurityPolicy: false, // Disabled — frontend is on a separate origin
+    crossOriginOpenerPolicy: false,
   }));
 
   // ─── Security: CORS Configuration ─────────────────────
   // Restricts which domains can access the API
-  app.use(cors({
+  const corsOptions = {
     origin: function (origin, callback) {
       // Allow requests with no origin (mobile apps, Postman, server-to-server)
       if (!origin) return callback(null, true);
       if (ALLOWED_ORIGINS.includes(origin)) {
         return callback(null, true);
       }
+      // In production, log blocked origins for debugging
+      console.log('CORS blocked origin:', origin);
       return callback(new Error('Not allowed by CORS'));
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     credentials: true,
     maxAge: 86400, // Cache preflight for 24 hours
-  }));
+  };
+  app.use(cors(corsOptions));
+  // Handle preflight requests explicitly
+  app.options('*', cors(corsOptions));
 
   // ─── Security: HTTP Parameter Pollution ───────────────
   // Prevents attackers from sending duplicate query params

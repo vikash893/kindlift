@@ -167,19 +167,26 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
     let query = {};
+    const conditions = [];
 
     // Search by name or email
     if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-      ];
+      conditions.push({
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ],
+      });
     }
 
     // Apply filters
-    if (filter === 'drivers') query.isDriverVerified = true;
-    if (filter === 'admins') query.$or = [{ isAdmin: true }, { role: { $in: ['admin', 'superadmin'] } }];
-    if (filter === 'inactive') query.isActive = false;
+    if (filter === 'drivers') conditions.push({ isDriverVerified: true });
+    if (filter === 'admins') conditions.push({ $or: [{ isAdmin: true }, { role: { $in: ['admin', 'superadmin'] } }] });
+    if (filter === 'inactive') conditions.push({ isActive: false });
+
+    if (conditions.length > 0) {
+      query.$and = conditions;
+    }
 
     const total = await User.countDocuments(query);
     const users = await User.find(query)
