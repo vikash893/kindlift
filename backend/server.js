@@ -43,6 +43,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://kindlift.onrender.com',
+  'https://kindlift-1.onrender.com',
   'https://kindlift-frontend.onrender.com',
   process.env.FRONTEND_URL,
 ].filter(Boolean);
