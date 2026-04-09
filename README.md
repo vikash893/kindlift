@@ -731,8 +731,8 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 | Name | Role | Contributions |
 |------|------|---------------|
-| **Vikash** | Lead Developer | Core architecture, frontend, backend, deployment |
-| **Vishnu Singh** | Developer | Feature implementation, testing |
+| **Vikash** | Lead Developer | Core architecture, backend, deployment |
+| **Vishnu Singh** | Developer | Feature implementation, frontend, testing |
 | **Yash Gupta** | Developer | Feature support |
 
 ---
