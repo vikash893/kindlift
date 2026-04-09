@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
-import { MapPin, Users, Calendar, Clock, CheckCircle, XCircle, User, ArrowRight } from 'lucide-react';
+import { MapPin, Users, Calendar, Clock, CheckCircle, XCircle, User, ArrowRight, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const Dashboard = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('passenger');
+  const [activeTab, setActiveTab] = useState('overview');
   const [myOffers, setMyOffers] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
@@ -80,6 +80,7 @@ export const Dashboard = () => {
   };
 
   const tabs = [
+    { key: 'overview', label: '📊 Overview' },
     { key: 'passenger', label: 'My Bookings' },
     { key: 'driver', label: 'My Offers' },
     { key: 'saved', label: 'Saved Rides' },
@@ -95,6 +96,8 @@ export const Dashboard = () => {
     return styles[status] || styles.pending;
   };
 
+  const avgRating = user?.totalRatings > 0 ? (user.ratingSum / user.totalRatings).toFixed(1) : 'N/A';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -109,27 +112,64 @@ export const Dashboard = () => {
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 pt-28">
       {/* Header */}
-      <div className="flex items-center gap-5 mb-10">
-        <div className="h-14 w-14 rounded-2xl overflow-hidden bg-brand-dark/5 border border-brand-gray-light flex items-center justify-center">
-          {user?.profilePhoto ? (
-            <img src={user.profilePhoto} alt={user.name} className="h-full w-full object-cover" />
-          ) : (
-            <User className="h-6 w-6 text-brand-muted" />
-          )}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-8">
+        <div className="flex items-center gap-5">
+          <div className="h-14 w-14 rounded-2xl overflow-hidden bg-brand-dark/5 border border-brand-gray-light flex items-center justify-center cursor-pointer" onClick={() => navigate('/profile')}>
+            {user?.profilePhoto ? (
+              <img src={user.profilePhoto} alt={user.name} className="h-full w-full object-cover" />
+            ) : (
+              <User className="h-6 w-6 text-brand-muted" />
+            )}
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-brand-dark">Welcome back, {user?.name}</h1>
+            <p className="text-brand-muted text-sm mt-1">Manage your rides and bookings</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-display text-2xl font-bold text-brand-dark">Welcome back, {user?.name}</h1>
-          <p className="text-brand-muted text-sm mt-1">Manage your rides and bookings</p>
+        <div className="flex gap-2">
+          <button onClick={() => navigate('/offer-ride')} className="px-5 py-2.5 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">
+            + Offer Ride
+          </button>
+          <button onClick={() => navigate('/book-ride')} className="px-5 py-2.5 bg-brand-accent text-brand-dark rounded-full text-sm font-display font-bold hover:bg-brand-dark hover:text-white transition-all duration-500">
+            Book Ride
+          </button>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-2xl border border-brand-gray-light p-5 card-lift cursor-pointer" onClick={() => navigate('/profile')}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="h-9 w-9 rounded-xl bg-amber-500 flex items-center justify-center"><Coins className="h-4 w-4 text-white" /></div>
+            <ArrowRight className="h-4 w-4 text-brand-muted" />
+          </div>
+          <p className="text-2xl font-display font-black text-brand-dark">{user?.coins || 0}</p>
+          <p className="text-xs text-brand-muted mt-0.5">Total Coins</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-brand-gray-light p-5 card-lift">
+          <div className="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center mb-2"><CheckCircle className="h-4 w-4 text-white" /></div>
+          <p className="text-2xl font-display font-black text-brand-dark">{avgRating}</p>
+          <p className="text-xs text-brand-muted mt-0.5">Avg Rating ({user?.totalRatings || 0} reviews)</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-brand-gray-light p-5 card-lift">
+          <div className="h-9 w-9 rounded-xl bg-blue-500 flex items-center justify-center mb-2"><MapPin className="h-4 w-4 text-white" /></div>
+          <p className="text-2xl font-display font-black text-brand-dark">{myOffers.length}</p>
+          <p className="text-xs text-brand-muted mt-0.5">Rides Offered</p>
+        </div>
+        <div className="bg-white rounded-2xl border border-brand-gray-light p-5 card-lift">
+          <div className="h-9 w-9 rounded-xl bg-violet-500 flex items-center justify-center mb-2"><Users className="h-4 w-4 text-white" /></div>
+          <p className="text-2xl font-display font-black text-brand-dark">{myRequests.length}</p>
+          <p className="text-xs text-brand-muted mt-0.5">Ride Bookings</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-0 mb-10 border-b border-brand-gray-light">
+      <div className="flex gap-0 mb-10 border-b border-brand-gray-light overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-6 py-3 text-sm font-display font-semibold transition-all duration-300 border-b-2 -mb-px ${
+            className={`px-6 py-3 text-sm font-display font-semibold transition-all duration-300 border-b-2 -mb-px whitespace-nowrap ${
               activeTab === tab.key
                 ? 'text-brand-dark border-brand-accent'
                 : 'text-brand-muted border-transparent hover:text-brand-dark'
@@ -139,6 +179,75 @@ export const Dashboard = () => {
           </button>
         ))}
       </div>
+
+      {/* OVERVIEW TAB */}
+      {activeTab === 'overview' && (
+        <div className="space-y-8">
+          {/* Quick Actions */}
+          <div className="grid md:grid-cols-3 gap-4">
+            <div onClick={() => navigate('/offer-ride')} className="bg-gradient-to-br from-brand-dark to-brand-charcoal rounded-2xl p-6 text-white cursor-pointer card-lift group">
+              <MapPin className="h-8 w-8 mb-4 text-brand-accent" />
+              <h3 className="font-display font-bold text-lg mb-1">Offer a Ride</h3>
+              <p className="text-white/60 text-sm">Share your commute and earn coins</p>
+              <ArrowRight className="h-5 w-5 mt-4 text-brand-accent group-hover:translate-x-2 transition-transform" />
+            </div>
+            <div onClick={() => navigate('/book-ride')} className="bg-gradient-to-br from-brand-accent to-amber-400 rounded-2xl p-6 text-brand-dark cursor-pointer card-lift group">
+              <Users className="h-8 w-8 mb-4" />
+              <h3 className="font-display font-bold text-lg mb-1">Book a Ride</h3>
+              <p className="text-brand-dark/60 text-sm">Find rides near your route</p>
+              <ArrowRight className="h-5 w-5 mt-4 group-hover:translate-x-2 transition-transform" />
+            </div>
+            <div onClick={() => navigate('/profile')} className="bg-white rounded-2xl border border-brand-gray-light p-6 cursor-pointer card-lift group">
+              <User className="h-8 w-8 mb-4 text-brand-accent" />
+              <h3 className="font-display font-bold text-lg mb-1 text-brand-dark">My Profile</h3>
+              <p className="text-brand-muted text-sm">View ratings, stats & edit profile</p>
+              <ArrowRight className="h-5 w-5 mt-4 text-brand-dark group-hover:translate-x-2 transition-transform" />
+            </div>
+          </div>
+
+          {/* Activity Summary */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border border-brand-gray-light p-6">
+              <h3 className="font-display font-bold text-brand-dark mb-4">Recent Bookings</h3>
+              {myRequests.length === 0 ? (
+                <p className="text-brand-muted text-sm py-4 text-center">No bookings yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {myRequests.slice(0, 4).map(req => (
+                    <div key={req._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-brand-dark/[0.02] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-brand-dark truncate">{req.source.name} → {req.destination.name}</p>
+                        <p className="text-xs text-brand-muted mt-0.5">{req.seatsRequested} seat(s) · {format(new Date(req.createdAt), 'MMM d')}</p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 text-xs rounded-full font-display font-bold border ${statusBadge(req.status)}`}>{req.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl border border-brand-gray-light p-6">
+              <h3 className="font-display font-bold text-brand-dark mb-4">Incoming Requests</h3>
+              {incomingRequests.length === 0 ? (
+                <p className="text-brand-muted text-sm py-4 text-center">No incoming requests</p>
+              ) : (
+                <div className="space-y-3">
+                  {incomingRequests.slice(0, 4).map(req => (
+                    <div key={req._id} className="flex items-center justify-between p-3 rounded-xl hover:bg-brand-dark/[0.02] transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-brand-dark">{req.passengerId?.name} · {req.seatsRequested} seat(s)</p>
+                        <p className="text-xs text-brand-muted mt-0.5 truncate">{req.source.name} → {req.destination.name}</p>
+                      </div>
+                      <span className={`px-2.5 py-0.5 text-xs rounded-full font-display font-bold border ${statusBadge(req.status)}`}>{req.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* PASSENGER TAB */}
       {activeTab === 'passenger' && (

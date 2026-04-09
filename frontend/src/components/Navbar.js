@@ -61,6 +61,10 @@ export const Navbar = () => {
         { to: '/offer-ride', label: 'Offer Ride' },
         { to: '/book-ride', label: 'Book Ride' },
         { to: '/dashboard', label: 'Dashboard' },
+        { to: '/profile', label: 'Profile' },
+        ...(user.isAdmin || user.role === 'admin' || user.role === 'superadmin'
+          ? [{ to: '/admin', label: 'Admin' }]
+          : []),
       ]
     : [];
 

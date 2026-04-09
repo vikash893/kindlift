@@ -12,6 +12,8 @@ import { RideDetails } from './pages/RideDetails';
 import { Home } from './pages/Home';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
+import { AdminPanel } from './pages/AdminPanel';
+import { Profile } from './pages/Profile';
 import { Loader } from './components/Loader';
 
 const PrivateRoute = ({ children }) => {
@@ -54,6 +56,8 @@ function App() {
               <Route path="/offer-ride" element={<PrivateRoute><OfferRide /></PrivateRoute>} />
               <Route path="/book-ride" element={<PrivateRoute><BookRide /></PrivateRoute>} />
               <Route path="/ride/:id" element={<PrivateRoute><RideDetails /></PrivateRoute>} />
+              <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+              <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
             </Routes>
           </main>
         </div>
