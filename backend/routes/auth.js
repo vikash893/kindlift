@@ -80,7 +80,9 @@ router.post('/register', validateRegister, async (req, res) => {
         name: user.name,
         email: user.email,
         profilePhoto: user.profilePhoto,
-        isDriverVerified: user.isDriverVerified
+        isDriverVerified: user.isDriverVerified,
+        isAdmin: user.isAdmin,
+        role: user.role,
       }
     });
   } catch (err) {
@@ -196,7 +198,9 @@ router.post('/login', validateLogin, async (req, res) => {
         name: user.name,
         email: user.email,
         profilePhoto: user.profilePhoto,
-        isDriverVerified: user.isDriverVerified
+        isDriverVerified: user.isDriverVerified,
+        isAdmin: user.isAdmin,
+        role: user.role,
       }
     });
   } catch (err) {

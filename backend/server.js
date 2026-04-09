@@ -34,6 +34,7 @@ const requestRoutes = require('./routes/requests');
 const savedRideRoutes = require('./routes/savedRides');
 const ratingRoutes = require('./routes/ratings');
 const locationRoutes = require('./routes/location');
+const adminRouter = require('./admin/getuser');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -220,7 +221,9 @@ async function startServer() {
   app.use('/api/requests', requestRoutes);                // Ride request lifecycle
   app.use('/api/saved-rides', savedRideRoutes);           // Saved routes
   app.use('/api/ratings', ratingRoutes);                  // Post-ride ratings
-  app.use("/api/location", locationLimiter, locationRoutes); // Location with stricter limit
+  app.use("/api/location", locationLimiter, locationRoutes);
+  app.use('/api/admin', adminRouter);
+  // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
   // Catches unhandled errors and CORS violations
