@@ -82,22 +82,23 @@ async function startServer() {
 
   // ─── Security: CORS Configuration ─────────────────────
   // Restricts which domains can access the API
-  const corsOptions = {
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, server-to-server)
-      if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      // In production, log blocked origins for debugging
-      console.log('CORS blocked origin:', origin);
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true,
-    maxAge: 86400, // Cache preflight for 24 hours
-  };
+ const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
+      origin.startsWith(allowedOrigin)
+    );
+
+    if (allowed) {
+      return callback(null, true);
+    }
+
+    console.log('❌ CORS blocked:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
   app.use(cors(corsOptions));
   // Handle preflight requests explicitly
   app.options('*', cors(corsOptions));
@@ -151,11 +152,23 @@ async function startServer() {
    * Configured with CORS for allowed origins.
    */
   const io = new Server(server, {
-    cors: {
-      origin: ALLOWED_ORIGINS,
-      methods: ['GET', 'POST']
-    }
-  });
+  cors: {
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
+        origin.startsWith(allowedOrigin)
+      );
+
+      if (allowed) return callback(null, true);
+
+      console.log('❌ Socket CORS blocked:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
   // Make Socket.IO accessible in Express route handlers
   app.set('io', io);
