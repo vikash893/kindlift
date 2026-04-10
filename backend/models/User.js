@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
   phone: { type: String },
   profilePhoto: { type: String }, // Base64 string
   
+  // Admin Fields
+  isAdmin: { type: Boolean, default: false },
+  role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
+
   // Driver Verification Fields
   isDriverVerified: { type: Boolean, default: false },
   vehicleNumber: { type: String },
@@ -47,6 +51,9 @@ const userSchema = new mongoose.Schema({
   // Rating System
   ratingSum: { type: Number, default: 0 },
   totalRatings: { type: Number, default: 0 },
+
+  // Account Status
+  isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);

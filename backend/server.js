@@ -34,6 +34,7 @@ const requestRoutes = require('./routes/requests');
 const savedRideRoutes = require('./routes/savedRides');
 const ratingRoutes = require('./routes/ratings');
 const locationRoutes = require('./routes/location');
+const adminRouter = require('./admin/getuser');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -42,6 +43,9 @@ const locationRoutes = require('./routes/location');
 const ALLOWED_ORIGINS = [
   'http://localhost:3000',
   'http://localhost:5173',
+  'http://localhost:8000',
+  'https://kindlift.in',
+  'https://www.kindlift.in',
   'https://kindlift.onrender.com',
   'https://kindlift-1.onrender.com',
   'https://kindlift-frontend.onrender.com',
@@ -72,34 +76,32 @@ async function startServer() {
   // Strict-Transport-Security, Content-Security-Policy, and more.
   app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "blob:", "https:"],
-        connectSrc: ["'self'", ...ALLOWED_ORIGINS, "https://nominatim.openstreetmap.org"],
-      },
-    },
+    contentSecurityPolicy: false, // Disabled — frontend is on a separate origin
+    crossOriginOpenerPolicy: false,
   }));
 
   // ─── Security: CORS Configuration ─────────────────────
   // Restricts which domains can access the API
-  app.use(cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, server-to-server)
-      if (!origin) return callback(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Not allowed by CORS'));
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400, // Cache preflight for 24 hours
-  }));
+ const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
+      origin.startsWith(allowedOrigin)
+    );
+
+    if (allowed) {
+      return callback(null, true);
+    }
+
+    console.log('❌ CORS blocked:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+};
+  app.use(cors(corsOptions));
+  // Handle preflight requests explicitly
+  app.options('*', cors(corsOptions));
 
   // ─── Security: HTTP Parameter Pollution ───────────────
   // Prevents attackers from sending duplicate query params
@@ -150,11 +152,23 @@ async function startServer() {
    * Configured with CORS for allowed origins.
    */
   const io = new Server(server, {
-    cors: {
-      origin: ALLOWED_ORIGINS,
-      methods: ['GET', 'POST']
-    }
-  });
+  cors: {
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
+        origin.startsWith(allowedOrigin)
+      );
+
+      if (allowed) return callback(null, true);
+
+      console.log('❌ Socket CORS blocked:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
   // Make Socket.IO accessible in Express route handlers
   app.set('io', io);
@@ -220,7 +234,9 @@ async function startServer() {
   app.use('/api/requests', requestRoutes);                // Ride request lifecycle
   app.use('/api/saved-rides', savedRideRoutes);           // Saved routes
   app.use('/api/ratings', ratingRoutes);                  // Post-ride ratings
-  app.use("/api/location", locationLimiter, locationRoutes); // Location with stricter limit
+  app.use("/api/location", locationLimiter, locationRoutes);
+  app.use('/api/admin', adminRouter);
+  // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
   // Catches unhandled errors and CORS violations

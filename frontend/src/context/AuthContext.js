@@ -18,8 +18,11 @@ export const AuthProvider = ({ children }) => {
             id: res.data._id, 
             name: res.data.name, 
             email: res.data.email,
+            phone: res.data.phone,
             profilePhoto: res.data.profilePhoto,
             isDriverVerified: res.data.isDriverVerified,
+            isAdmin: res.data.isAdmin,
+            role: res.data.role,
             coins: res.data.coins || 0,
             ratingSum: res.data.ratingSum || 0,
             totalRatings: res.data.totalRatings || 0

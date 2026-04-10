@@ -75,14 +75,14 @@ export const Footer = () => {
               <h4 className="font-display font-semibold text-white text-sm uppercase tracking-widest mb-6">Legal</h4>
               <ul className="space-y-4">
                 {[
-                  { label: 'Privacy Policy', to: '/privacy-policy' },
-                  { label: 'Terms of Service', to: '/terms-of-service' },
-                  { label: 'Safety', to: '/safety' },
-                  { label: 'FAQs', to: '/faqs' },
-                ].map((item) => (
-                  <li key={item.to}>
-                    <Link to={item.to} className="text-white/50 text-sm hover:text-white link-hover transition-colors duration-300">
-                      {item.label}
+                  { to: '/privacy-policy', label: 'Privacy Policy' },
+                  { to: '/terms-of-service', label: 'Terms of Service' },
+                  { to: '/safety', label: 'Safety' },
+                  { to: '/faqs', label: 'FAQs' },
+                ].map((link) => (
+                  <li key={link.to}>
+                    <Link to={link.to} className="text-white/50 text-sm hover:text-white link-hover transition-colors duration-300">
+                      {link.label}
                     </Link>
                   </li>
                 ))}
