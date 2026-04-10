@@ -28,12 +28,12 @@ export const About = () => {
     },
     {
       name: 'Yash Gupta',
-      role: 'Security Engineer',
-      description: 'Specializes in AI algorithms and route optimization.',
+      role: 'Auth & UX Developer',
+      description: 'Focuses on building secure auth flows and intuitive user interfaces.',
       image: yash,
-      github: '#',
-      linkedin: '#',
-      email: 'ygupta8875@gmail.com',
+      github: 'https://github.com/Yashgupta7877#',
+      linkedin: 'https://www.linkedin.com/in/yash-gupta-289693325/',
+      email: 'yashguptamkh9571@gmail.com',
     },
   ];
 
