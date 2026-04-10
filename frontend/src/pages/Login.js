@@ -152,11 +152,7 @@ export const Login = () => {
             </Link>
           </form>
 
-          <div className="mt-8 p-4 bg-brand-dark/5 rounded-xl text-center">
-            <p className="text-xs text-brand-muted">
-              <span className="font-semibold text-brand-dark">Demo:</span> demo@kindlift.com / demo123
-            </p>
-          </div>
+          
         </div>
       </div>
     </div>
