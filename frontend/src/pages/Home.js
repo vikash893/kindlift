@@ -198,7 +198,7 @@ export const Home = () => {
               style={{ animationDelay: '0.6s' }}
             >
               {[
-                { value: '10,000+', label: 'Happy Journeys' },
+                { value: '10k+', label: 'Happy Journeys' },
                 { value: '98%', label: 'Match Accuracy' },
                 { value: '50+', label: 'Active Cities' },
               ].map((stat, i) => (
@@ -306,7 +306,7 @@ export const Home = () => {
           <RevealSection>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
               <div ref={journeysRef}>
-                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">{journeys.toLocaleString()}+</p>
+                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">{Math.floor(journeys / 1000)}k+</p>
                 <p className="text-brand-muted mt-4 text-lg">Happy Journeys</p>
               </div>
               <div ref={matchRef}>

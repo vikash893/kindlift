@@ -19,6 +19,10 @@ import { TermsOfService } from './pages/TermsOfService';
 import { Safety } from './pages/Safety';
 import { FAQs } from './pages/FAQs';
 import { Loader } from './components/Loader';
+// import { PrivacyPolicy } from './pages/PrivacyPolicy';
+// import { TermsOfService } from './pages/TermsOfService';
+// import { Safety } from './pages/Safety';
+// import { FAQs } from './pages/FAQs';
 
 const PrivateRoute = ({ children }) => {
 const { user, loading } = useAuth();
