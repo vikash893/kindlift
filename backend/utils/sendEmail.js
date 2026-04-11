@@ -1,37 +1,22 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendEmail = async (to, subject, text) => {
   try {
-    console.log("📧 EMAIL_USER:", process.env.EMAIL_USER);
-    console.log("📨 Sending to:", to);
+    console.log("📨 Sending email to:", to);
 
-    // ✅ Gmail transporter (fixed for deployment)
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false, // ✅ Fix for Render/Gmail issues
-      },
-    });
-
-    // ✅ Verify connection (VERY IMPORTANT DEBUG)
-    await transporter.verify();
-    console.log("✅ SMTP connection verified");
-
-    const info = await transporter.sendMail({
-      from: `"KindLift" <${process.env.EMAIL_USER}>`,
+    const response = await resend.emails.send({
+      from: 'onboarding@resend.dev', // default works
       to,
       subject,
-      text,
+      html: `<p>${text}</p>`,
     });
 
-    console.log('✅ Email sent SUCCESS:', info.response);
+    console.log("✅ Email sent:", response);
 
   } catch (error) {
-    console.error('❌ FULL Email Error:', error);
+    console.error("❌ Email Error:", error);
   }
 };
 
