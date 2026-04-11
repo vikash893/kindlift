@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Heart, MessageCircle, Star } from 'lucide-react';
-import api from "../lib/api";
+import axios from 'axios'; // Import axios directly
 
 function Feedback() {
   const [feedback, setFeedback] = useState({
@@ -29,20 +29,46 @@ function Feedback() {
     setSuccess('');
 
     try {
-      await api.post("/feedback", feedback);
+      // Determine base URL
+      const hostname = window.location.hostname;
+      const baseURL = (hostname === 'localhost' || hostname === '127.0.0.1') 
+        ? 'http://localhost:8000/api' 
+        : 'https://kindlift-1.onrender.com/api';
+      
+      console.log('Submitting to:', `${baseURL}/feedback`);
+      console.log('Feedback data:', feedback);
+      
+      const response = await axios.post(`${baseURL}/feedback`, feedback, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      console.log('Response:', response.data);
+      
       setSuccess("Thank you for your genuine feedback! Redirecting to home page...");
       setFeedback({
         name: "",
         email: "",
         message: ""
       });
-      // Redirect to home page after 2 seconds
+      
       setTimeout(() => {
         navigate('/');
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit feedback. Please try again.");
-      console.error(err);
+      console.error('Full error:', err);
+      
+      if (err.code === 'ERR_NETWORK') {
+        setError("Cannot connect to backend. Please check if the server is running.");
+      } else if (err.response?.status === 404) {
+        setError("API endpoint not found. Please check the backend URL.");
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError(`Failed to submit feedback: ${err.message}`);
+      }
     } finally {
       setLoading(false);
     }
