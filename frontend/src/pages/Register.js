@@ -71,15 +71,15 @@ export const Register = () => {
 
   return (
     <>
-      <Navbar /> {/* Add Navbar here */}
-      <div className="min-h-screen flex pt-16"> {/* Added pt-16 to account for navbar */}
+      <Navbar /> {/* Navbar added here */}
+      <div className="min-h-screen flex pt-16"> {/* Added pt-16 for navbar spacing */}
         {/* Left — Dark brand panel */}
         <div className="hidden lg:flex lg:w-1/2 section-dark relative overflow-hidden flex-col justify-between p-12 xl:p-16">
           <div className="noise-overlay absolute inset-0" />
 
           {/* Logo removed - navbar has it */}
           <div className="relative z-10">
-            {/* Logo removed to avoid duplication */}
+            {/* Logo section removed to avoid duplication */}
           </div>
 
           <div className="relative z-10 mt-12"> {/* Added mt-12 to push content down */}
