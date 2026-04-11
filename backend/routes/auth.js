@@ -1,30 +1,10 @@
-/**
- * @fileoverview Authentication Routes
- *
- * Handles user registration, login, OTP email verification, and
- * retrieving the current authenticated user's profile.
- * All routes include express-validator input validation.
- *
- * Routes:
- * - POST /register    — Create a new user account (requires verified email)
- * - POST /login       — Authenticate and receive a JWT token
- * - POST /send-otp    — Send a 6-digit OTP to the user's email
- * - POST /verify-otp  — Verify the OTP code
- * - GET  /me          — Get the current user's profile (requires auth)
- *
- * @requires express    - Router
- * @requires bcryptjs   - Password hashing
- * @requires jsonwebtoken - JWT token generation
- * @requires nodemailer - Email delivery for OTP
- */
-
-/** @type {Set<string>} Set of emails that have been verified via OTP */
-const verifiedEmails = new Set();
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { User } = require('../models/User');
-const nodemailer = require("nodemailer");
+const OTP = require('../models/OTP');
+const { sendEmail } = require('../utils/sendEmail');
+
 const {
   validateRegister,
   validateLogin,
@@ -34,13 +14,10 @@ const {
 
 const router = express.Router();
 
-/**
- * POST /register — Register a new user
- *
- * Requires email to be pre-verified via OTP flow.
- * Passwords are hashed with bcrypt (10 salt rounds).
- * Returns a JWT token valid for 7 days.
- */
+// Store verified emails (temporary after OTP)
+const verifiedEmails = new Set();
+
+// ================= REGISTER =================
 router.post('/register', validateRegister, async (req, res) => {
   try {
     const { name, email, password, phone, profilePhoto } = req.body;
@@ -49,6 +26,7 @@ router.post('/register', validateRegister, async (req, res) => {
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
+
     if (!verifiedEmails.has(email)) {
       return res.status(400).json({ message: "Email not verified ❌" });
     }
@@ -85,78 +63,76 @@ router.post('/register', validateRegister, async (req, res) => {
         role: user.role,
       }
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// ═══════════════════ OTP EMAIL VERIFICATION ═══════════════════
-
-/** @type {Object.<string, {otp: string, expires: number}>} In-memory OTP storage */
-const otpStore = {};
-
-const { sendEmail } = require('../utils/sendEmail');
-
-/**
- * POST /send-otp — Send OTP verification email
- *
- * Generates a random 6-digit OTP, stores it in memory (5-minute expiry),
- * and sends it via centralized sendEmail utility.
- */
+// ================= SEND OTP =================
 router.post("/send-otp", validateSendOtp, async (req, res) => {
-  const { email } = req.body;
-
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-  otpStore[email] = {
-    otp,
-    expires: Date.now() + 5 * 60 * 1000,
-  };
-
   try {
+    const { email } = req.body;
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Delete old OTP
+    await OTP.deleteMany({ email });
+
+    // Save new OTP in DB
+    await OTP.create({
+      email,
+      otp,
+      expires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+    });
+
     await sendEmail(
       email,
       "OTP Verification",
-      `Use ${otp} as your One-Time Password (OTP) to continue. This code will expire shortly.`
+      `Your OTP is ${otp}. It will expire in 10 minutes.`
     );
 
-    res.json({ message: "OTP sent" });
+    res.json({ message: "OTP sent ✅" });
+
   } catch (err) {
     console.error('OTP Send Error:', err);
-    res.status(500).json({ message: "Email failed" });
+    res.status(500).json({ message: "Email failed ❌" });
   }
 });
 
-/**
- * POST /verify-otp — Verify the OTP code
- */
-router.post("/verify-otp", validateVerifyOtp, (req, res) => {
-  const { email, otp } = req.body;
+// ================= VERIFY OTP =================
+router.post("/verify-otp", validateVerifyOtp, async (req, res) => {
+  try {
+    const { email, otp } = req.body;
 
-  const record = otpStore[email];
+    const record = await OTP.findOne({ email });
 
-  if (!record) {
-    return res.status(400).json({ message: "No OTP found" });
+    if (!record) {
+      return res.status(400).json({ message: "No OTP found ❌" });
+    }
+
+    if (new Date() > record.expires) {
+      await OTP.deleteOne({ email });
+      return res.status(400).json({ message: "OTP expired ⏰" });
+    }
+
+    if (record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP ❌" });
+    }
+
+    await OTP.deleteOne({ email });
+    verifiedEmails.add(email);
+
+    res.json({ message: "Verified ✅" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Verification failed" });
   }
-
-  if (Date.now() > record.expires) {
-    delete otpStore[email]; // Clean up expired OTP
-    return res.status(400).json({ message: "OTP expired" });
-  }
-
-  if (record.otp !== otp) {
-    return res.status(400).json({ message: "Invalid OTP" });
-  }
-
-  delete otpStore[email];
-  verifiedEmails.add(email);
-  res.json({ message: "Verified ✅" });
 });
 
-/**
- * POST /login — Authenticate user and return JWT token
- */
+// ================= LOGIN =================
 router.post('/login', validateLogin, async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -190,15 +166,14 @@ router.post('/login', validateLogin, async (req, res) => {
         role: user.role,
       }
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-/**
- * GET /me — Get current authenticated user's profile
- */
+// ================= ME =================
 router.get('/me', async (req, res) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -216,6 +191,7 @@ router.get('/me', async (req, res) => {
     }
 
     res.json(user);
+
   } catch (err) {
     res.status(401).json({ message: 'Invalid token' });
   }
