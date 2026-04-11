@@ -35,6 +35,7 @@ const savedRideRoutes = require('./routes/savedRides');
 const ratingRoutes = require('./routes/ratings');
 const locationRoutes = require('./routes/location');
 const adminRouter = require('./admin/getuser');
+const feedbackRouter = require('./routes/Feedback');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -236,6 +237,7 @@ async function startServer() {
   app.use('/api/ratings', ratingRoutes);                  // Post-ride ratings
   app.use("/api/location", locationLimiter, locationRoutes);
   app.use('/api/admin', adminRouter);
+  app.use('/api', feedbackRouter);
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────

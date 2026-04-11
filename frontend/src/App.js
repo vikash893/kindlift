@@ -19,6 +19,7 @@ import { TermsOfService } from './pages/TermsOfService';
 import { Safety } from './pages/Safety';
 import { FAQs } from './pages/FAQs';
 import { Loader } from './components/Loader';
+import Feedback from './pages/Feedback';
 // import { PrivacyPolicy } from './pages/PrivacyPolicy';
 // import { TermsOfService } from './pages/TermsOfService';
 // import { Safety } from './pages/Safety';
@@ -58,6 +59,7 @@ return ( <AuthProvider> <Router> <div className="min-h-screen bg-brand-light fle
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/safety" element={<Safety />} />
           <Route path="/faqs" element={<FAQs />} />
+          <Route path="/feedback" element={<Feedback />} />
 
           <Route path="/login" element={
             <PublicRoute>
@@ -77,6 +79,8 @@ return ( <AuthProvider> <Router> <div className="min-h-screen bg-brand-light fle
             </PrivateRoute>
           } />
 
+
+          
           <Route path="/offer-ride" element={
             <PrivateRoute>
               <OfferRide />
