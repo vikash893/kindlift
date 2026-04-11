@@ -7,16 +7,22 @@ const sendEmail = async (to, subject, text) => {
     console.log("📨 Sending email to:", to);
 
     const response = await resend.emails.send({
-      from: 'onboarding@resend.dev', // default works
+      from: 'onboarding@resend.dev', // default works for testing
       to,
       subject,
       html: `<p>${text}</p>`,
     });
 
+    if (response.error) {
+      console.error("❌ Resend API Error:", response.error);
+      throw new Error(response.error.message);
+    }
+
     console.log("✅ Email sent:", response);
 
   } catch (error) {
-    console.error("❌ Email Error:", error);
+    console.error("❌ Email Error:", error.message || error);
+    throw error; // Rethrow to let auth route handle the 500 status!
   }
 };
 
