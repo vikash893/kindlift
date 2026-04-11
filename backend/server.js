@@ -70,6 +70,10 @@ const ALLOWED_ORIGINS = [
  */
 async function startServer() {
   const app = express();
+  
+  // Trust the first proxy (Render.com) to enable correct IP detection for rate-limiting
+  app.set('trust proxy', 1);
+  
   const PORT = process.env.PORT || 8000;
 
   // ─── Security: HTTP Headers (Helmet) ──────────────────
