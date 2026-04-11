@@ -71,8 +71,9 @@ let transporter = null;
 const sendEmail = async (to, subject, text) => {
   console.log("📨 Sending email to:", to);
 
-  // Priority 1: Use Resend API if configured (works best on cloud)
-  if (process.env.RESEND_API_KEY) {
+  // Priority 1: Use Resend API only if a verified domain is configured
+  // (Free tier Resend can only send to the account owner's email)
+  if (process.env.RESEND_API_KEY && process.env.RESEND_FROM) {
     return sendViaResend(to, subject, `<p>${text}</p>`);
   }
 
