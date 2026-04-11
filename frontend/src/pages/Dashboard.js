@@ -122,8 +122,14 @@ export const Dashboard = () => {
             )}
           </div>
           <div>
-            <h1 className="font-display text-2xl font-bold text-brand-dark">Welcome back, {user?.name}</h1>
-            <p className="text-brand-muted text-sm mt-1">Manage your rides and bookings</p>
+            <h1 className="font-display text-2xl font-bold text-brand-dark">
+              {myOffers.length === 0 && myRequests.length === 0 ? 'Welcome' : 'Welcome back'}, {user?.name}
+            </h1>
+            <p className="text-brand-muted text-sm mt-1">
+              {myOffers.length === 0 && myRequests.length === 0
+                ? 'Get started by offering or booking a ride'
+                : 'Manage your rides and bookings'}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">

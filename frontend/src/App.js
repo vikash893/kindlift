@@ -26,96 +26,94 @@ import Feedback from './pages/Feedback';
 // import { FAQs } from './pages/FAQs';
 
 const PrivateRoute = ({ children }) => {
-const { user, loading } = useAuth();
-if (loading) return <Loader />;
-if (!user) return <Navigate to="/login" />;
-return children;
+  const { user, loading } = useAuth();
+  if (loading) return <Loader />;
+  if (!user) return <Navigate to="/login" />;
+  return children;
 };
 
 const PublicRoute = ({ children }) => {
-const { user, loading } = useAuth();
-if (loading) return <Loader />;
-return !user ? children : <Navigate to="/dashboard" />;
+  const { user, loading } = useAuth();
+  if (loading) return <Loader />;
+  return !user ? children : <Navigate to="/dashboard" />;
 };
 
 /* Hide navbar on login/register pages */
 const ConditionalNavbar = () => {
-const location = useLocation();
-const hideOn = ['/login', '/register', '/feedback'];
-if (hideOn.includes(location.pathname)) return null;
-return <Navbar />;
+  const location = useLocation();
+  const hideOn = ['/login', '/register', '/feedback'];
+  if (hideOn.includes(location.pathname)) return null;
+  return <Navbar />;
 };
 
 function App() {
-return ( <AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <CustomCursor /> <ConditionalNavbar />
+  return (<AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <CustomCursor /> <ConditionalNavbar />      <main className="flex-1">
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/safety" element={<Safety />} />
+      <Route path="/faqs" element={<FAQs />} />
+      <Route path="/feedback" element={<Feedback />} />
 
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-of-service" element={<TermsOfService />} />
-          <Route path="/safety" element={<Safety />} />
-          <Route path="/faqs" element={<FAQs />} />
-          <Route path="/feedback" element={<Feedback />} />
+      <Route path="/login" element={
+        <PublicRoute>
+          <Login />
+        </PublicRoute>
+      } />
 
-          <Route path="/login" element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } />
+      <Route path="/register" element={
+        <PublicRoute>
+          <Register />
+        </PublicRoute>
+      } />
 
-          <Route path="/register" element={
-            <PublicRoute>
-              <Register />
-            </PublicRoute>
-          } />
-
-          <Route path="/dashboard" element={
-            <PrivateRoute>
-              <Dashboard />
-            </PrivateRoute>
-          } />
+      <Route path="/dashboard" element={
+        <PrivateRoute>
+          <Dashboard />
+        </PrivateRoute>
+      } />
 
 
-          
-          <Route path="/offer-ride" element={
-            <PrivateRoute>
-              <OfferRide />
-            </PrivateRoute>
-          } />
 
-          <Route path="/book-ride" element={
-            <PrivateRoute>
-              <BookRide />
-            </PrivateRoute>
-          } />
+      <Route path="/offer-ride" element={
+        <PrivateRoute>
+          <OfferRide />
+        </PrivateRoute>
+      } />
 
-          <Route path="/ride/:id" element={
-            <PrivateRoute>
-              <RideDetails />
-            </PrivateRoute>
-          } />
+      <Route path="/book-ride" element={
+        <PrivateRoute>
+          <BookRide />
+        </PrivateRoute>
+      } />
 
-          <Route path="/admin" element={
-            <PrivateRoute>
-              <AdminPanel />
-            </PrivateRoute>
-          } />
+      <Route path="/ride/:id" element={
+        <PrivateRoute>
+          <RideDetails />
+        </PrivateRoute>
+      } />
 
-          <Route path="/profile" element={
-            <PrivateRoute>
-              <Profile />
-            </PrivateRoute>
-          } />
-        </Routes>
-      </main>
-    </div>
+      <Route path="/admin" element={
+        <PrivateRoute>
+          <AdminPanel />
+        </PrivateRoute>
+      } />
+
+      <Route path="/profile" element={
+        <PrivateRoute>
+          <Profile />
+        </PrivateRoute>
+      } />
+    </Routes>
+  </main>
+  </div>
   </Router>
-</AuthProvider>
+  </AuthProvider>
 
-);
+  );
 }
 
 export default App;
