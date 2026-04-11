@@ -49,7 +49,6 @@ return <Navbar />;
 function App() {
 return ( <AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <CustomCursor /> <ConditionalNavbar />
 
-```
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
