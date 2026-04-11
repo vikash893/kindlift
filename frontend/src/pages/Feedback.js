@@ -39,8 +39,7 @@ function Feedback() {
       
       const response = await axios.post(`${baseURL}/feedback`, feedback, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         }
       });
       
