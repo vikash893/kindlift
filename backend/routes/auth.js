@@ -77,9 +77,11 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
   try {
     const { email } = req.body;
 
-    // Check if email service is configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('❌ EMAIL_USER or EMAIL_PASS not configured!');
+    // Check if email service is configured (either custom SMTP or Gmail)
+    const hasSmtp = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+    const hasGmail = process.env.EMAIL_USER && process.env.EMAIL_PASS;
+    if (!hasSmtp && !hasGmail) {
+      console.error('❌ No email service configured! Set SMTP_HOST/SMTP_USER/SMTP_PASS or EMAIL_USER/EMAIL_PASS');
       return res.status(500).json({ message: "Email service not configured on server ❌" });
     }
 
