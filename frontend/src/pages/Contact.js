@@ -48,7 +48,7 @@ export const Contact = () => {
                     </div>
                     <div>
                       <p className="text-sm text-brand-muted mb-1">Email us at</p>
-                      <p className="font-display font-bold text-brand-dark">support@kindlift.in</p>
+                      <p className="font-display font-bold text-brand-dark">rajputvishnu2513@gmail.com</p>
                     </div>
                   </div>
 
@@ -58,7 +58,7 @@ export const Contact = () => {
                     </div>
                     <div>
                       <p className="text-sm text-brand-muted mb-1">Call us at</p>
-                      <p className="font-display font-bold text-brand-dark">+91 (800) 123-4567</p>
+                      <p className="font-display font-bold text-brand-dark">+91 (790) 699-0603</p>
                     </div>
                   </div>
 
