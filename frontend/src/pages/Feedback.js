@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Heart, MessageCircle, Star } from 'lucide-react';
-import axios from 'axios'; // Import axios directly
+import axios from 'axios';
 
 function Feedback() {
   const [feedback, setFeedback] = useState({
@@ -29,7 +29,6 @@ function Feedback() {
     setSuccess('');
 
     try {
-      // Determine base URL
       const hostname = window.location.hostname;
       const baseURL = (hostname === 'localhost' || hostname === '127.0.0.1') 
         ? 'http://localhost:8000/api' 
@@ -76,25 +75,14 @@ function Feedback() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left — Dark brand panel with text content */}
+      {/* Left — Dark brand panel with text content (Logo removed) */}
       <div className="hidden lg:flex lg:w-1/2 section-dark relative overflow-hidden flex-col justify-between p-12 xl:p-16">
         <div className="noise-overlay absolute inset-0" />
         <div className="absolute inset-0 bg-brand-dark/95" />
 
-        <div className="relative z-10">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H6c-.6 0-1.1.2-1.4.6L3 7.5C2.4 8.1 2 8.8 2 9.5V16c0 .6.4 1 1 1h1" />
-                <circle cx="7" cy="17" r="2" />
-                <circle cx="17" cy="17" r="2" />
-              </svg>
-            </div>
-            <span className="font-display font-bold text-xl text-white">Kindlift</span>
-          </Link>
-        </div>
+        {/* Logo section removed */}
 
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 space-y-8 mt-12">
           <div>
             <h1 className="font-display text-display-lg text-white mb-6">
               Your <span className="text-gradient">feedback</span><br />
@@ -149,17 +137,8 @@ function Feedback() {
       {/* Right — Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-16 bg-brand-light">
         <div className="w-full max-w-md">
-          <div className="lg:hidden flex items-center gap-2.5 mb-12">
-            <div className="w-9 h-9 bg-brand-accent rounded-xl flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H6c-.6 0-1.1.2-1.4.6L3 7.5C2.4 8.1 2 8.8 2 9.5V16c0 .6.4 1 1 1h1" />
-                <circle cx="7" cy="17" r="2" />
-                <circle cx="17" cy="17" r="2" />
-              </svg>
-            </div>
-            <span className="font-display font-bold text-lg text-brand-dark">Kindlift</span>
-          </div>
-
+          {/* Mobile logo removed */}
+          
           <h2 className="font-display text-3xl font-bold text-brand-dark mb-2">Share Your Thoughts</h2>
           <p className="text-brand-muted mb-2">We value genuine feedback from our community</p>
           <p className="text-xs text-brand-muted/70 mb-10">Please visit our website to share authentic experiences</p>

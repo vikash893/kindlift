@@ -16,7 +16,6 @@ export const Navbar = () => {
     const handleScroll = () => {
       const currentScroll = window.scrollY;
 
-      // Show/hide based on scroll direction
       if (currentScroll > 100) {
         setHidden(currentScroll > lastScroll.current && currentScroll > 200);
       } else {
@@ -46,6 +45,8 @@ export const Navbar = () => {
   };
 
   const isHome = location.pathname === '/';
+  // Always use dark text on feedback page since it has light background on the right
+  const shouldUseDarkText = isHome ? !scrolled : true;
   const isDark = isHome && !scrolled;
 
   const navLinks = !user
@@ -53,7 +54,7 @@ export const Navbar = () => {
         { to: '/', label: 'Home' },
         { to: '/about', label: 'About' },
         { to: '/contact', label: 'Contact' },
-        {to:'/feedback', label:'Feedback'},
+        { to: '/feedback', label: 'Feedback' },
       ]
     : [];
 
@@ -81,7 +82,7 @@ export const Navbar = () => {
             className={`flex items-center justify-between transition-all duration-500 rounded-full px-6 py-2.5 ${
               scrolled
                 ? 'bg-white/90 backdrop-blur-xl shadow-nav'
-                : 'bg-transparent'
+                : 'bg-white/80 backdrop-blur-sm' // Always have background when not scrolled
             }`}
           >
             {/* Logo */}
@@ -93,9 +94,7 @@ export const Navbar = () => {
                   <circle cx="17" cy="17" r="2" />
                 </svg>
               </div>
-              <span className={`font-display font-bold text-lg tracking-tight transition-colors duration-300 ${
-                isDark ? 'text-white' : 'text-brand-dark'
-              }`}>
+              <span className={`font-display font-bold text-lg tracking-tight transition-colors duration-300 text-brand-dark`}>
                 Kindlift
               </span>
             </Link>
@@ -109,7 +108,7 @@ export const Navbar = () => {
                   className={`px-4 py-2 text-sm font-medium transition-all duration-300 link-hover ${
                     location.pathname === link.to
                       ? 'text-brand-accent'
-                      : isDark ? 'text-white/70 hover:text-white' : 'text-brand-dark/60 hover:text-brand-dark'
+                      : 'text-brand-dark/60 hover:text-brand-dark'
                   }`}
                 >
                   {link.label}
@@ -122,9 +121,7 @@ export const Navbar = () => {
               {user ? (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-3">
-                    <div className={`h-8 w-8 rounded-full overflow-hidden border-2 ${
-                      isDark ? 'border-white/20' : 'border-brand-dark/10'
-                    } flex items-center justify-center bg-brand-accent/10`}>
+                    <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-brand-dark/10 flex items-center justify-center bg-brand-accent/10">
                       {user.profilePhoto ? (
                         <img src={user.profilePhoto} alt={user.name} className="h-full w-full object-cover" />
                       ) : (
@@ -132,7 +129,7 @@ export const Navbar = () => {
                       )}
                     </div>
                     <div className="text-right">
-                      <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-brand-dark'}`}>
+                      <span className="text-sm font-medium text-brand-dark">
                         {user.name.split(' ')[0]}
                       </span>
                       <span className="block text-xs text-brand-accent font-semibold">{user.coins || 0} coins</span>
@@ -140,11 +137,7 @@ export const Navbar = () => {
                   </div>
                   <button
                     onClick={handleLogout}
-                    className={`p-2 rounded-full transition-all ${
-                      isDark
-                        ? 'text-white/50 hover:text-red-400 hover:bg-white/10'
-                        : 'text-brand-muted hover:text-red-500 hover:bg-red-50'
-                    }`}
+                    className="p-2 rounded-full transition-all text-brand-muted hover:text-red-500 hover:bg-red-50"
                     title="Logout"
                   >
                     <LogOut className="h-4 w-4" />
@@ -154,15 +147,13 @@ export const Navbar = () => {
                 <div className="flex items-center gap-3">
                   <Link
                     to="/login"
-                    className={`px-4 py-2 text-sm font-medium transition-all link-hover ${
-                      isDark ? 'text-white/70 hover:text-white' : 'text-brand-dark/60 hover:text-brand-dark'
-                    }`}
+                    className="px-4 py-2 text-sm font-medium transition-all link-hover text-brand-dark/60 hover:text-brand-dark"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    className="px-5 py-2.5 bg-brand-accent text-brand-dark text-sm font-display font-bold rounded-full hover:bg-white transition-all duration-300"
+                    className="px-5 py-2.5 bg-brand-accent text-brand-dark text-sm font-display font-bold rounded-full hover:bg-brand-accent/80 transition-all duration-300"
                   >
                     Sign Up
                   </Link>
@@ -173,9 +164,7 @@ export const Navbar = () => {
             {/* Mobile Toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className={`md:hidden p-2 rounded-lg transition-colors ${
-                isDark ? 'text-white hover:bg-white/10' : 'text-brand-dark hover:bg-brand-dark/5'
-              }`}
+              className="md:hidden p-2 rounded-lg transition-colors text-brand-dark hover:bg-brand-dark/5"
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
