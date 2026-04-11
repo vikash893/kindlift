@@ -7,7 +7,7 @@ function Feedback() {
   const [feedback, setFeedback] = useState({
     name: "",
     email: "",
-    feedback: ""
+    message: ""
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -34,7 +34,7 @@ function Feedback() {
       setFeedback({
         name: "",
         email: "",
-        feedback: ""
+        message: ""
       });
       // Redirect to home page after 2 seconds
       setTimeout(() => {
@@ -160,7 +160,7 @@ function Feedback() {
                 name="name"
                 required
                 className="input-underline"
-                placeholder="John Doe"
+                placeholder="Vikash Bhardwaj"
                 value={feedback.name}
                 onChange={handleChange}
               />
@@ -182,12 +182,12 @@ function Feedback() {
             <div>
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Your Feedback</label>
               <textarea
-                name="feedback"
+                name="message"
                 required
                 rows="5"
                 className="input-underline resize-none"
                 placeholder="Share your experience, suggestions, or report any issues..."
-                value={feedback.feedback}
+                value={feedback.message}
                 onChange={handleChange}
               />
             </div>
