@@ -77,23 +77,23 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Delete old OTP
     await OTP.deleteMany({ email });
 
-    // Save new OTP in DB
     await OTP.create({
       email,
       otp,
-      expires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+      expires: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    await sendEmail(
+    // ✅ Send response immediately
+    res.json({ message: "OTP sent ✅" });
+
+    // ✅ Send email in background
+    sendEmail(
       email,
       "OTP Verification",
       `Your OTP is ${otp}. It will expire in 10 minutes.`
-    );
-
-    res.json({ message: "OTP sent ✅" });
+    ).catch(err => console.error("Email Error:", err));
 
   } catch (err) {
     console.error('OTP Send Error:', err);
