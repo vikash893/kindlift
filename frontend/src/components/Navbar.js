@@ -81,8 +81,8 @@ export const Navbar = () => {
           <div
             className={`flex items-center justify-between transition-all duration-500 rounded-full px-6 py-2.5 ${
               scrolled
-                ? 'bg-white/90 backdrop-blur-xl shadow-nav'
-                : 'bg-white/80 backdrop-blur-sm' // Always have background when not scrolled
+                ? 'bg-white/60 backdrop-blur-2xl shadow-nav border border-white/30'
+                : 'bg-white/40 backdrop-blur-xl border border-white/20'
             }`}
           >
             {/* Logo */}
