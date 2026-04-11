@@ -14,9 +14,6 @@ const {
 
 const router = express.Router();
 
-// Store verified emails (temporary after OTP)
-const verifiedEmails = new Set();
-
 // ================= REGISTER =================
 router.post('/register', validateRegister, async (req, res) => {
   try {
@@ -27,7 +24,9 @@ router.post('/register', validateRegister, async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    if (!verifiedEmails.has(email)) {
+    // Check MongoDB for verified email (replaces in-memory Set)
+    const verifiedRecord = await OTP.findOne({ email, verified: true });
+    if (!verifiedRecord) {
       return res.status(400).json({ message: "Email not verified ❌" });
     }
 
@@ -43,6 +42,9 @@ router.post('/register', validateRegister, async (req, res) => {
     });
 
     await user.save();
+
+    // Clean up verified OTP record after successful registration
+    await OTP.deleteMany({ email });
 
     const payload = { id: user.id, name: user.name };
     const token = jwt.sign(
@@ -75,6 +77,12 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
   try {
     const { email } = req.body;
 
+    // Check if email service is configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('❌ EMAIL_USER or EMAIL_PASS not configured!');
+      return res.status(500).json({ message: "Email service not configured on server ❌" });
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     await OTP.deleteMany({ email });
@@ -83,17 +91,23 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
       email,
       otp,
       expires: new Date(Date.now() + 10 * 60 * 1000),
+      verified: false,
     });
 
-    // ✅ Send response immediately
-    res.json({ message: "OTP sent ✅" });
-
-    // ✅ Send email in background
-    sendEmail(
-      email,
-      "OTP Verification",
-      `Your OTP is ${otp}. It will expire in 10 minutes.`
-    ).catch(err => console.error("Email Error:", err));
+    // Send email and wait for it before responding
+    try {
+      await sendEmail(
+        email,
+        "OTP Verification",
+        `Your OTP is <strong>${otp}</strong>. It will expire in 10 minutes.`
+      );
+      res.json({ message: "OTP sent ✅" });
+    } catch (emailErr) {
+      console.error("❌ Email send failed:", emailErr.message);
+      // Clean up the OTP since email failed
+      await OTP.deleteMany({ email });
+      res.status(500).json({ message: "Failed to send OTP email. Please try again." });
+    }
 
   } catch (err) {
     console.error('OTP Send Error:', err);
@@ -106,7 +120,7 @@ router.post("/verify-otp", validateVerifyOtp, async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const record = await OTP.findOne({ email });
+    const record = await OTP.findOne({ email, verified: false });
 
     if (!record) {
       return res.status(400).json({ message: "No OTP found ❌" });
@@ -121,8 +135,10 @@ router.post("/verify-otp", validateVerifyOtp, async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP ❌" });
     }
 
-    await OTP.deleteOne({ email });
-    verifiedEmails.add(email);
+    // Mark as verified in MongoDB (persists across server restarts)
+    record.verified = true;
+    record.expires = new Date(Date.now() + 30 * 60 * 1000); // Extend 30 min for registration
+    await record.save();
 
     res.json({ message: "Verified ✅" });
 
