@@ -3,11 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar'; // Import Navbar
 import api from '../lib/api';
-import { ArrowRight, Camera } from 'lucide-react';
+import { ArrowRight, Camera, ArrowLeft } from 'lucide-react';
 
 export const Register = () => {
+  const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
-  const [showOtpField, setShowOtpField] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,8 +16,6 @@ export const Register = () => {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -31,41 +29,32 @@ export const Register = () => {
     }
   };
 
-  const handleSendOtp = async () => {
-    if (!email) { setError('Please enter your email first'); return; }
-    setSendingOtp(true); setError('');
-    try {
-      await api.post("/auth/send-otp", { email });
-      alert("OTP sent 📩");
-      setShowOtpField(true);
-    } catch (err) {
-      setError(err.response?.data?.message || "Failed to send OTP");
-    } finally { setSendingOtp(false); }
-  };
-
-  const handleVerifyOtp = async () => {
-    setVerifyingOtp(true); setError('');
-    try {
-      await api.post('/auth/verify-otp', { email, otp });
-      alert("Email verified ✅");
-      navigate('/login');
-    } catch (err) {
-      setError(err.response?.data?.message || "Invalid OTP");
-    } finally { setVerifyingOtp(false); }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleInitialSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) { setError('Passwords do not match'); return; }
     if (!profilePhoto) { setError('Profile photo is required'); return; }
 
     setLoading(true); setError('');
     try {
+      await api.post("/auth/send-otp", { email });
+      setStep(2);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to send OTP");
+    } finally { setLoading(false); }
+  };
+
+  const handleFinalSubmit = async (e) => {
+    e.preventDefault();
+    if (!otp) { setError('Please enter your OTP'); return; }
+
+    setLoading(true); setError('');
+    try {
+      await api.post('/auth/verify-otp', { email, otp });
       const res = await api.post('/auth/register', { name, email, password, phone, profilePhoto });
       login(res.data.token, res.data.user);
-      setShowOtpField(true);
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Verification or Registration failed");
     } finally { setLoading(false); }
   };
 
@@ -105,96 +94,125 @@ export const Register = () => {
         {/* Right — Form */}
         <div className="flex-1 flex items-start justify-center px-6 py-12 lg:px-16 bg-brand-light overflow-y-auto">
           <div className="w-full max-w-md py-8">
-            {/* Mobile logo removed */}
             
-            <h2 className="font-display text-3xl font-bold text-brand-dark mb-2">Create Account</h2>
-            <p className="text-brand-muted mb-10">Join Kindlift and start your journey</p>
+            {step === 1 ? (
+              <>
+                <h2 className="font-display text-3xl font-bold text-brand-dark mb-2">Create Account</h2>
+                <p className="text-brand-muted mb-10">Join Kindlift and start your journey</p>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
-                  <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold">!</span>
-                  {error}
-                </div>
-              )}
+                <form onSubmit={handleInitialSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
+                      <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold">!</span>
+                      {error}
+                    </div>
+                  )}
 
-              {/* Profile Photo */}
-              <div className="flex justify-center mb-4">
-                <div className="relative group">
-                  <div className={`w-24 h-24 rounded-full overflow-hidden border-2 ${!profilePhoto && error?.includes('photo') ? 'border-red-400' : 'border-brand-gray-light'} flex items-center justify-center bg-brand-dark/5 transition-all group-hover:border-brand-accent`}>
-                    {profilePhoto ? (
-                      <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                  {/* Profile Photo */}
+                  <div className="flex justify-center mb-4">
+                    <div className="relative group">
+                      <div className={`w-24 h-24 rounded-full overflow-hidden border-2 ${!profilePhoto && error?.includes('photo') ? 'border-red-400' : 'border-brand-gray-light'} flex items-center justify-center bg-brand-dark/5 transition-all group-hover:border-brand-accent`}>
+                        {profilePhoto ? (
+                          <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                          <Camera className="h-8 w-8 text-brand-muted" />
+                        )}
+                      </div>
+                      <label htmlFor="photo-upload"
+                        className="absolute bottom-0 right-0 bg-brand-dark p-2.5 rounded-full text-white cursor-pointer hover:bg-brand-accent transition-all shadow-lg">
+                        <Camera className="h-3.5 w-3.5" />
+                        <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Full Name <span className="text-red-400">*</span></label>
+                    <input type="text" required className="input-underline" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email <span className="text-red-400">*</span></label>
+                    <input type="email" required className="input-underline w-full" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Password <span className="text-red-400">*</span></label>
+                    <input type="password" required className="input-underline" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Confirm Password <span className="text-red-400">*</span></label>
+                    <input type="password" required className="input-underline" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Phone (optional)</label>
+                    <input type="tel" className="input-underline" placeholder="1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  </div>
+
+                  <button type="submit" disabled={loading}
+                    className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4">
+                    {loading ? (
+                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Sending OTP...</span>
                     ) : (
-                      <Camera className="h-8 w-8 text-brand-muted" />
+                      <>Sign Up <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
                     )}
-                  </div>
-                  <label htmlFor="photo-upload"
-                    className="absolute bottom-0 right-0 bg-brand-dark p-2.5 rounded-full text-white cursor-pointer hover:bg-brand-accent transition-all shadow-lg">
-                    <Camera className="h-3.5 w-3.5" />
-                    <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Full Name <span className="text-red-400">*</span></label>
-                <input type="text" required className="input-underline" placeholder="Enter your full name" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-
-              <div>
-                <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email <span className="text-red-400">*</span></label>
-                <div className="flex gap-2 items-end">
-                  <input type="email" required className="input-underline flex-1" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-                  <button type="button" onClick={handleSendOtp} disabled={sendingOtp}
-                    className="px-5 py-2.5 bg-brand-dark text-white text-sm font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 whitespace-nowrap disabled:opacity-50">
-                    {sendingOtp ? <span className="inline-flex items-center gap-1.5"><div className="loader-spinner !w-3.5 !h-3.5 !border-2" />Sending...</span> : 'Verify'}
                   </button>
+
+                  <p className="text-center text-sm text-brand-muted">
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-display font-semibold text-brand-accent hover:text-brand-accent-hover link-hover">Sign in here</Link>
+                  </p>
+                </form>
+
+                <div className="mt-6 p-4 bg-brand-dark/5 rounded-xl text-center">
+                  <p className="text-xs text-brand-muted"><span className="font-semibold text-brand-dark">Note:</span> Profile photo is required</p>
                 </div>
-                {showOtpField && (
-                  <div className="flex gap-2 mt-4 items-end">
-                    <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)}
-                      className="input-underline flex-1" />
-                    <button type="button" onClick={handleVerifyOtp} disabled={verifyingOtp}
-                      className="px-5 py-2.5 bg-green-600 text-white text-sm font-display font-bold rounded-full hover:bg-green-700 transition-all whitespace-nowrap disabled:opacity-50">
-                      {verifyingOtp ? <span className="inline-flex items-center gap-1.5"><div className="loader-spinner !w-3.5 !h-3.5 !border-2" />Verifying...</span> : 'Verify OTP'}
-                    </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={() => setStep(1)} 
+                  className="mb-8 flex items-center text-sm font-medium text-brand-muted hover:text-brand-dark transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Back to details
+                </button>
+                <h2 className="font-display text-3xl font-bold text-brand-dark mb-2">Verify Email</h2>
+                <p className="text-brand-muted mb-10">We've sent a 6-digit OTP to <span className="font-semibold text-brand-dark">{email}</span></p>
+
+                <form onSubmit={handleFinalSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
+                      <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold">!</span>
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-display font-semibold text-brand-dark mb-3 text-center">Enter OTP <span className="text-red-400">*</span></label>
+                    <input 
+                      type="text" 
+                      required 
+                      className="input-underline text-center text-3xl tracking-widest font-display py-4" 
+                      placeholder="------" 
+                      maxLength="6" 
+                      value={otp} 
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))} 
+                    />
                   </div>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Password <span className="text-red-400">*</span></label>
-                <input type="password" required className="input-underline" placeholder="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-
-              <div>
-                <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Confirm Password <span className="text-red-400">*</span></label>
-                <input type="password" required className="input-underline" placeholder="Confirm your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
-              </div>
-
-              <div>
-                <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Phone (optional)</label>
-                <input type="tel" className="input-underline" placeholder="1234567890" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
-
-              <button type="submit" disabled={loading}
-                className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4">
-                {loading ? (
-                  <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Registering...</span>
-                ) : (
-                  <>Sign Up <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
-                )}
-              </button>
-
-              <p className="text-center text-sm text-brand-muted">
-                Already have an account?{' '}
-                <Link to="/login" className="font-display font-semibold text-brand-accent hover:text-brand-accent-hover link-hover">Sign in here</Link>
-              </p>
-            </form>
-
-            <div className="mt-6 p-4 bg-brand-dark/5 rounded-xl text-center">
-              <p className="text-xs text-brand-muted"><span className="font-semibold text-brand-dark">Note:</span> Profile photo is required</p>
-            </div>
+                  <button type="submit" disabled={loading}
+                    className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed mt-4">
+                    {loading ? (
+                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Verifying...</span>
+                    ) : (
+                      <>Verify & Register <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>

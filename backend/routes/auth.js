@@ -96,25 +96,13 @@ router.post('/register', validateRegister, async (req, res) => {
 /** @type {Object.<string, {otp: string, expires: number}>} In-memory OTP storage */
 const otpStore = {};
 
-/**
- * Gmail SMTP transporter for sending OTP emails.
- * Requires EMAIL_USER and EMAIL_PASS environment variables.
- */
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const { sendEmail } = require('../utils/sendEmail');
 
 /**
  * POST /send-otp — Send OTP verification email
  *
  * Generates a random 6-digit OTP, stores it in memory (5-minute expiry),
- * and sends it via Gmail SMTP.
+ * and sends it via centralized sendEmail utility.
  */
 router.post("/send-otp", validateSendOtp, async (req, res) => {
   const { email } = req.body;
@@ -127,16 +115,15 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
   };
 
   try {
-    await transporter.sendMail({
-      from: "Kindlift",
-      to: email,
-      subject: "OTP Verification",
-      text: `Use ${otp} as your One-Time Password (OTP) to continue. This code will expire shortly.`,
-    });
+    await sendEmail(
+      email,
+      "OTP Verification",
+      `Use ${otp} as your One-Time Password (OTP) to continue. This code will expire shortly.`
+    );
 
     res.json({ message: "OTP sent" });
   } catch (err) {
-    console.log(err);
+    console.error('OTP Send Error:', err);
     res.status(500).json({ message: "Email failed" });
   }
 });
