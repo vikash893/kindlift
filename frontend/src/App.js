@@ -41,7 +41,7 @@ return !user ? children : <Navigate to="/dashboard" />;
 /* Hide navbar on login/register pages */
 const ConditionalNavbar = () => {
 const location = useLocation();
-const hideOn = ['/login', '/register'];
+const hideOn = ['/login', '/register', '/feedback'];
 if (hideOn.includes(location.pathname)) return null;
 return <Navbar />;
 };
