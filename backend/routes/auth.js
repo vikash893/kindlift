@@ -1,3 +1,5 @@
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "EXISTS" : "MISSING");
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -25,7 +27,8 @@ router.post('/register', validateRegister, async (req, res) => {
     }
 
     // Check MongoDB for verified email (replaces in-memory Set)
-    const verifiedRecord = await OTP.findOne({ email, verified: true });
+    const verifiedRecord = await OTP.findOne({ email, verified: true })
+      .sort({ createdAt: -1 });
     if (!verifiedRecord) {
       return res.status(400).json({ message: "Email not verified ❌" });
     }
@@ -86,6 +89,8 @@ router.post("/send-otp", validateSendOtp, async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("Generated OTP:", otp);
+    console.log("SEND OTP EMAIL:", email);
 
     await OTP.deleteMany({ email });
 
@@ -122,8 +127,12 @@ router.post("/verify-otp", validateVerifyOtp, async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const record = await OTP.findOne({ email, verified: false });
-
+    const record = await OTP.findOne({ email }).sort({ createdAt: -1 });
+    console.log("DB OTP:", record?.otp);
+    console.log("ENTERED OTP:", otp);
+    console.log("TYPE DB:", typeof record?.otp);
+    console.log("TYPE ENTERED:", typeof otp);
+    console.log("VERIFY OTP EMAIL:", email);
     if (!record) {
       return res.status(400).json({ message: "No OTP found ❌" });
     }
@@ -133,7 +142,7 @@ router.post("/verify-otp", validateVerifyOtp, async (req, res) => {
       return res.status(400).json({ message: "OTP expired ⏰" });
     }
 
-    if (record.otp !== otp) {
+    if (record.otp !== otp.toString()) {
       return res.status(400).json({ message: "Invalid OTP ❌" });
     }
 
