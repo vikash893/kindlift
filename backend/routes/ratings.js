@@ -158,6 +158,35 @@ router.post('/predict-sentiment', authMiddleware, async (req, res) => {
 });
 
 /**
+ * POST /test-sentiment — PUBLIC testing route (No token required)
+ * 
+ * Use this to verify ML integration on Render without needing a login token.
+ */
+router.post('/test-sentiment', async (req, res) => {
+  try {
+    const { review } = req.body;
+    
+    if (!review || !review.trim()) {
+      return res.status(400).json({ message: 'Missing "review" field' });
+    }
+
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+
+    const mlResponse = await fetch(`${mlServiceUrl}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review: review.trim() })
+    });
+
+    const prediction = await mlResponse.json();
+    res.json(prediction);
+  } catch (err) {
+    console.error('ML Test Error:', err.message);
+    res.status(503).json({ message: 'ML service unavailable' });
+  }
+});
+
+/**
  * GET /sentiment/:userId — Get sentiment summary for a user
  *
  * Returns the user's average rating along with ML-predicted
