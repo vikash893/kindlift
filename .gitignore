@@ -15,3 +15,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# Python / ML
+__pycache__/
+*.pyc
+ml/ola_review_dataset.csv

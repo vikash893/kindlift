@@ -114,4 +114,112 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
+/**
+ * POST /predict-sentiment — Get ML-predicted sentiment from review text
+ *
+ * Calls the Python ML microservice to predict whether
+ * a given review text is positive, neutral, or negative.
+ *
+ * Body: { "review": "the driver was very friendly" }
+ * Response: { "predicted_sentiment": "positive", "confidence": "high", ... }
+ */
+router.post('/predict-sentiment', authMiddleware, async (req, res) => {
+  try {
+    const { review } = req.body;
+
+    if (!review || !review.trim()) {
+      return res.status(400).json({ message: 'Missing "review" field' });
+    }
+
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+
+    const mlResponse = await fetch(`${mlServiceUrl}/predict`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review: review.trim() })
+    });
+
+    if (!mlResponse.ok) {
+      const errorData = await mlResponse.json();
+      return res.status(mlResponse.status).json({
+        message: 'ML service error',
+        detail: errorData.error
+      });
+    }
+
+    const prediction = await mlResponse.json();
+    res.json(prediction);
+  } catch (err) {
+    console.error('ML Service Error:', err.message);
+    res.status(503).json({
+      message: 'ML service unavailable. Make sure the Python server is running on port 5001.'
+    });
+  }
+});
+
+/**
+ * GET /sentiment/:userId — Get sentiment summary for a user
+ *
+ * Returns the user's average rating along with ML-predicted
+ * sentiments from their most recent reviews.
+ */
+router.get('/sentiment/:userId', async (req, res) => {
+  try {
+    if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const avgRating = user.totalRatings > 0
+      ? (user.ratingSum / user.totalRatings).toFixed(1)
+      : 0;
+
+    // Get the user's latest reviews
+    const latestRatings = await Rating.find({ ratedUserId: req.params.userId })
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    // Predict sentiment for each review that has text
+    let mlPredictions = [];
+    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+
+    for (const r of latestRatings) {
+      if (r.review && r.review.trim()) {
+        try {
+          const mlResponse = await fetch(`${mlServiceUrl}/predict`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ review: r.review.trim() })
+          });
+          if (mlResponse.ok) {
+            const prediction = await mlResponse.json();
+            mlPredictions.push({
+              review: r.review,
+              rating: r.rating,
+              ...prediction
+            });
+          }
+        } catch {
+          // ML service not available — skip prediction
+        }
+      }
+    }
+
+    res.json({
+      userId: user._id,
+      name: user.name,
+      averageRating: parseFloat(avgRating),
+      totalRatings: user.totalRatings,
+      mlPredictions
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
