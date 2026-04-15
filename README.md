@@ -61,27 +61,27 @@
 |---------|-------------|
 | **Offer Rides** | Create ride offers with source, destination, seats, and departure time |
 | **Driver Verification** | One-time vehicle + license verification on first ride creation |
-| **Manage Requests** | Accept or reject incoming ride requests from passengers |
-| **Complete Rides** | Verify ride completion using passenger's 4-digit OTP code |
-| **Earn Coins** | Receive coins based on distance covered (1 coin per km) |
+| **Manage Requests** | Accept or reject incoming ride requests from passengers            |
+| **Complete Rides** | Verify ride completion using passenger's 4-digit OTP code           |
+| **Earn Coins** | Receive coins based on distance covered (1 coin per km)                 |
 
 ### For Passengers
 | Feature | Description |
 |---------|-------------|
-| **Search Rides** | Find matching rides based on source/destination coordinates |
-| **Book Rides** | Request seats on available rides with real-time notifications |
-| **Real-Time Chat** | Message drivers in real-time after booking |
-| **Rate Drivers** | Leave 1-5 star ratings with text reviews post-ride |
-| **Save Routes** | Bookmark frequently used routes for quick access |
+| **Search Rides** | Find matching rides based on source/destination coordinates           |
+| **Book Rides** | Request seats on available rides with real-time notifications           |
+| **Real-Time Chat** | Message drivers in real-time after booking                          |
+| **Rate Drivers** | Leave 1-5 star ratings with text reviews post-ride                    |
+| **Save Routes** | Bookmark frequently used routes for quick access                       |
 
 ### General
 | Feature | Description |
 |---------|-------------|
-| **OTP Email Verification** | Email-based OTP verification during registration |
+| **OTP Email Verification** | Email-based OTP verification during registration             |
 | **Interactive Maps** | Leaflet-powered maps for location selection and ride visualization |
-| **3D Hero Section** | Immersive Three.js-powered landing page with animated car model |
-| **Responsive Design** | Fully responsive UI with mobile-first approach |
-| **Custom Cursor** | Cuberto-style custom cursor for premium feel |
+| **3D Hero Section** | Immersive Three.js-powered landing page with animated car model     |
+| **Responsive Design** | Fully responsive UI with mobile-first approach                    |
+| **Custom Cursor** | Cuberto-style custom cursor for premium feel                          |
 
 ---
 
