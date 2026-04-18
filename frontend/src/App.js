@@ -21,6 +21,7 @@ import { FAQs } from './pages/FAQs';
 import { Loader } from './components/Loader';
 import Feedback from './pages/Feedback';
 import { ForgotPassword } from './pages/ForgotPassword';
+import ScrollToTop from './components/ScrollToTop';
 // import { PrivacyPolicy } from './pages/PrivacyPolicy';
 // import { TermsOfService } from './pages/TermsOfService';
 // import { Safety } from './pages/Safety';
@@ -48,7 +49,7 @@ const ConditionalNavbar = () => {
 };
 
 function App() {
-  return (<AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
+  return (<AuthProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
