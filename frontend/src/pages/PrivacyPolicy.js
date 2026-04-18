@@ -115,8 +115,8 @@ export const PrivacyPolicy = () => {
                   <h3 className="font-display text-xl font-bold mb-2">Questions about your privacy?</h3>
                   <p className="text-white/50 leading-relaxed">
                     If you have any questions or concerns about this privacy policy or your data, please contact us at{' '}
-                    <a href="mailto:support@kindlift.in" className="text-brand-accent hover:underline">
-                      support@kindlift.in
+                    <a href="mailto:rajputvishnu2513@gmail.com" className="text-brand-accent hover:underline">
+                      rajputvishnu2513@gmail.com
                     </a>
                   </p>
                 </div>
