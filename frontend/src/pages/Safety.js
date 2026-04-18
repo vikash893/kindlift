@@ -133,8 +133,8 @@ export const Safety = () => {
               <div>
                 <h3 className="font-display text-xl font-bold text-brand-dark mb-2">In case of emergency</h3>
                 <p className="text-brand-muted leading-relaxed">
-                  If you ever feel unsafe during a ride, use the in-app SOS button or call emergency services at <strong className="text-brand-dark">112</strong>. 
-                  You can also reach our 24/7 safety team at <strong className="text-brand-dark">+91 (800) 123-4567</strong>.
+                  If you ever feel unsafe during a ride, use the in-app SOS button or call emergency services at <strong className="text-brand-dark">112</strong>.
+                  You can also reach our 24/7 safety team at <strong className="text-brand-dark">+91 78775 87073</strong>.
                 </p>
               </div>
             </div>
