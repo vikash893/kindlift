@@ -422,12 +422,14 @@ const RidesTab = () => {
   );
 };
 
-// ─── RATINGS TAB ────────────────────────────────────
+// ─── RATINGS TAB (with AI Sentiment) ────────────────
 const RatingsTab = () => {
   const [ratings, setRatings] = useState([]);
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [sentiments, setSentiments] = useState({});
+  const [analyzingAll, setAnalyzingAll] = useState(false);
 
   const fetchRatings = useCallback(async () => {
     setLoading(true);
@@ -441,14 +443,70 @@ const RatingsTab = () => {
 
   useEffect(() => { fetchRatings(); }, [fetchRatings]);
 
+  const analyzeSentiment = async (ratingId, reviewText) => {
+    if (!reviewText?.trim()) return;
+    setSentiments(prev => ({ ...prev, [ratingId]: { loading: true } }));
+    try {
+      const res = await api.post('/ratings/predict-sentiment', { review: reviewText });
+      setSentiments(prev => ({ ...prev, [ratingId]: res.data }));
+    } catch {
+      setSentiments(prev => ({ ...prev, [ratingId]: { error: true } }));
+    }
+  };
+
+  const analyzeAll = async () => {
+    setAnalyzingAll(true);
+    const reviewRatings = ratings.filter(r => r.review?.trim());
+    for (const r of reviewRatings) {
+      if (!sentiments[r._id] || sentiments[r._id].error) {
+        await analyzeSentiment(r._id, r.review);
+      }
+    }
+    setAnalyzingAll(false);
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this rating? User aggregate will be updated.')) return;
     try { await api.delete(`/admin/ratings/${id}`); fetchRatings(); }
     catch (err) { alert('Failed to delete rating'); }
   };
 
+  const getSentimentBadge = (s) => {
+    if (!s) return null;
+    if (s.loading) return <span className="px-2 py-0.5 text-[10px] rounded-full bg-gray-100 text-gray-500 font-bold animate-pulse">Analyzing...</span>;
+    if (s.error) return <span className="px-2 py-0.5 text-[10px] rounded-full bg-red-50 text-red-400 font-bold">ML Error</span>;
+    const colors = {
+      positive: 'bg-emerald-100 text-emerald-800',
+      negative: 'bg-red-100 text-red-800',
+      neutral: 'bg-amber-100 text-amber-800',
+    };
+    return (
+      <span className={`px-2.5 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full ${colors[s.predicted_sentiment] || 'bg-gray-100 text-gray-600'}`}>
+        {s.predicted_sentiment} · {s.confidence} ({Math.round(s.confidence_score * 100)}%)
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-6">
+      {/* AI Analysis Header */}
+      <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-indigo-500 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-indigo-900 text-sm">AI Sentiment Analysis</p>
+            <p className="text-xs text-indigo-600">Analyze review sentiments using the ML model</p>
+          </div>
+        </div>
+        <button onClick={analyzeAll} disabled={analyzingAll || loading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-full text-xs font-display font-bold hover:bg-indigo-700 transition-all disabled:opacity-50">
+          <Activity className={`h-3.5 w-3.5 ${analyzingAll ? 'animate-spin' : ''}`} />
+          {analyzingAll ? 'Analyzing...' : 'Analyze All Reviews'}
+        </button>
+      </div>
+
       {loading ? <LoadingSpinner /> : ratings.length === 0 ? <EmptyState icon={Star} text="No ratings yet" /> : (
         <>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -459,6 +517,19 @@ const RatingsTab = () => {
                   <button onClick={() => handleDelete(r._id)} className="p-1 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
                 <p className="text-sm text-brand-dark mb-3">{r.review || <span className="text-brand-muted italic">No review text</span>}</p>
+
+                {/* AI Sentiment Badge */}
+                {r.review?.trim() && (
+                  <div className="mb-3 flex items-center gap-2">
+                    {sentiments[r._id] ? getSentimentBadge(sentiments[r._id]) : (
+                      <button onClick={() => analyzeSentiment(r._id, r.review)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-display font-bold text-indigo-600 bg-indigo-50 rounded-full hover:bg-indigo-100 transition-colors">
+                        <TrendingUp className="h-3 w-3" /> Analyze
+                      </button>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between pt-3 border-t border-brand-gray-light">
                   <div className="text-xs"><span className="text-brand-muted">By:</span> <span className="font-semibold text-brand-dark">{r.raterId?.name || 'Unknown'}</span></div>
                   <div className="text-xs"><span className="text-brand-muted">For:</span> <span className="font-semibold text-brand-dark">{r.ratedUserId?.name || 'Unknown'}</span></div>
