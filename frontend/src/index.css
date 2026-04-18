@@ -17,14 +17,10 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: #fafafa;
     color: #0a0a0a;
-    cursor: none;
     overflow-x: hidden;
   }
 
-  /* Restore cursor on mobile */
-  @media (pointer: coarse) {
-    body { cursor: auto; }
-  }
+
 
   ::selection {
     background-color: rgba(232, 168, 56, 0.3);
@@ -60,26 +56,7 @@
   background: #555;
 }
 
-/* ─── Custom Cursor (Cuberto-style) ─────────────────── */
-.custom-cursor {
-  position: fixed;
-  top: -4px;
-  left: -4px;
-  width: 8px;
-  height: 8px;
-  background: #fff;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 99999;
-  mix-blend-mode: difference;
-  will-change: transform;
-  transition: opacity 0.3s ease;
-}
 
-@media (pointer: coarse) {
-  .custom-cursor { display: none !important; }
-  body { cursor: auto !important; }
-}
 
 /* ─── Cuberto Utilities ─────────────────────────────── */
 @layer utilities {
@@ -160,18 +137,7 @@
   transform: translateY(0);
 }
 
-/* ─── Magnetic Button ───────────────────────────────── */
-.magnetic-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
 
-.magnetic-btn:hover {
-  transform: translate(var(--magnet-x, 0), var(--magnet-y, 0));
-}
 
 /* ─── Link Hover Underline ──────────────────────────── */
 .link-hover {
