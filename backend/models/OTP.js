@@ -17,6 +17,11 @@ const otpSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  purpose: {
+    type: String,
+    enum: ['registration', 'password-reset'],
+    default: 'registration',
+  },
 });
 
 // Auto-delete documents 30 minutes after expiry (cleanup)
