@@ -115,7 +115,7 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 /**
- * POST /predict-sentiment — Get ML-predicted sentiment from review text
+ * POST /predict-sentiment — Get ML-predicted sentiment (Admin only)
  *
  * Calls the Python ML microservice to predict whether
  * a given review text is positive, neutral, or negative.
@@ -125,6 +125,12 @@ router.get('/user/:userId', async (req, res) => {
  */
 router.post('/predict-sentiment', authMiddleware, async (req, res) => {
   try {
+    // Admin check
+    const user = await User.findById(req.user.id);
+    if (!user || (!user.isAdmin && user.role !== 'admin' && user.role !== 'superadmin')) {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
     const { review } = req.body;
 
     if (!review || !review.trim()) {
@@ -157,45 +163,20 @@ router.post('/predict-sentiment', authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * POST /test-sentiment — PUBLIC testing route (No token required)
- * 
- * Use this to verify ML integration on Render without needing a login token.
- */
-router.post('/test-sentiment', async (req, res) => {
-  try {
-    const { review } = req.body;
-    
-    if (!review || !review.trim()) {
-      return res.status(400).json({ message: 'Missing "review" field' });
-    }
 
-    const mlServiceUrl = process.env.ML_SERVICE_URL || 'http://localhost:5001';
-
-    const mlResponse = await fetch(`${mlServiceUrl}/predict`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ review: review.trim() })
-    });
-
-    const prediction = await mlResponse.json();
-    res.json(prediction);
-  } catch (err) {
-    console.error('ML Test Error:', err.message);
-    res.status(503).json({ message: 'ML service unavailable' });
-  }
-});
 
 /**
- * GET /sentiment/:userId — Get sentiment summary for a user
+ * GET /sentiment/:userId — Get sentiment summary for a user (Admin only)
  *
  * Returns the user's average rating along with ML-predicted
  * sentiments from their most recent reviews.
  */
-router.get('/sentiment/:userId', async (req, res) => {
+router.get('/sentiment/:userId', authMiddleware, async (req, res) => {
   try {
-    if (!req.params.userId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid user ID format' });
+    // Admin check
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || (!adminUser.isAdmin && adminUser.role !== 'admin' && adminUser.role !== 'superadmin')) {
+      return res.status(403).json({ message: 'Admin access required' });
     }
 
     const user = await User.findById(req.params.userId);
