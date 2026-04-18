@@ -20,6 +20,7 @@ import { Safety } from './pages/Safety';
 import { FAQs } from './pages/FAQs';
 import { Loader } from './components/Loader';
 import Feedback from './pages/Feedback';
+import { ForgotPassword } from './pages/ForgotPassword';
 // import { PrivacyPolicy } from './pages/PrivacyPolicy';
 // import { TermsOfService } from './pages/TermsOfService';
 // import { Safety } from './pages/Safety';
@@ -41,7 +42,7 @@ const PublicRoute = ({ children }) => {
 /* Hide navbar on login/register pages */
 const ConditionalNavbar = () => {
   const location = useLocation();
-  const hideOn = ['/login', '/register', '/feedback'];
+  const hideOn = ['/login', '/register', '/feedback', '/forgot-password'];
   if (hideOn.includes(location.pathname)) return null;
   return <Navbar />;
 };
@@ -67,6 +68,12 @@ function App() {
       <Route path="/register" element={
         <PublicRoute>
           <Register />
+        </PublicRoute>
+      } />
+
+      <Route path="/forgot-password" element={
+        <PublicRoute>
+          <ForgotPassword />
         </PublicRoute>
       } />
 

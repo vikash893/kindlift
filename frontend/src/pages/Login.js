@@ -109,9 +109,9 @@ export const Login = () => {
                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-brand-accent focus:ring-brand-accent" />
                   <span className="text-sm text-brand-muted">Remember me</span>
                 </label>
-                <a href="#" className="text-sm text-brand-accent hover:text-brand-accent-hover font-display font-semibold link-hover">
+                <Link to="/forgot-password" className="text-sm text-brand-accent hover:text-brand-accent-hover font-display font-semibold link-hover">
                   Forgot password?
-                </a>
+                </Link>
               </div>
 
               <button
