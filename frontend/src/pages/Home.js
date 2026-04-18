@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { HeroCar3D } from '../components/HeroCar3D';
 import { RevealSection, TextReveal } from '../components/TextReveal';
-import { MagneticButton } from '../components/MagneticButton';
+
 import { MarqueeText } from '../components/MarqueeText';
 import { Footer } from '../components/Footer';
 
@@ -177,19 +177,19 @@ export const Home = () => {
               className="flex flex-col sm:flex-row gap-4 mb-16 animate-fade-up"
               style={{ animationDelay: '0.45s' }}
             >
-              <MagneticButton as={Link} to="/book-ride"
+              <Link to="/book-ride"
                 className="group inline-flex items-center gap-3 px-8 py-4 bg-brand-accent text-brand-dark font-display font-bold text-base rounded-full hover:bg-white transition-all duration-500"
               >
                 Find a Ride
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </MagneticButton>
+              </Link>
 
-              <MagneticButton as={Link} to="/offer-ride"
+              <Link to="/offer-ride"
                 className="group inline-flex items-center gap-3 px-8 py-4 border border-white/20 text-white font-display font-bold text-base rounded-full hover:bg-white/10 transition-all duration-500"
               >
                 Offer a Ride
                 <ArrowUpRight className="h-5 w-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </MagneticButton>
+              </Link>
             </div>
 
             {/* Stats */}
