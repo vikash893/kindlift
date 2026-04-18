@@ -225,4 +225,97 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// ================= FORGOT PASSWORD — Send OTP =================
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Don't reveal whether the email exists for security
+      return res.json({ message: 'If that email exists, a reset OTP has been sent ✅' });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Password Reset OTP:', otp);
+
+    // Clear old OTPs for this email
+    await OTP.deleteMany({ email, purpose: 'password-reset' });
+
+    await OTP.create({
+      email,
+      otp,
+      expires: new Date(Date.now() + 10 * 60 * 1000),
+      verified: false,
+      purpose: 'password-reset',
+    });
+
+    try {
+      await sendEmail(
+        email,
+        'KindLift — Password Reset',
+        `Your password reset OTP is <strong>${otp}</strong>. It will expire in 10 minutes. If you didn't request this, please ignore this email.`
+      );
+      res.json({ message: 'Reset OTP sent ✅' });
+    } catch (emailErr) {
+      console.error('❌ Password reset email failed:', emailErr.message);
+      await OTP.deleteMany({ email, purpose: 'password-reset' });
+      res.status(500).json({ message: 'Failed to send reset email. Please try again.' });
+    }
+  } catch (err) {
+    console.error('Forgot Password Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ================= RESET PASSWORD — Verify OTP & Update =================
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP, and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // Find the OTP record
+    const record = await OTP.findOne({ email, purpose: 'password-reset' }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(400).json({ message: 'No reset OTP found. Please request a new one.' });
+    }
+
+    if (new Date() > record.expires) {
+      await OTP.deleteMany({ email, purpose: 'password-reset' });
+      return res.status(400).json({ message: 'OTP expired ⏰. Please request a new one.' });
+    }
+
+    if (record.otp !== otp.toString()) {
+      return res.status(400).json({ message: 'Invalid OTP ❌' });
+    }
+
+    // Hash new password and update
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await User.findOneAndUpdate({ email }, { password: hashedPassword });
+
+    // Clean up OTP records
+    await OTP.deleteMany({ email, purpose: 'password-reset' });
+
+    res.json({ message: 'Password reset successful ✅' });
+  } catch (err) {
+    console.error('Reset Password Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
