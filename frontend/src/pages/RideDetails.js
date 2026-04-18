@@ -27,8 +27,7 @@ export const RideDetails = () => {
   const [isRated, setIsRated] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const messagesEndRef = useRef(null);
-  const [sentiment, setSentiment] = useState(null);
-  const [sentimentLoading, setSentimentLoading] = useState(false);
+
 
   useEffect(() => {
     fetchRideData();
@@ -42,24 +41,7 @@ export const RideDetails = () => {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (review.trim().length > 3) {
-        setSentimentLoading(true);
-        try {
-          const res = await api.post('/ratings/predict-sentiment', { review });
-          setSentiment(res.data);
-        } catch (err) {
-          setSentiment(null);
-        } finally {
-          setSentimentLoading(false);
-        }
-      } else {
-        setSentiment(null);
-      }
-    }, 800);
-    return () => clearTimeout(timer);
-  }, [review]);
+
 
   const fetchRideData = async () => {
     try {
@@ -213,23 +195,6 @@ export const RideDetails = () => {
                   </div>
                   <textarea placeholder="Leave a review (optional)" className="w-full text-sm p-3 rounded-xl border border-brand-gray-light focus:ring-2 focus:ring-brand-accent/30 outline-none mb-3 bg-white" value={review} onChange={(e) => setReview(e.target.value)} />
                   
-                  {/* Real-time Sentiment Predictor */}
-                  {(sentimentLoading || sentiment) && (
-                    <div className="mb-4 flex items-center gap-2 text-xs bg-white p-2.5 rounded-lg border border-brand-gray-light">
-                      <span className="font-display font-bold text-brand-dark">Model Prediction:</span>
-                      {sentimentLoading ? (
-                        <span className="text-brand-muted animate-pulse font-medium">Analyzing your text...</span>
-                      ) : (
-                        <span className={`px-2.5 py-0.5 rounded-full font-bold ${
-                          sentiment.predicted_sentiment === 'positive' ? 'bg-emerald-100 text-emerald-700' :
-                          sentiment.predicted_sentiment === 'negative' ? 'bg-red-100 text-red-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {sentiment.predicted_sentiment.charAt(0).toUpperCase() + sentiment.predicted_sentiment.slice(1)} Sentiment
-                        </span>
-                      )}
-                    </div>
-                  )}
 
                   <button onClick={handleRatingSubmit} className="px-6 py-3 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">Submit Rating</button>
                 </div>
