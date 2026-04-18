@@ -13,6 +13,7 @@ export const Profile = () => {
   const [formData, setFormData] = useState({ name: '', phone: '', profilePhoto: '' });
   const [ratings, setRatings] = useState([]);
   const [stats, setStats] = useState({ ridesOffered: 0, ridesCompleted: 0, requestsMade: 0, requestsCompleted: 0 });
+  const [sentimentData, setSentimentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -26,12 +27,14 @@ export const Profile = () => {
   const fetchProfileData = async () => {
     setLoading(true);
     try {
-      const [ratingsRes, offersRes, requestsRes] = await Promise.all([
+      const [ratingsRes, offersRes, requestsRes, sentimentRes] = await Promise.all([
         api.get(`/ratings/user/${user.id}`),
         api.get('/rides/my-offers'),
         api.get('/requests/my-requests'),
+        api.get(`/ratings/sentiment/${user.id}`).catch(() => null) // fail silently if ML offline
       ]);
       setRatings(ratingsRes.data);
+      if (sentimentRes?.data) setSentimentData(sentimentRes.data.mlPredictions);
       setStats({
         ridesOffered: offersRes.data.length,
         ridesCompleted: offersRes.data.filter(r => r.status === 'completed').length,
@@ -165,30 +168,64 @@ export const Profile = () => {
 
       {/* Ratings Section */}
       <div className="bg-white rounded-2xl border border-brand-gray-light p-6">
-        <h2 className="font-display font-bold text-lg text-brand-dark mb-4 flex items-center gap-2">
-          <Star className="h-5 w-5 text-brand-accent" /> My Ratings ({ratings.length})
-        </h2>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <h2 className="font-display font-bold text-lg text-brand-dark flex items-center gap-2">
+            <Star className="h-5 w-5 text-brand-accent" /> My Ratings ({ratings.length})
+          </h2>
+          
+          {/* ML Sentiment Summary Badge */}
+          {sentimentData && sentimentData.length > 0 && (
+            <div className="flex items-center gap-2 bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-2 rounded-xl border border-indigo-100">
+              <span className="text-xs font-display font-bold text-indigo-800 flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> AI Sentiment Analysis:</span>
+              <div className="flex gap-1.5">
+                {sentimentData.map((s, i) => (
+                  <div key={i} className={`h-2.5 w-2.5 rounded-full ${
+                    s.predicted_sentiment === 'positive' ? 'bg-emerald-500' :
+                    s.predicted_sentiment === 'negative' ? 'bg-red-500' : 'bg-amber-400'
+                  }`} title={s.predicted_sentiment} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-8"><div className="loader-spinner" /></div>
         ) : ratings.length === 0 ? (
           <p className="text-brand-muted text-center py-8">No ratings received yet</p>
         ) : (
           <div className="space-y-3">
-            {ratings.map(r => (
-              <div key={r._id} className="bg-brand-dark/[0.02] rounded-xl p-4 flex items-start gap-4">
-                <div className="h-10 w-10 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-sm flex-shrink-0 overflow-hidden">
-                  {r.raterId?.profilePhoto ? <img src={r.raterId.profilePhoto} alt="" className="h-full w-full object-cover" /> : r.raterId?.name?.charAt(0)?.toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-sm text-brand-dark">{r.raterId?.name || 'Anonymous'}</span>
-                    <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${i < r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />)}</div>
+            {ratings.map(r => {
+              // Match with sentiment if available
+              const aiSentiment = sentimentData?.find(s => s.review === r.review);
+
+              return (
+                <div key={r._id} className="bg-brand-dark/[0.02] rounded-xl p-4 flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-sm flex-shrink-0 overflow-hidden">
+                    {r.raterId?.profilePhoto ? <img src={r.raterId.profilePhoto} alt="" className="h-full w-full object-cover" /> : r.raterId?.name?.charAt(0)?.toUpperCase()}
                   </div>
-                  <p className="text-sm text-brand-muted">{r.review || 'No written review'}</p>
-                  <p className="text-xs text-brand-muted/60 mt-1">{format(new Date(r.createdAt), 'MMM d, yyyy')}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-semibold text-sm text-brand-dark">{r.raterId?.name || 'Anonymous'}</span>
+                      <div className="flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} className={`h-3 w-3 ${i < r.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />)}</div>
+                      
+                      {/* Show AI tag on individual review if calculated */}
+                      {aiSentiment && (
+                        <span className={`ml-2 px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold rounded-full ${
+                          aiSentiment.predicted_sentiment === 'positive' ? 'bg-emerald-100 text-emerald-800' :
+                          aiSentiment.predicted_sentiment === 'negative' ? 'bg-red-100 text-red-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {aiSentiment.predicted_sentiment}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-brand-muted">{r.review || 'No written review'}</p>
+                    <p className="text-xs text-brand-muted/60 mt-1">{format(new Date(r.createdAt), 'MMM d, yyyy')}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

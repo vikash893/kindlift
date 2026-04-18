@@ -105,4 +105,4 @@ if __name__ == '__main__':
     print(f"\nKindLift ML Service running on http://localhost:{port}")
     print(f"   POST /predict  - Predict sentiment from review text")
     print(f"   GET  /health   - Health check\n")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
