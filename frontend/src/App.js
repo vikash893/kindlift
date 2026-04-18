@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
-import { CustomCursor } from './components/CustomCursor';
+
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Dashboard } from './pages/Dashboard';
@@ -47,7 +47,7 @@ const ConditionalNavbar = () => {
 };
 
 function App() {
-  return (<AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <CustomCursor /> <ConditionalNavbar />      <main className="flex-1">
+  return (<AuthProvider> <Router> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
