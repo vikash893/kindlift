@@ -273,6 +273,41 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
+// ================= VERIFY RESET OTP =================
+router.post('/verify-reset-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ message: 'Email and OTP are required' });
+    }
+
+    const record = await OTP.findOne({ email, purpose: 'password-reset' }).sort({ createdAt: -1 });
+
+    if (!record) {
+      return res.status(400).json({ message: 'No reset OTP found. Please request a new one.' });
+    }
+
+    if (new Date() > record.expires) {
+      await OTP.deleteMany({ email, purpose: 'password-reset' });
+      return res.status(400).json({ message: 'OTP expired ⏰. Please request a new one.' });
+    }
+
+    if (record.otp !== otp.toString()) {
+      return res.status(400).json({ message: 'Invalid OTP ❌' });
+    }
+
+    // Mark as verified so reset-password can confirm
+    record.verified = true;
+    await record.save();
+
+    res.json({ message: 'OTP verified ✅' });
+  } catch (err) {
+    console.error('Verify Reset OTP Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ================= RESET PASSWORD — Verify OTP & Update =================
 router.post('/reset-password', async (req, res) => {
   try {
