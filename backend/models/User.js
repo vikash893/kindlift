@@ -56,6 +56,14 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
 
+// ─── Performance Indexes ─────────────────────────────
+// email is already unique (built-in index)
+userSchema.index({ isActive: 1 });                         // Admin active user filter
+userSchema.index({ isDriverVerified: 1 });                 // Admin driver filter
+userSchema.index({ isAdmin: 1, role: 1 });                 // Admin role filter
+userSchema.index({ totalRatings: -1 });                    // Top rated users sort
+userSchema.index({ createdAt: -1 });                       // Recent users sort
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = { User };

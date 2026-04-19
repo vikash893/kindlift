@@ -1,29 +1,32 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AlertProvider } from './components/CustomAlert';
 import { Navbar } from './components/Navbar';
-
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { Dashboard } from './pages/Dashboard';
-import { OfferRide } from './pages/OfferRide';
-import { BookRide } from './pages/BookRide';
-import { RideDetails } from './pages/RideDetails';
-import { Home } from './pages/Home';
-import { About } from './pages/About';
-import { Contact } from './pages/Contact';
-import { AdminPanel } from './pages/AdminPanel';
-import { Profile } from './pages/Profile';
-import { PrivacyPolicy } from './pages/PrivacyPolicy';
-import { TermsOfService } from './pages/TermsOfService';
-import { Safety } from './pages/Safety';
-import { FAQs } from './pages/FAQs';
-import { NotFound } from './pages/NotFound';
 import { Loader } from './components/Loader';
-import Feedback from './pages/Feedback';
-import { ForgotPassword } from './pages/ForgotPassword';
 import ScrollToTop from './components/ScrollToTop';
+
+// ─── Lazy-loaded Pages (Code Splitting) ─────────────
+// Each page is only loaded when the user navigates to it,
+// reducing the initial JS bundle size dramatically.
+const Login = lazy(() => import('./pages/Login').then(m => ({ default: m.Login })));
+const Register = lazy(() => import('./pages/Register').then(m => ({ default: m.Register })));
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const OfferRide = lazy(() => import('./pages/OfferRide').then(m => ({ default: m.OfferRide })));
+const BookRide = lazy(() => import('./pages/BookRide').then(m => ({ default: m.BookRide })));
+const RideDetails = lazy(() => import('./pages/RideDetails').then(m => ({ default: m.RideDetails })));
+const Home = lazy(() => import('./pages/Home').then(m => ({ default: m.Home })));
+const About = lazy(() => import('./pages/About').then(m => ({ default: m.About })));
+const Contact = lazy(() => import('./pages/Contact').then(m => ({ default: m.Contact })));
+const AdminPanel = lazy(() => import('./pages/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const Profile = lazy(() => import('./pages/Profile').then(m => ({ default: m.Profile })));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('./pages/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const Safety = lazy(() => import('./pages/Safety').then(m => ({ default: m.Safety })));
+const FAQs = lazy(() => import('./pages/FAQs').then(m => ({ default: m.FAQs })));
+const NotFound = lazy(() => import('./pages/NotFound').then(m => ({ default: m.NotFound })));
+const Feedback = lazy(() => import('./pages/Feedback'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -48,6 +51,7 @@ const ConditionalNavbar = () => {
 
 function App() {
   return (<AuthProvider> <AlertProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
+    <Suspense fallback={<Loader />}>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
@@ -82,8 +86,6 @@ function App() {
         </PrivateRoute>
       } />
 
-
-
       <Route path="/offer-ride" element={
         <PrivateRoute>
           <OfferRide />
@@ -117,6 +119,7 @@ function App() {
       {/* 404 Catch-all */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   </main>
   </div>
   </Router>

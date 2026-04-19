@@ -75,6 +75,12 @@ const rideRequestSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// ─── Performance Indexes ─────────────────────────────
+rideRequestSchema.index({ passengerId: 1, status: 1 });    // My requests + status
+rideRequestSchema.index({ offerId: 1, status: 1 });        // Incoming requests for a ride
+rideRequestSchema.index({ status: 1 });                     // Admin stats
+rideRequestSchema.index({ createdAt: -1 });                 // Sort by latest
+
 const RideRequest = mongoose.model('RideRequest', rideRequestSchema);
 
 module.exports = { RideRequest };

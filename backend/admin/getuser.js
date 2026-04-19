@@ -22,6 +22,30 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
+// ─── Server-side Response Cache ──────────────────────
+// Cache heavy endpoints (stats) to avoid hitting DB on every request
+const responseCache = new Map();
+const CACHE_TTL = 60 * 1000; // 60 seconds
+
+function getCachedResponse(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    responseCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCachedResponse(key, data) {
+  responseCache.set(key, { data, timestamp: Date.now() });
+}
+
+// Invalidate stats cache when data changes
+function invalidateStatsCache() {
+  responseCache.delete('admin_stats');
+}
+
 // ─── Admin Auth Middleware ───────────────────────────────
 const adminMiddleware = async (req, res, next) => {
   try {
@@ -43,19 +67,15 @@ const adminMiddleware = async (req, res, next) => {
  */
 router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
   try {
+    // Check server-side cache first
+    const cached = getCachedResponse('admin_stats');
+    if (cached) return res.json(cached);
+
     const [
-      totalUsers,
-      activeUsers,
-      verifiedDrivers,
-      totalRides,
-      activeRides,
-      completedRides,
-      totalRequests,
-      pendingRequests,
-      acceptedRequests,
-      completedRequests,
-      totalRatings,
-      totalMessages,
+      totalUsers, activeUsers, verifiedDrivers,
+      totalRides, activeRides, completedRides,
+      totalRequests, pendingRequests, acceptedRequests, completedRequests,
+      totalRatings, totalMessages,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ isActive: { $ne: false } }),
@@ -71,81 +91,51 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
       Message.countDocuments(),
     ]);
 
-    // Get recent sign-ups (last 7 days)
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const newUsersThisWeek = await User.countDocuments({ createdAt: { $gte: weekAgo } });
-    const newRidesThisWeek = await RideOffer.countDocuments({ createdAt: { $gte: weekAgo } });
-
-    // Get user growth data (last 30 days, grouped by day)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const userGrowth = await User.aggregate([
-      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
+
+    const [newUsersThisWeek, newRidesThisWeek, userGrowth, rideGrowth, ratingAgg, topUsers, recentUsers, recentRides] = await Promise.all([
+      User.countDocuments({ createdAt: { $gte: weekAgo } }),
+      RideOffer.countDocuments({ createdAt: { $gte: weekAgo } }),
+      User.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      RideOffer.aggregate([
+        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      Rating.aggregate([
+        { $group: { _id: null, avg: { $avg: '$rating' }, total: { $sum: 1 } } },
+      ]),
+      User.find({ totalRatings: { $gt: 0 } })
+        .select('name email profilePhoto ratingSum totalRatings coins isDriverVerified')
+        .sort({ totalRatings: -1 }).limit(5).lean(),
+      User.find()
+        .select('name email createdAt profilePhoto isDriverVerified')
+        .sort({ createdAt: -1 }).limit(5).lean(),
+      RideOffer.find()
+        .populate('driverId', 'name email')
+        .sort({ createdAt: -1 }).limit(5).lean(),
     ]);
 
-    const rideGrowth = await RideOffer.aggregate([
-      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
-
-    // Average rating
-    const ratingAgg = await Rating.aggregate([
-      { $group: { _id: null, avg: { $avg: '$rating' }, total: { $sum: 1 } } },
-    ]);
-
-    // Top rated users
-    const topUsers = await User.find({ totalRatings: { $gt: 0 } })
-      .select('name email profilePhoto ratingSum totalRatings coins isDriverVerified')
-      .sort({ totalRatings: -1 })
-      .limit(5);
-
-    // Recent activity
-    const recentUsers = await User.find()
-      .select('name email createdAt profilePhoto isDriverVerified')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    const recentRides = await RideOffer.find()
-      .populate('driverId', 'name email')
-      .sort({ createdAt: -1 })
-      .limit(5);
-
-    res.json({
+    const response = {
       overview: {
-        totalUsers,
-        activeUsers,
-        verifiedDrivers,
-        totalRides,
-        activeRides,
-        completedRides,
-        totalRequests,
-        pendingRequests,
-        acceptedRequests,
-        completedRequests,
-        totalRatings,
-        totalMessages,
-        newUsersThisWeek,
-        newRidesThisWeek,
+        totalUsers, activeUsers, verifiedDrivers,
+        totalRides, activeRides, completedRides,
+        totalRequests, pendingRequests, acceptedRequests, completedRequests,
+        totalRatings, totalMessages,
+        newUsersThisWeek, newRidesThisWeek,
         averageRating: ratingAgg[0]?.avg?.toFixed(1) || '0.0',
       },
-      userGrowth,
-      rideGrowth,
-      topUsers,
-      recentUsers,
-      recentRides,
-    });
+      userGrowth, rideGrowth, topUsers, recentUsers, recentRides,
+    };
+
+    // Cache the response
+    setCachedResponse('admin_stats', response);
+    res.json(response);
   } catch (err) {
     console.error('Admin stats error:', err);
     res.status(500).json({ message: 'Server error' });
@@ -188,12 +178,15 @@ router.get('/users', authMiddleware, adminMiddleware, async (req, res) => {
       query.$and = conditions;
     }
 
-    const total = await User.countDocuments(query);
-    const users = await User.find(query)
-      .select('-password')
-      .sort({ [sortBy]: sortOrder })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const [total, users] = await Promise.all([
+      User.countDocuments(query),
+      User.find(query)
+        .select('-password')
+        .sort({ [sortBy]: sortOrder })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
 
     res.json({
       users,
@@ -268,6 +261,7 @@ router.put('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.json({ message: 'User updated successfully', user });
+    invalidateStatsCache();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -293,6 +287,7 @@ router.delete('/users/:id', authMiddleware, adminMiddleware, async (req, res) =>
     await Rating.deleteMany({ $or: [{ raterId: req.params.id }, { ratedUserId: req.params.id }] });
 
     res.json({ message: 'User and related data deleted successfully' });
+    invalidateStatsCache();
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }

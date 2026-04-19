@@ -60,6 +60,12 @@ const rideOfferSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// ─── Performance Indexes ─────────────────────────────
+rideOfferSchema.index({ driverId: 1, status: 1 });       // My offers + status filter
+rideOfferSchema.index({ status: 1 });                     // Admin stats countDocuments
+rideOfferSchema.index({ createdAt: -1 });                 // Sorting by latest
+rideOfferSchema.index({ status: 1, createdAt: -1 });      // Admin rides list
+
 const RideOffer = mongoose.model('RideOffer', rideOfferSchema);
 
 module.exports = { RideOffer };

@@ -65,6 +65,9 @@ const ratingSchema = new mongoose.Schema({
 
 // Prevent duplicate ratings: one rating per rater per ride request
 ratingSchema.index({ requestId: 1, raterId: 1 }, { unique: true });
+// ─── Performance Indexes ─────────────────────────────
+ratingSchema.index({ ratedUserId: 1, createdAt: -1 });     // User's received ratings
+ratingSchema.index({ createdAt: -1 });                      // Admin ratings list
 
 const Rating = mongoose.model('Rating', ratingSchema);
 
