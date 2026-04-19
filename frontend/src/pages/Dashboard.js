@@ -325,6 +325,28 @@ export const Dashboard = () => {
                         </button>
                       </div>
                     )}
+
+                    {req.status === 'completed' && (
+                      <div className="pt-5 border-t border-brand-gray-light space-y-3">
+                        {req.offerId?.driverId && (
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-blue-500 flex items-center justify-center text-white text-sm font-display font-bold">
+                              {req.offerId.driverId.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-sm font-display font-bold text-brand-dark">{req.offerId.driverId.name}</p>
+                              <p className="text-xs text-brand-muted">Ride completed</p>
+                            </div>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => navigate(`/ride/${req._id}`)}
+                          className="w-full px-4 py-3 bg-blue-600 text-white rounded-full text-sm font-display font-bold hover:bg-blue-700 transition-all duration-500 flex items-center justify-center gap-2"
+                        >
+                          {req.isRatedByPassenger ? 'View Details' : '⭐ Rate & Review'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -386,6 +408,17 @@ export const Dashboard = () => {
                           className="px-5 py-2.5 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500"
                         >
                           View Ride & Chat
+                        </button>
+                      </div>
+                    )}
+                    {req.status === 'completed' && (
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="px-3 py-1 text-xs bg-blue-500/10 text-blue-600 rounded-full font-display font-bold">COMPLETED</span>
+                        <button
+                          onClick={() => navigate(`/ride/${req._id}`)}
+                          className="px-5 py-2.5 bg-blue-600 text-white rounded-full text-sm font-display font-bold hover:bg-blue-700 transition-all duration-500"
+                        >
+                          {req.isRatedByDriver ? 'View Details' : '⭐ Rate & Review'}
                         </button>
                       </div>
                     )}
