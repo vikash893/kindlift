@@ -33,7 +33,24 @@ export const ForgotPassword = () => {
     }
   };
 
-  // Step 2: Verify OTP & Step 3: Reset Password (combined)
+  // Step 2: Verify OTP
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/auth/verify-reset-otp', { email, otp });
+      setSuccess(res.data.message);
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 3: Reset Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError('');
@@ -176,7 +193,7 @@ export const ForgotPassword = () => {
                 </div>
                 <p className="text-brand-muted mb-10 ml-[52px]">We sent a 6-digit code to <strong className="text-brand-dark">{email}</strong></p>
 
-                <form onSubmit={(e) => { e.preventDefault(); setStep(3); }} className="space-y-6">
+                <form onSubmit={handleVerifyOtp} className="space-y-6">
                   {error && (
                     <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
                       <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold">!</span>
@@ -199,10 +216,14 @@ export const ForgotPassword = () => {
                   </div>
 
                   <button
-                    type="submit" disabled={otp.length !== 6}
+                    type="submit" disabled={otp.length !== 6 || loading}
                     className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Verify & Continue <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    {loading ? (
+                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Verifying...</span>
+                    ) : (
+                      <>Verify & Continue <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
+                    )}
                   </button>
 
                   <div className="flex items-center justify-between">
