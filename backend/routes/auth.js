@@ -225,6 +225,46 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// ================= UPDATE PROFILE =================
+router.put('/update-profile', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'No token' });
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || 'fallback_secret'
+    );
+
+    const { name, phone, profilePhoto } = req.body;
+    const updates = {};
+    if (name) updates.name = name;
+    if (phone !== undefined) updates.phone = phone;
+    if (profilePhoto !== undefined) updates.profilePhoto = profilePhoto;
+
+    const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      profilePhoto: user.profilePhoto,
+      isDriverVerified: user.isDriverVerified,
+      isAdmin: user.isAdmin,
+      role: user.role,
+      coins: user.coins || 0,
+      ratingSum: user.ratingSum || 0,
+      totalRatings: user.totalRatings || 0,
+    });
+
+  } catch (err) {
+    console.error('Update Profile Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // ================= FORGOT PASSWORD — Send OTP =================
 router.post('/forgot-password', async (req, res) => {
   try {

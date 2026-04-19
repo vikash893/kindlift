@@ -44,23 +44,39 @@ export const Profile = () => {
     finally { setLoading(false); }
   };
 
-  const handlePhotoChange = (e) => {
+  const photoInputRef = React.useRef(null);
+
+  const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) { toast('warning', 'Image must be under 2MB'); return; }
     const reader = new FileReader();
-    reader.onloadend = () => setFormData(p => ({ ...p, profilePhoto: reader.result }));
+    reader.onloadend = async () => {
+      const base64 = reader.result;
+      setFormData(p => ({ ...p, profilePhoto: base64 }));
+      // Immediately save photo to backend
+      try {
+        const res = await api.put('/auth/update-profile', { profilePhoto: base64 });
+        updateUser(res.data);
+        toast('success', 'Profile photo updated!');
+      } catch (err) {
+        toast('error', 'Failed to update photo');
+      }
+    };
     reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await api.get('/auth/me');
-      // Update via auth context (profile photo is stored on user model)
-      updateUser({ name: formData.name, phone: formData.phone, profilePhoto: formData.profilePhoto });
+      const res = await api.put('/auth/update-profile', {
+        name: formData.name,
+        phone: formData.phone,
+        profilePhoto: formData.profilePhoto,
+      });
+      updateUser(res.data);
       setEditing(false);
-      showSuccess('Profile updated! Changes will reflect on next login.', 'Profile Saved');
+      showSuccess('Profile updated successfully!', 'Profile Saved');
     } catch (err) { toast('error', 'Failed to save profile'); }
     finally { setSaving(false); }
   };
@@ -183,22 +199,33 @@ export const Profile = () => {
         </div>
         <div className="px-8 pb-8 -mt-14">
           <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="relative group">
-              <div className="h-28 w-28 rounded-3xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                {(editing ? formData.profilePhoto : user?.profilePhoto || user?.photo) ? (
-                  <img src={editing ? formData.profilePhoto : user?.profilePhoto} alt={user?.name} className="h-full w-full object-cover" />
+            <div className="relative group flex flex-col items-center">
+              <div className="h-28 w-28 rounded-3xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center cursor-pointer"
+                onClick={() => photoInputRef.current?.click()}>
+                {(formData.profilePhoto || user?.profilePhoto || user?.photo) ? (
+                  <img src={formData.profilePhoto || user?.profilePhoto || user?.photo} alt={user?.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="h-full w-full bg-brand-accent/10 flex items-center justify-center">
                     <User className="h-12 w-12 text-brand-accent" />
                   </div>
                 )}
               </div>
-              {editing && (
-                <label className="absolute inset-0 rounded-3xl bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera className="h-6 w-6 text-white" />
-                  <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
-                </label>
-              )}
+              {/* Always-visible camera overlay on hover */}
+              <label
+                className="absolute top-0 left-1/2 -translate-x-1/2 h-28 w-28 rounded-3xl bg-black/40 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-all duration-300"
+                onClick={() => photoInputRef.current?.click()}
+              >
+                <Camera className="h-6 w-6 text-white mb-1" />
+                <span className="text-white text-[10px] font-display font-bold">Change</span>
+              </label>
+              <input ref={photoInputRef} type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
+              {/* Change Photo text below avatar */}
+              <button
+                onClick={() => photoInputRef.current?.click()}
+                className="mt-2 text-xs text-brand-accent font-display font-bold hover:underline transition-all flex items-center gap-1"
+              >
+                <Camera className="h-3 w-3" /> Change Photo
+              </button>
             </div>
 
             <div className="flex-1 pt-16 sm:pt-4">
