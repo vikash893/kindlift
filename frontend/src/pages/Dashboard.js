@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
+import { useAlert } from '../components/CustomAlert';
 import { MapPin, Users, Calendar, Clock, CheckCircle, XCircle, User, ArrowRight, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const Dashboard = () => {
   const { user } = useAuth();
+  const { toast } = useAlert();
   const [activeTab, setActiveTab] = useState('overview');
   const [myOffers, setMyOffers] = useState([]);
   const [incomingRequests, setIncomingRequests] = useState([]);
@@ -56,7 +58,7 @@ export const Dashboard = () => {
       fetchData();
     } catch (error) {
       console.error('Error updating request', error);
-      alert('Failed to update request status');
+      toast('error', 'Failed to update request status');
     }
   };
 

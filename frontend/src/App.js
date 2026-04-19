@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AlertProvider } from './components/CustomAlert';
 import { Navbar } from './components/Navbar';
 
 import { Login } from './pages/Login';
@@ -18,14 +19,11 @@ import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import { TermsOfService } from './pages/TermsOfService';
 import { Safety } from './pages/Safety';
 import { FAQs } from './pages/FAQs';
+import { NotFound } from './pages/NotFound';
 import { Loader } from './components/Loader';
 import Feedback from './pages/Feedback';
 import { ForgotPassword } from './pages/ForgotPassword';
 import ScrollToTop from './components/ScrollToTop';
-// import { PrivacyPolicy } from './pages/PrivacyPolicy';
-// import { TermsOfService } from './pages/TermsOfService';
-// import { Safety } from './pages/Safety';
-// import { FAQs } from './pages/FAQs';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -49,7 +47,7 @@ const ConditionalNavbar = () => {
 };
 
 function App() {
-  return (<AuthProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
+  return (<AuthProvider> <AlertProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/about" element={<About />} />
@@ -115,10 +113,14 @@ function App() {
           <Profile />
         </PrivateRoute>
       } />
+
+      {/* 404 Catch-all */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   </main>
   </div>
   </Router>
+  </AlertProvider>
   </AuthProvider>
 
   );

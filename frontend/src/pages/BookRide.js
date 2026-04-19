@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
+import { useAlert } from '../components/CustomAlert';
 import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const BookRide = () => {
+  const { toast, success: showSuccess } = useAlert();
   const [source, setSource] = useState('');
   const [destination, setDestination] = useState('');
   const [seats, setSeats] = useState(1);
@@ -94,16 +96,16 @@ export const BookRide = () => {
   };
 
   const requestRide = async (offerId) => {
-    if (!sourceCoords || !destinationCoords) { alert("Please select valid locations from suggestions"); return; }
+    if (!sourceCoords || !destinationCoords) { toast('warning', 'Please select valid locations from suggestions'); return; }
     try {
       await api.post('/requests', {
         offerId, seatsRequested: seats,
         source: { name: source, lat: sourceCoords.lat, lng: sourceCoords.lng },
         destination: { name: destination, lat: destinationCoords.lat, lng: destinationCoords.lng },
       });
-      alert('Ride requested successfully!');
+      showSuccess('Ride requested successfully! Check your dashboard for updates.', 'Request Sent 🚗');
       navigate('/dashboard');
-    } catch (err) { alert(err.response?.data?.message || 'Failed to request ride'); }
+    } catch (err) { toast('error', err.response?.data?.message || 'Failed to request ride'); }
   };
 
   return (

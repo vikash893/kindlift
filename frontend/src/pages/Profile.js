@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import { useAlert } from '../components/CustomAlert';
 import {
   User, Mail, Phone, Car, Star, Coins, Award, Shield, Camera,
   MapPin, Calendar, CheckCircle, TrendingUp, Edit3, Save, X,
@@ -9,6 +10,7 @@ import { format } from 'date-fns';
 
 export const Profile = () => {
   const { user, updateUser } = useAuth();
+  const { toast, success: showSuccess } = useAlert();
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', profilePhoto: '' });
   const [ratings, setRatings] = useState([]);
@@ -45,7 +47,7 @@ export const Profile = () => {
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); return; }
+    if (file.size > 2 * 1024 * 1024) { toast('warning', 'Image must be under 2MB'); return; }
     const reader = new FileReader();
     reader.onloadend = () => setFormData(p => ({ ...p, profilePhoto: reader.result }));
     reader.readAsDataURL(file);
@@ -58,8 +60,8 @@ export const Profile = () => {
       // Update via auth context (profile photo is stored on user model)
       updateUser({ name: formData.name, phone: formData.phone, profilePhoto: formData.profilePhoto });
       setEditing(false);
-      alert('Profile updated! Changes will reflect on next login.');
-    } catch (err) { alert('Failed to save profile'); }
+      showSuccess('Profile updated! Changes will reflect on next login.', 'Profile Saved');
+    } catch (err) { toast('error', 'Failed to save profile'); }
     finally { setSaving(false); }
   };
 

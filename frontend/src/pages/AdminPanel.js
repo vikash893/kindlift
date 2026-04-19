@@ -9,6 +9,7 @@ import {
   BarChart3, Coins, AlertTriangle, User as UserIcon, ArrowUpRight, RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAlert } from '../components/CustomAlert';
 
 // ─── ADMIN DASHBOARD TAB ────────────────────────────
 const DashboardTab = ({ stats, loading }) => {
@@ -127,6 +128,7 @@ const DashboardTab = ({ stats, loading }) => {
 
 // ─── USERS TAB ──────────────────────────────────────
 const UsersTab = ({ onViewUser }) => {
+  const { toast, confirm: confirmAlert } = useAlert();
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({});
   const [search, setSearch] = useState('');
@@ -149,23 +151,27 @@ const UsersTab = ({ onViewUser }) => {
   const handleToggleActive = async (id, current) => {
     try {
       await api.put(`/admin/users/${id}`, { isActive: !current });
+      toast('success', `User ${current ? 'deactivated' : 'activated'} successfully`);
       fetchUsers();
-    } catch (err) { alert('Failed to update user'); }
+    } catch (err) { toast('error', 'Failed to update user'); }
   };
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Delete user "${name}" and all their data? This cannot be undone.`)) return;
+    const confirmed = await confirmAlert(`Delete user "${name}" and all their data? This cannot be undone.`, 'Delete User');
+    if (!confirmed) return;
     try {
       await api.delete(`/admin/users/${id}`);
+      toast('success', `User "${name}" deleted successfully`);
       fetchUsers();
-    } catch (err) { alert('Failed to delete user'); }
+    } catch (err) { toast('error', 'Failed to delete user'); }
   };
 
   const handleMakeAdmin = async (id) => {
     try {
       await api.put(`/admin/users/${id}`, { isAdmin: true, role: 'admin' });
+      toast('success', 'User promoted to admin');
       fetchUsers();
-    } catch (err) { alert('Failed to update user role'); }
+    } catch (err) { toast('error', 'Failed to update user role'); }
   };
 
   const filters = ['all', 'drivers', 'admins', 'inactive'];
@@ -332,6 +338,7 @@ const UserDetailModal = ({ userId, onClose }) => {
 
 // ─── RIDES TAB ──────────────────────────────────────
 const RidesTab = () => {
+  const { toast, confirm: confirmAlert } = useAlert();
   const [rides, setRides] = useState([]);
   const [pagination, setPagination] = useState({});
   const [status, setStatus] = useState('');
@@ -351,14 +358,15 @@ const RidesTab = () => {
   useEffect(() => { fetchRides(); }, [fetchRides]);
 
   const handleStatusChange = async (id, newStatus) => {
-    try { await api.put(`/admin/rides/${id}`, { status: newStatus }); fetchRides(); }
-    catch (err) { alert('Failed to update ride'); }
+    try { await api.put(`/admin/rides/${id}`, { status: newStatus }); toast('success', 'Ride status updated'); fetchRides(); }
+    catch (err) { toast('error', 'Failed to update ride'); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this ride and all related requests?')) return;
-    try { await api.delete(`/admin/rides/${id}`); fetchRides(); }
-    catch (err) { alert('Failed to delete ride'); }
+    const confirmed = await confirmAlert('Delete this ride and all related requests?', 'Delete Ride');
+    if (!confirmed) return;
+    try { await api.delete(`/admin/rides/${id}`); toast('success', 'Ride deleted successfully'); fetchRides(); }
+    catch (err) { toast('error', 'Failed to delete ride'); }
   };
 
   const statuses = ['', 'waiting', 'ongoing', 'completed', 'cancelled'];
@@ -424,6 +432,7 @@ const RidesTab = () => {
 
 // ─── RATINGS TAB (with AI Sentiment) ────────────────
 const RatingsTab = () => {
+  const { toast, confirm: confirmAlert } = useAlert();
   const [ratings, setRatings] = useState([]);
   const [pagination, setPagination] = useState({});
   const [page, setPage] = useState(1);
@@ -466,9 +475,10 @@ const RatingsTab = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this rating? User aggregate will be updated.')) return;
-    try { await api.delete(`/admin/ratings/${id}`); fetchRatings(); }
-    catch (err) { alert('Failed to delete rating'); }
+    const confirmed = await confirmAlert('Delete this rating? User aggregate will be updated.', 'Delete Rating');
+    if (!confirmed) return;
+    try { await api.delete(`/admin/ratings/${id}`); toast('success', 'Rating deleted'); fetchRatings(); }
+    catch (err) { toast('error', 'Failed to delete rating'); }
   };
 
   const getSentimentBadge = (s) => {

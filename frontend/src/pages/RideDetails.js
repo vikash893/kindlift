@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
+import { useAlert } from '../components/CustomAlert';
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -18,6 +19,7 @@ export const RideDetails = () => {
   const { id } = useParams();
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
+  const { toast, error: showError, success: showSuccess } = useAlert();
   const [request, setRequest] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -50,7 +52,7 @@ export const RideDetails = () => {
       const isPass = user.id === reqRes.data.passengerId._id;
       if (isPass && reqRes.data.isRatedByPassenger) setIsRated(true);
       if (!isPass && reqRes.data.isRatedByDriver) setIsRated(true);
-    } catch (error) { console.error('Error fetching ride details', error); alert('Failed to load ride details'); navigate('/dashboard'); }
+    } catch (error) { console.error('Error fetching ride details', error); toast('error', 'Failed to load ride details'); navigate('/dashboard'); }
     finally { setLoading(false); }
   };
 
@@ -64,24 +66,24 @@ export const RideDetails = () => {
   };
 
   const handleCompleteRide = async () => {
-    if (!inputCode || inputCode.length !== 4) return alert('Please enter the 4-digit code.');
+    if (!inputCode || inputCode.length !== 4) { toast('warning', 'Please enter the 4-digit code.'); return; }
     try {
       const res = await api.put(`/requests/${request._id}/complete`, { code: inputCode });
       updateUser({ coins: (user.coins || 0) + res.data.coinsAllocated });
-      alert(`Ride completed! You earned ${res.data.coinsAllocated} coins.`);
+      showSuccess(`Ride completed! You earned ${res.data.coinsAllocated} coins.`, 'Ride Complete 🎉');
       fetchRideData();
-    } catch (err) { alert(err.response?.data?.message || 'Failed to complete ride'); }
+    } catch (err) { toast('error', err.response?.data?.message || 'Failed to complete ride'); }
   };
 
   const handleRatingSubmit = async (e) => {
     e.preventDefault();
-    if (rating === 0) return alert('Please select a rating');
+    if (rating === 0) { toast('warning', 'Please select a rating'); return; }
     try {
       const isPassenger = user.id === request.passengerId._id;
       const ratedUserId = isPassenger ? request.offerId.driverId._id : request.passengerId._id;
       await api.post('/ratings', { rideOfferId: request.offerId._id, requestId: request._id, ratedUserId, rating, review, raterRole: isPassenger ? 'passenger' : 'driver' });
-      alert('Thank you for rating!'); setIsRated(true);
-    } catch (err) { alert(err.response?.data?.message || 'Failed to submit rating'); }
+      showSuccess('Thank you for your rating!', 'Rating Submitted ⭐'); setIsRated(true);
+    } catch (err) { toast('error', err.response?.data?.message || 'Failed to submit rating'); }
   };
 
   if (loading) return (
