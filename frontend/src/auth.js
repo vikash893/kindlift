@@ -7,7 +7,8 @@ const provider = new GoogleAuthProvider();
 export const signInWithGoogle = async () => {
   try {
     const result = await signInWithPopup(auth, provider);
-    return result.user; // 🔥 IMPORTANT
+    return result.user; 
+    //console.log(result.user.photoURL);
   } catch (error) {
     if (error.code !== "auth/cancelled-popup-request") {
       console.error(error);
