@@ -1,3 +1,4 @@
+import { signInWithGoogle } from "../auth";
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -130,6 +131,34 @@ export const Login = () => {
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-brand-gray-light" /></div>
                 <div className="relative flex justify-center"><span className="px-4 bg-brand-light text-brand-muted text-sm">or</span></div>
               </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const firebaseUser = await signInWithGoogle();
+
+                  if (firebaseUser) {
+                    const user = {
+                      id: firebaseUser.uid,
+                      name: firebaseUser.displayName,
+                      email: firebaseUser.email,
+                      photo: firebaseUser.photoURL
+                    };
+
+                    login(null, user);
+                    navigate("/dashboard");
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-300 rounded-full bg-white hover:bg-gray-50 transition-all"
+              >
+                <img
+                  src="https://developers.google.com/identity/images/g-logo.png"
+                  alt="google"
+                  className="w-5 h-5"
+                />
+                <span className="font-semibold text-gray-700">
+                  Continue with Google
+                </span>
+              </button>
 
               <Link to="/register" className="block w-full">
                 <button type="button" className="w-full px-6 py-4 border-2 border-brand-dark/10 text-brand-dark font-display font-bold rounded-full hover:border-brand-dark/30 transition-all">
