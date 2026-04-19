@@ -6,10 +6,12 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-**A modern ride-sharing web application that connects solo travelers with vehicle owners for safe, shared journeys.**
+**A modern ride-sharing web application that connects solo travelers with vehicle owners for safe, shared journeys — powered by AI-driven sentiment analysis.**
 
 [Live Demo](https://kindlift.onrender.com) · [Report Bug](https://github.com/vikash893/kindlift/issues) · [Request Feature](https://github.com/vikash893/kindlift/issues)
 
@@ -28,7 +30,10 @@
 - [Environment Variables](#-environment-variables)
 - [API Documentation](#-api-documentation)
 - [Database Models](#-database-models)
+- [ML Service](#-ml-service--sentiment-analysis)
 - [Real-Time Events](#-real-time-events-socketio)
+- [Security](#-security)
+- [Testing](#-testing)
 - [Deployment](#-deployment)
 - [Contributing](#-contributing)
 - [Team](#-team)
@@ -51,6 +56,8 @@
 - 🔒 **Secure Completion** — 4-digit OTP codes ensure verified ride completion
 - 🪙 **Coin Rewards** — Gamified incentive system rewarding both drivers and passengers
 - ⭐ **Rating System** — Mutual driver/passenger ratings build trust and accountability
+- 🤖 **AI Sentiment Analysis** — ML-powered review classification (positive/neutral/negative)
+- 🛡 **Admin Dashboard** — Full platform management with analytics, user/ride/rating oversight
 
 ---
 
@@ -64,6 +71,7 @@
 | **Manage Requests** | Accept or reject incoming ride requests from passengers            |
 | **Complete Rides** | Verify ride completion using passenger's 4-digit OTP code           |
 | **Earn Coins** | Receive coins based on distance covered (1 coin per km)                 |
+| **Rate Passengers** | Leave 1-5 star ratings with text reviews for passengers post-ride  |
 
 ### For Passengers
 | Feature | Description |
@@ -73,15 +81,34 @@
 | **Real-Time Chat** | Message drivers in real-time after booking                          |
 | **Rate Drivers** | Leave 1-5 star ratings with text reviews post-ride                    |
 | **Save Routes** | Bookmark frequently used routes for quick access                       |
+| **Submit Feedback** | Provide general platform feedback via the dedicated feedback page |
+
+### For Admins
+| Feature | Description |
+|---------|-------------|
+| **Analytics Dashboard** | Platform-wide statistics — users, rides, requests, ratings, messages |
+| **User Management** | Search, filter, activate/deactivate, promote to admin, delete users    |
+| **Ride Management** | View all rides, change status, delete rides and related requests        |
+| **Request Oversight** | Browse all ride requests with status filtering and pagination          |
+| **Rating Moderation** | View, delete ratings; AI sentiment analysis on review text             |
+| **AI Sentiment Analysis** | Analyze review sentiments in bulk using the ML microservice         |
 
 ### General
 | Feature | Description |
 |---------|-------------|
 | **OTP Email Verification** | Email-based OTP verification during registration             |
+| **Forgot Password** | Secure multi-step password reset via OTP (email → verify → reset)  |
+| **Google OAuth Login** | One-click sign-in with Google account                             |
 | **Interactive Maps** | Leaflet-powered maps for location selection and ride visualization |
 | **3D Hero Section** | Immersive Three.js-powered landing page with animated car model     |
 | **Responsive Design** | Fully responsive UI with mobile-first approach                    |
 | **Custom Cursor** | Cuberto-style custom cursor for premium feel                          |
+| **Custom Alert System** | Toast notifications and modal dialogs replacing native `alert()`  |
+| **Code Splitting** | Lazy-loaded pages with React Suspense for faster initial loads       |
+| **Scroll Restoration** | Automatic scroll-to-top on page navigation                        |
+| **Static Pages** | Privacy Policy, Terms of Service, Safety Guidelines, FAQs             |
+| **404 Page** | Custom "Not Found" page for invalid routes                               |
+| **Profile Management** | Edit name, phone, profile photo from a dedicated profile page      |
 
 ---
 
@@ -91,12 +118,13 @@
 | Technology | Purpose |
 |------------|---------|
 | **React 19** | UI framework with functional components and hooks |
-| **React Router v7** | Client-side routing with protected routes |
+| **React Router v7** | Client-side routing with protected & public routes |
 | **Tailwind CSS 3.4** | Utility-first CSS framework for styling |
 | **Three.js / React Three Fiber** | 3D hero section with animated car model |
 | **Leaflet / React Leaflet** | Interactive maps for ride location display |
 | **Socket.IO Client** | Real-time messaging with WebSocket transport |
-| **Axios** | HTTP client with auth interceptors |
+| **Firebase Auth** | Google OAuth sign-in integration |
+| **Axios** | HTTP client with JWT auth interceptors |
 | **Lucide React** | Modern icon library |
 | **date-fns** | Date formatting utilities |
 
@@ -109,67 +137,95 @@
 | **Socket.IO 4.8** | Real-time bidirectional communication |
 | **JWT (jsonwebtoken)** | Token-based authentication (7-day expiry) |
 | **bcrypt.js** | Password hashing with salt rounds |
-| **Nodemailer** | OTP email delivery via Gmail SMTP |
-| **express-rate-limit** | API rate limiting (300 req/min global, 60 req/min location) |
+| **Nodemailer** | OTP email delivery via Gmail SMTP / Resend API |
+| **Helmet** | Secure HTTP headers (CSP, X-Frame-Options, HSTS) |
+| **hpp** | HTTP Parameter Pollution protection |
+| **xss** | XSS sanitization of all request inputs |
+| **express-validator** | Request body/query/param validation |
+| **express-rate-limit** | API rate limiting (300/min global, 20/15min auth, 60/min location) |
 | **node-cache** | In-memory caching for geocoding results (1 hour TTL) |
 | **p-queue** | Request queuing for Nominatim API (1 req/sec) |
+
+### ML Service
+| Technology | Purpose |
+|------------|---------|
+| **Python 3.10+** | ML runtime |
+| **Flask 3.1** | Lightweight REST API microservice |
+| **scikit-learn 1.8** | Random Forest classifier for sentiment prediction |
+| **TF-IDF Vectorizer** | Text feature extraction (top 5000 words, unigrams + bigrams) |
+| **joblib** | Model serialization/deserialization |
+| **pandas** | Data processing for model training |
+| **gunicorn** | Production WSGI server |
 
 ---
 
 ## 🏗 Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      FRONTEND                           │
-│  React 19 + Tailwind CSS + Three.js + Leaflet           │
-│                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│  │  Pages   │  │Components│  │ Context  │              │
-│  │ (9 pages)│  │(8 comps) │  │(AuthCtx) │              │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘              │
-│       │              │             │                     │
-│  ┌────┴──────────────┴─────────────┴─────┐              │
-│  │          lib/api.js (Axios)           │ ← JWT Token  │
-│  │          lib/socket.js (Socket.IO)    │ ← WebSocket  │
-│  └────────────────┬──────────────────────┘              │
-└───────────────────┼─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        FRONTEND                               │
+│   React 19 + Tailwind CSS + Three.js + Leaflet + Firebase     │
+│                                                                │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │  Pages   │  │Components│  │ Context  │  │  Code Split  │  │
+│  │(18 pages)│  │(10 comps)│  │(AuthCtx) │  │ (lazy load)  │  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────────┘  │
+│       │              │             │                            │
+│  ┌────┴──────────────┴─────────────┴──────┐                    │
+│  │          lib/api.js (Axios)            │ ← JWT Token        │
+│  │          lib/socket.js (Socket.IO)     │ ← WebSocket        │
+│  └────────────────┬───────────────────────┘                    │
+└───────────────────┼────────────────────────────────────────────┘
                     │ HTTPS / WSS
-┌───────────────────┼─────────────────────────────────────┐
-│                   ▼      BACKEND                        │
-│  ┌────────────────────────────────────────┐              │
-│  │         Express.js Server              │              │
-│  │  ┌──────────────────────────────────┐  │              │
-│  │  │     Middleware Layer             │  │              │
-│  │  │  • CORS  • Rate Limiter  • Auth │  │              │
-│  │  └──────────────────────────────────┘  │              │
-│  │                                        │              │
-│  │  ┌─────────┐  ┌─────────┐  ┌────────┐ │              │
-│  │  │  Auth   │  │  Rides  │  │Location│ │              │
-│  │  │ Routes  │  │ Routes  │  │ Routes │ │              │
-│  │  └─────────┘  └─────────┘  └────────┘ │              │
-│  │  ┌─────────┐  ┌─────────┐  ┌────────┐ │              │
-│  │  │Requests │  │ Ratings │  │ Saved  │ │              │
-│  │  │ Routes  │  │ Routes  │  │ Rides  │ │              │
-│  │  └─────────┘  └─────────┘  └────────┘ │              │
-│  └────────────────┬───────────────────────┘              │
-│                   │                                      │
-│  ┌────────────────┼───────────────────────┐              │
-│  │  Socket.IO     ▼    Server             │              │
-│  │  • join room  • send_message           │              │
-│  │  • receive_message  • request_updated  │              │
-│  └────────────────┬───────────────────────┘              │
-└───────────────────┼─────────────────────────────────────┘
+┌───────────────────┼────────────────────────────────────────────┐
+│                   ▼      BACKEND                                │
+│  ┌──────────────────────────────────────────────┐               │
+│  │           Express.js Server                   │               │
+│  │  ┌────────────────────────────────────────┐   │               │
+│  │  │         Security Middleware Layer       │   │               │
+│  │  │  Helmet · CORS · HPP · Rate Limiter    │   │               │
+│  │  │  XSS Sanitize · Input Validate · Auth  │   │               │
+│  │  └────────────────────────────────────────┘   │               │
+│  │                                                │               │
+│  │  ┌─────────┐  ┌─────────┐  ┌────────┐        │               │
+│  │  │  Auth   │  │  Rides  │  │Location│        │               │
+│  │  │ Routes  │  │ Routes  │  │ Routes │        │               │
+│  │  └─────────┘  └─────────┘  └────────┘        │               │
+│  │  ┌─────────┐  ┌─────────┐  ┌────────┐        │               │
+│  │  │Requests │  │ Ratings │  │ Saved  │        │               │
+│  │  │ Routes  │  │ Routes  │  │ Rides  │        │               │
+│  │  └─────────┘  └─────────┘  └────────┘        │               │
+│  │  ┌─────────┐  ┌─────────┐                     │               │
+│  │  │ Admin   │  │Feedback │                     │               │
+│  │  │ Routes  │  │ Routes  │                     │               │
+│  │  └─────────┘  └─────────┘                     │               │
+│  └────────────────┬──────────────────────────────┘               │
+│                   │                                               │
+│  ┌────────────────┼───────────────────────┐                      │
+│  │  Socket.IO     ▼    Server             │                      │
+│  │  • join room  • send_message           │                      │
+│  │  • receive_message  • request_updated  │                      │
+│  └────────────────┬───────────────────────┘                      │
+└───────────────────┼──────────────────────────────────────────────┘
                     │
-┌───────────────────┼─────────────────────────────────────┐
-│                   ▼    DATABASE                         │
-│            MongoDB Atlas (Cloud)                        │
-│  ┌────────┐ ┌──────────┐ ┌───────────┐ ┌───────────┐  │
-│  │ Users  │ │RideOffers│ │RideRequests│ │ Messages  │  │
-│  └────────┘ └──────────┘ └───────────┘ └───────────┘  │
-│  ┌────────┐ ┌──────────┐                               │
-│  │Ratings │ │SavedRides│                               │
-│  └────────┘ └──────────┘                               │
-└─────────────────────────────────────────────────────────┘
+        ┌───────────┼───────────┐
+        │           │           │
+        ▼           ▼           ▼
+┌──────────────┐  ┌──────────────────────────────────────┐
+│   DATABASE   │  │        ML MICROSERVICE                │
+│ MongoDB Atlas│  │  Flask + scikit-learn + TF-IDF        │
+│              │  │                                        │
+│ ┌──────────┐ │  │  POST /predict  → sentiment analysis  │
+│ │  Users   │ │  │  GET  /health   → health check        │
+│ │RideOffers│ │  │                                        │
+│ │RideReqs  │ │  │  Random Forest (200 trees)             │
+│ │ Messages │ │  │  TF-IDF (5000 features, bigrams)       │
+│ │ Ratings  │ │  │  3-class: positive/neutral/negative    │
+│ │SavedRides│ │  └──────────────────────────────────────┘
+│ │ Feedback │ │
+│ │  OTPs    │ │
+│ └──────────┘ │
+└──────────────┘
 ```
 
 ---
@@ -178,73 +234,103 @@
 
 ```
 kindlift/
-├── backend/                    # Express.js API server
+├── backend/                        # Express.js API server
+│   ├── admin/
+│   │   └── getuser.js              # Admin panel API (stats, CRUD for users/rides/ratings)
 │   ├── config/
-│   │   └── db.js               # MongoDB connection setup
+│   │   └── db.js                   # MongoDB connection setup
 │   ├── middleware/
-│   │   └── auth.js             # JWT authentication middleware
+│   │   ├── auth.js                 # JWT authentication middleware
+│   │   ├── sanitize.js             # XSS sanitization middleware (strips HTML/script tags)
+│   │   └── validate.js             # Input validation rules (express-validator)
 │   ├── models/
-│   │   ├── User.js             # User schema (auth, driver verification, coins, ratings)
-│   │   ├── RideOffer.js        # Ride offer schema (source, destination, seats, status)
-│   │   ├── RideRequest.js      # Ride request schema (passenger booking, OTP, rating flags)
-│   │   ├── Message.js          # Chat message schema (linked to ride requests)
-│   │   ├── Rating.js           # Rating schema (1-5 stars, reviews, duplicate prevention)
-│   │   └── SavedRide.js        # Saved ride/route schema
+│   │   ├── User.js                 # User schema (auth, admin, driver, coins, ratings)
+│   │   ├── RideOffer.js            # Ride offer schema (source, destination, seats, status)
+│   │   ├── RideRequest.js          # Ride request schema (booking, OTP, rating flags)
+│   │   ├── Message.js              # Chat message schema (linked to ride requests)
+│   │   ├── Rating.js               # Rating schema (1-5 stars, reviews, duplicate prevention)
+│   │   ├── SavedRide.js            # Saved ride/route schema
+│   │   ├── Feedback.js             # General platform feedback schema
+│   │   └── OTP.js                  # OTP schema (registration + password reset, auto-expiry)
 │   ├── routes/
-│   │   ├── auth.js             # Authentication routes (register, login, OTP, me)
-│   │   ├── rides.js            # Ride management (create, search, my-offers, complete)
-│   │   ├── requests.js         # Request handling (create, accept/reject, complete, messages)
-│   │   ├── ratings.js          # Rating submission and retrieval
-│   │   ├── savedRides.js       # Saved routes CRUD operations
-│   │   └── location.js         # Location search with Nominatim geocoding
+│   │   ├── auth.js                 # Auth routes (register, login, OTP, Google OAuth, forgot/reset password)
+│   │   ├── rides.js                # Ride management (create, search, my-offers, complete)
+│   │   ├── requests.js             # Request handling (create, accept/reject, complete, messages)
+│   │   ├── ratings.js              # Rating submission, retrieval, and ML sentiment proxy
+│   │   ├── savedRides.js           # Saved routes CRUD operations
+│   │   ├── location.js             # Location search with Nominatim geocoding
+│   │   └── Feedback.js             # Feedback submission route
+│   ├── tests/                      # Unit tests
+│   │   ├── middleware/             # Middleware tests (sanitize, etc.)
+│   │   ├── models/                 # Model tests
+│   │   └── utils/                  # Utility tests (geocoder, etc.)
 │   ├── utils/
-│   │   ├── geocoder.js         # Geocoding + Haversine distance calculation
-│   │   └── sendEmail.ts        # Nodemailer email utility
-│   ├── uploads/                # File upload directory
-│   ├── .env                    # Environment variables (not committed)
-│   ├── server.js               # Application entry point
-│   └── package.json            # Backend dependencies
+│   │   ├── geocoder.js             # Geocoding + Haversine distance calculation
+│   │   └── sendEmail.js            # Email utility (Gmail SMTP / Resend API / custom SMTP)
+│   ├── .env.example                # Environment variable template
+│   ├── server.js                   # Application entry point (security stack + Socket.IO)
+│   └── package.json                # Backend dependencies
 │
-├── frontend/                   # React SPA
-│   ├── public/                 # Static assets
+├── frontend/                       # React SPA
+│   ├── public/                     # Static assets
 │   ├── src/
-│   │   ├── api/
-│   │   │   └── axios.js        # Legacy axios instance (deprecated)
-│   │   ├── auth/               # Auth-related utilities
 │   │   ├── components/
-│   │   │   ├── CustomCursor.js # Cuberto-style animated cursor
-│   │   │   ├── Footer.js       # Global footer component
-│   │   │   ├── HeroCar3D.js    # Three.js 3D car hero section
-│   │   │   ├── Loader.js       # Loading spinner component
-│   │   │   ├── MagneticButton.js # Magnetic hover effect button
-│   │   │   ├── MarqueeText.js  # Scrolling marquee text
-│   │   │   ├── Navbar.js       # Responsive navigation bar
-│   │   │   └── TextReveal.js   # Scroll-triggered text animation
+│   │   │   ├── CustomAlert.js      # Toast + modal alert system (replaces native alerts)
+│   │   │   ├── CustomCursor.js     # Cuberto-style animated cursor
+│   │   │   ├── Footer.js           # Global footer component
+│   │   │   ├── HeroCar3D.js        # Three.js 3D car hero section
+│   │   │   ├── Loader.js           # Loading spinner component
+│   │   │   ├── MagneticButton.js   # Magnetic hover effect button
+│   │   │   ├── MarqueeText.js      # Scrolling marquee text
+│   │   │   ├── Navbar.js           # Responsive navigation bar
+│   │   │   ├── ScrollToTop.js      # Route-change scroll restoration
+│   │   │   └── TextReveal.js       # Scroll-triggered text animation
 │   │   ├── context/
-│   │   │   └── AuthContext.js  # React Context for auth state management
+│   │   │   └── AuthContext.js      # React Context for auth state management
 │   │   ├── lib/
-│   │   │   ├── api.js          # Axios instance with JWT interceptor
-│   │   │   └── socket.js       # Socket.IO client configuration
+│   │   │   ├── api.js              # Axios instance with JWT interceptor
+│   │   │   └── socket.js           # Socket.IO client configuration
 │   │   ├── pages/
-│   │   │   ├── Home.js         # Landing page with 3D hero
-│   │   │   ├── About.js        # About page
-│   │   │   ├── Contact.js      # Contact form page
-│   │   │   ├── Login.js        # Login page
-│   │   │   ├── Register.js     # Registration page with OTP verification
-│   │   │   ├── Dashboard.js    # User dashboard (offers, requests, stats)
-│   │   │   ├── OfferRide.js    # Create ride offer with map
-│   │   │   ├── BookRide.js     # Search and book rides
-│   │   │   └── RideDetails.js  # Ride details with chat and map
-│   │   ├── App.js              # Root component with routing
-│   │   ├── App.css             # Global app styles
-│   │   ├── index.js            # React entry point
-│   │   └── index.css           # Tailwind CSS directives and custom styles
-│   ├── tailwind.config.js      # Tailwind CSS configuration
-│   ├── postcss.config.js       # PostCSS configuration
-│   └── package.json            # Frontend dependencies
+│   │   │   ├── Home.js             # Landing page with 3D hero
+│   │   │   ├── About.js            # About page
+│   │   │   ├── Contact.js          # Contact form page
+│   │   │   ├── Login.js            # Login page (email + Google OAuth)
+│   │   │   ├── Register.js         # Registration page with OTP verification
+│   │   │   ├── ForgotPassword.js   # Multi-step password reset (email → OTP → new password)
+│   │   │   ├── Dashboard.js        # User dashboard (offers, requests, stats, ratings)
+│   │   │   ├── OfferRide.js        # Create ride offer with map
+│   │   │   ├── BookRide.js         # Search and book rides
+│   │   │   ├── RideDetails.js      # Ride details with chat and map
+│   │   │   ├── Profile.js          # User profile management
+│   │   │   ├── AdminPanel.js       # Admin dashboard with analytics + CRUD management
+│   │   │   ├── Feedback.js         # Platform feedback submission page
+│   │   │   ├── FAQs.js             # Frequently asked questions
+│   │   │   ├── Safety.js           # Safety guidelines page
+│   │   │   ├── PrivacyPolicy.js    # Privacy policy page
+│   │   │   ├── TermsOfService.js   # Terms of service page
+│   │   │   └── NotFound.js         # Custom 404 page
+│   │   ├── firebase.js             # Firebase configuration (Google Auth)
+│   │   ├── App.js                  # Root component with routing + code splitting
+│   │   ├── App.css                 # Global app styles
+│   │   ├── index.js                # React entry point
+│   │   └── index.css               # Tailwind CSS directives and custom styles
+│   ├── tailwind.config.js          # Tailwind CSS configuration
+│   ├── postcss.config.js           # PostCSS configuration
+│   └── package.json                # Frontend dependencies
 │
-├── .gitignore                  # Git ignore rules
-└── README.md                   # This file
+├── ml/                             # Python ML microservice
+│   ├── app.py                      # Flask API server (predict + health endpoints)
+│   ├── train_model.py              # Model training script (Random Forest + TF-IDF)
+│   ├── requirements.txt            # Python dependencies
+│   └── models/                     # Serialized ML artifacts
+│       ├── rating_model_final.pkl  # Trained Random Forest classifier
+│       ├── tfidf_vectorizer.pkl    # Fitted TF-IDF vectorizer (5000 features)
+│       └── target_encoder.pkl      # Label encoder (positive/neutral/negative)
+│
+├── CONTRIBUTING.md                 # Contribution guidelines
+├── LICENSE                         # MIT License
+├── .gitignore                      # Git ignore rules
+└── README.md                       # This file
 ```
 
 ---
@@ -254,6 +340,7 @@ kindlift/
 ### Prerequisites
 
 - **Node.js** v18 or higher — [Download](https://nodejs.org/)
+- **Python** 3.10 or higher — [Download](https://www.python.org/) *(for ML service)*
 - **MongoDB Atlas** account — [Sign up](https://www.mongodb.com/atlas)
 - **Gmail account** with App Password for OTP emails — [Guide](https://support.google.com/accounts/answer/185833)
 - **Git** — [Download](https://git-scm.com/)
@@ -281,9 +368,16 @@ kindlift/
    npm install
    ```
 
-4. **Configure environment variables** (see [Environment Variables](#-environment-variables))
+4. **Install ML service dependencies**
 
-5. **Start the backend server**
+   ```bash
+   cd ../ml
+   pip install -r requirements.txt
+   ```
+
+5. **Configure environment variables** (see [Environment Variables](#-environment-variables))
+
+6. **Start the backend server**
 
    ```bash
    cd backend
@@ -292,7 +386,16 @@ kindlift/
 
    The API server will start on `http://localhost:8000`
 
-6. **Start the frontend development server**
+7. **Start the ML microservice** *(optional — required for sentiment analysis)*
+
+   ```bash
+   cd ml
+   python app.py
+   ```
+
+   The ML service will start on `http://localhost:5001`
+
+8. **Start the frontend development server**
 
    ```bash
    cd frontend
@@ -305,7 +408,7 @@ kindlift/
 
 ## 🔐 Environment Variables
 
-Create a `.env` file in the `backend/` directory:
+Create a `.env` file in the `backend/` directory (see `.env.example` for a template):
 
 ```env
 # ─── Database ───────────────────────────────────────
@@ -320,9 +423,14 @@ EMAIL_PASS=your_gmail_app_password
 
 # ─── Server ─────────────────────────────────────────
 PORT=8000
+
+# ─── ML Service (optional) ──────────────────────────
+ML_SERVICE_URL=http://localhost:5001
 ```
 
 > **Note:** For Gmail, you must generate an **App Password** (not your regular password). Enable 2FA on your Google account first, then go to *Security → App Passwords → Generate*.
+
+> **Tip:** Alternative email providers are supported — set `RESEND_API_KEY` for the Resend service or `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` for a custom SMTP server.
 
 ---
 
@@ -343,9 +451,14 @@ Authorization: Bearer <jwt_token>
 |--------|----------|------|-------------|
 | `POST` | `/register` | ❌ | Register a new user (requires verified email) |
 | `POST` | `/login` | ❌ | Login and receive JWT token |
+| `POST` | `/google` | ❌ | Google OAuth login/registration |
 | `GET` | `/me` | ✅ | Get current authenticated user profile |
-| `POST` | `/send-otp` | ❌ | Send OTP to email for verification |
+| `PUT` | `/update-profile` | ✅ | Update user profile (name, phone, photo) |
+| `POST` | `/send-otp` | ❌ | Send OTP to email for registration verification |
 | `POST` | `/verify-otp` | ❌ | Verify OTP code |
+| `POST` | `/forgot-password` | ❌ | Send password reset OTP |
+| `POST` | `/verify-reset-otp` | ❌ | Verify password reset OTP |
+| `POST` | `/reset-password` | ❌ | Reset password with verified OTP |
 
 <details>
 <summary><strong>POST /register</strong> — Register a new user</summary>
@@ -370,7 +483,9 @@ Authorization: Bearer <jwt_token>
     "name": "John Doe",
     "email": "john@example.com",
     "profilePhoto": "data:image/jpeg;base64,...",
-    "isDriverVerified": false
+    "isDriverVerified": false,
+    "isAdmin": false,
+    "role": "user"
   }
 }
 ```
@@ -398,10 +513,27 @@ Authorization: Bearer <jwt_token>
     "name": "John Doe",
     "email": "john@example.com",
     "profilePhoto": "...",
-    "isDriverVerified": true
+    "isDriverVerified": true,
+    "isAdmin": false,
+    "role": "user"
   }
 }
 ```
+</details>
+
+<details>
+<summary><strong>POST /google</strong> — Google OAuth login</summary>
+
+**Request Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@gmail.com",
+  "photo": "https://..."
+}
+```
+
+**Response (200):** Returns JWT token and user object. Creates a new user if email is not registered.
 </details>
 
 <details>
@@ -414,7 +546,7 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-**Response (200):** `{ "message": "OTP sent" }`
+**Response (200):** `{ "message": "OTP sent ✅" }`
 </details>
 
 <details>
@@ -429,6 +561,50 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Response (200):** `{ "message": "Verified ✅" }`
+</details>
+
+<details>
+<summary><strong>POST /forgot-password</strong> — Request password reset</summary>
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response (200):** `{ "message": "Reset OTP sent ✅" }`
+
+> **Security:** Does not reveal whether the email exists in the system.
+</details>
+
+<details>
+<summary><strong>POST /verify-reset-otp</strong> — Verify password reset OTP</summary>
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "otp": "123456"
+}
+```
+
+**Response (200):** `{ "message": "OTP verified ✅" }`
+</details>
+
+<details>
+<summary><strong>POST /reset-password</strong> — Reset password</summary>
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "otp": "123456",
+  "newPassword": "newsecurepassword"
+}
+```
+
+**Response (200):** `{ "message": "Password reset successful ✅" }`
 </details>
 
 ---
@@ -530,8 +706,10 @@ Authorization: Bearer <jwt_token>
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `POST` | `/` | ✅ | Submit a rating |
+| `POST` | `/` | ✅ | Submit a rating (validated + authorized) |
 | `GET` | `/user/:userId` | ❌ | Get all ratings for a specific user |
+| `POST` | `/predict-sentiment` | ✅ 🔒 | Predict review sentiment via ML (admin only) |
+| `GET` | `/sentiment/:userId` | ✅ 🔒 | Get sentiment summary for a user (admin only) |
 
 <details>
 <summary><strong>POST /</strong> — Submit a rating</summary>
@@ -549,9 +727,33 @@ Authorization: Bearer <jwt_token>
 ```
 
 **Business Logic:**
+- **Authorization:** Only users involved in the ride can rate; self-rating is blocked
 - Prevents duplicate ratings (unique index on `requestId + raterId`)
 - Updates the rated user's aggregate rating (`ratingSum`, `totalRatings`)
 - When **both** driver and passenger have rated each other, the ride request is automatically deleted from history
+</details>
+
+<details>
+<summary><strong>POST /predict-sentiment</strong> — ML sentiment prediction (Admin)</summary>
+
+**Request Body:**
+```json
+{
+  "review": "the driver was very friendly and helpful"
+}
+```
+
+**Response (200):**
+```json
+{
+  "predicted_sentiment": "positive",
+  "confidence": "high",
+  "confidence_score": 0.85,
+  "input": "the driver was very friendly and helpful"
+}
+```
+
+Proxies the request to the Python ML microservice.
 </details>
 
 ---
@@ -584,6 +786,40 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+### 💬 Feedback (`/api/feedback`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/feedback` | ❌ | Submit platform feedback |
+
+---
+
+### 🛡 Admin (`/api/admin`)
+
+All admin endpoints require JWT authentication **and** admin privileges.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/login` | ❌ | Admin-specific login (verifies admin role) |
+| `GET` | `/stats` | ✅ 🔒 | Platform-wide analytics dashboard |
+| `GET` | `/users` | ✅ 🔒 | List users with pagination, search, filters |
+| `GET` | `/users/:id` | ✅ 🔒 | Get full user details with ride stats |
+| `PUT` | `/users/:id` | ✅ 🔒 | Update user (activate/deactivate, promote, coins) |
+| `DELETE` | `/users/:id` | ✅ 🔒 | Delete user and all related data |
+| `GET` | `/rides` | ✅ 🔒 | List rides with pagination and status filters |
+| `PUT` | `/rides/:id` | ✅ 🔒 | Update ride status |
+| `DELETE` | `/rides/:id` | ✅ 🔒 | Delete ride and related requests |
+| `GET` | `/requests` | ✅ 🔒 | List all ride requests |
+| `GET` | `/ratings` | ✅ 🔒 | List all ratings with user details |
+| `DELETE` | `/ratings/:id` | ✅ 🔒 | Delete rating (reverses aggregate) |
+| `GET` | `/profile` | ✅ 🔒 | Get admin's own profile |
+| `PUT` | `/profile` | ✅ 🔒 | Update admin's profile |
+| `POST` | `/make-admin` | ✅ 🔒 | Promote user to admin (superadmin only) |
+
+> 🔒 = Requires admin/superadmin role. Stats endpoint is cached server-side for 60 seconds.
+
+---
+
 ## 🗄 Database Models
 
 ### User
@@ -594,6 +830,8 @@ Authorization: Bearer <jwt_token>
 | `password` | String | bcrypt hashed password (required) |
 | `phone` | String | Phone number |
 | `profilePhoto` | String | Base64-encoded profile image |
+| `isAdmin` | Boolean | Whether the user has admin privileges (default: false) |
+| `role` | Enum | `user` · `admin` · `superadmin` (default: user) |
 | `isDriverVerified` | Boolean | Whether driver verification is complete |
 | `vehicleNumber` | String | Registered vehicle number |
 | `licenseNumber` | String | Driver's license number |
@@ -601,6 +839,7 @@ Authorization: Bearer <jwt_token>
 | `coins` | Number | Earned reward coins (default: 0) |
 | `ratingSum` | Number | Sum of all received ratings |
 | `totalRatings` | Number | Count of total ratings received |
+| `isActive` | Boolean | Account active status (default: true) |
 
 ### RideOffer
 | Field | Type | Description |
@@ -630,7 +869,7 @@ Authorization: Bearer <jwt_token>
 |-------|------|-------------|
 | `requestId` | ObjectId → RideRequest | Associated ride request |
 | `senderId` | ObjectId → User | Message sender |
-| `text` | String | Message content |
+| `text` | String | Message content (max 2000 chars, validated via Socket.IO) |
 
 ### Rating
 | Field | Type | Description |
@@ -640,7 +879,7 @@ Authorization: Bearer <jwt_token>
 | `raterId` | ObjectId → User | User giving the rating |
 | `ratedUserId` | ObjectId → User | User being rated |
 | `rating` | Number | Rating value (1–5) |
-| `review` | String | Optional text review |
+| `review` | String | Optional text review (max 500 chars) |
 | `raterRole` | Enum | `driver` or `passenger` |
 
 > **Index:** `{ requestId, raterId }` is unique — prevents duplicate ratings.
@@ -652,6 +891,71 @@ Authorization: Bearer <jwt_token>
 | `source` | `{ name, lat, lng }` | Saved source location |
 | `destination` | `{ name, lat, lng }` | Saved destination location |
 | `seats` | Number | Default number of seats |
+
+### Feedback
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | String | Submitter's name (required) |
+| `email` | String | Submitter's email (required) |
+| `message` | String | Feedback message (required) |
+
+### OTP
+| Field | Type | Description |
+|-------|------|-------------|
+| `email` | String | Target email address |
+| `otp` | String | 6-digit OTP code |
+| `expires` | Date | Expiration timestamp (10 min from creation) |
+| `verified` | Boolean | Whether the OTP has been verified |
+| `purpose` | Enum | `registration` or `password-reset` |
+
+> OTP documents auto-delete 30 minutes after expiry via a TTL index.
+
+---
+
+## 🤖 ML Service — Sentiment Analysis
+
+KindLift includes a **Python Flask microservice** that classifies ride review text into three sentiment categories using a trained Random Forest model.
+
+### How It Works
+
+1. **Training** — The model is trained on the Ola ride review dataset using TF-IDF feature extraction with 5000 features (unigrams + bigrams) and a Random Forest classifier (200 trees, balanced class weights).
+
+2. **Prediction** — Given a review text string, the service returns the predicted sentiment, confidence level, and confidence score.
+
+3. **Integration** — The Node.js backend proxies prediction requests to the Flask service, keeping the ML model isolated from the main application.
+
+### Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/predict` | Predict sentiment from review text |
+| `GET` | `/health` | Service health check |
+
+### Example
+
+```bash
+curl -X POST http://localhost:5001/predict \
+  -H "Content-Type: application/json" \
+  -d '{"review": "the driver was very friendly and helpful"}'
+```
+
+```json
+{
+  "predicted_sentiment": "positive",
+  "confidence": "high",
+  "confidence_score": 0.85,
+  "input": "the driver was very friendly and helpful"
+}
+```
+
+### Retraining the Model
+
+```bash
+cd ml
+python train_model.py
+```
+
+This generates three `.pkl` files in `ml/models/` that the Flask app loads on startup.
 
 ---
 
@@ -674,6 +978,49 @@ Client connects → emits 'join' with userId → Server joins user to their room
 | `new_request` | Server → Client | RideRequest object | Notify driver of new booking request |
 | `request_updated` | Server → Client | RideRequest object | Notify passenger of status change |
 
+> **Validation:** Socket messages are validated for required fields and text is limited to 2000 characters.
+
+---
+
+## 🛡 Security
+
+KindLift implements a **7-layer security stack**, applied in order:
+
+| Layer | Technology | Protection |
+|-------|------------|------------|
+| 1. HTTP Headers | **Helmet** | X-Content-Type-Options, X-Frame-Options, HSTS, X-XSS-Protection |
+| 2. CORS | **cors** | Restricts API access to whitelisted frontend origins |
+| 3. Parameter Pollution | **hpp** | Prevents duplicate query parameter injection |
+| 4. Rate Limiting | **express-rate-limit** | Global: 300/min, Auth: 20/15min, Location: 60/min |
+| 5. XSS Sanitization | **xss** | Recursive HTML/script tag stripping on body, query, params |
+| 6. Input Validation | **express-validator** | Type checking, length limits, format validation on all routes |
+| 7. Authentication | **JWT + bcrypt** | Token-based auth with 7-day expiry, salted password hashing |
+
+### Additional Security Measures
+
+- **OTP-based email verification** for registration and password reset
+- **Server-side OTP verification** — the forgot-password flow requires verified OTP before allowing password reset
+- **Admin role system** — `user`, `admin`, `superadmin` with middleware-enforced access control
+- **Self-rating prevention** — users cannot rate themselves
+- **Duplicate rating prevention** — unique compound index on `{ requestId, raterId }`
+- **Proxy trust** — `trust proxy` configured for accurate IP-based rate limiting behind Render.com
+
+---
+
+## 🧪 Testing
+
+The project includes unit tests for middleware, models, and utilities:
+
+```bash
+cd backend
+npm test
+```
+
+Tests cover:
+- **Sanitize middleware** — XSS filtering of request body, query, and params
+- **Geocoder utility** — Haversine distance calculations
+- **Model validations** — Schema constraints and index integrity
+
 ---
 
 ## 🌐 Deployment
@@ -681,17 +1028,20 @@ Client connects → emits 'join' with userId → Server joins user to their room
 ### Current Deployment
 
 - **Backend:** Deployed on [Render](https://render.com) at `https://kindlift-1.onrender.com`
-- **Frontend:** Deployed on [Render](https://render.com) (static site)
+- **Frontend:** Deployed on [Render](https://render.com) at `https://kindlift.onrender.com`
+- **ML Service:** Deployed separately (can be co-located or on a dedicated instance)
 - **Database:** MongoDB Atlas (cloud-hosted)
+- **Domain:** [kindlift.in](https://kindlift.in)
 
 ### Deploy Your Own
 
 #### Backend (Render)
 1. Create a new **Web Service** on Render
 2. Connect your GitHub repository
-3. Set build command: `npm install`
-4. Set start command: `node server.js`
-5. Add all environment variables from `.env`
+3. Set root directory: `backend`
+4. Set build command: `npm install`
+5. Set start command: `node server.js`
+6. Add all environment variables from `.env`
 
 #### Frontend (Render)
 1. Create a new **Static Site** on Render
@@ -699,11 +1049,20 @@ Client connects → emits 'join' with userId → Server joins user to their room
 3. Set publish directory: `frontend/build`
 4. Update `lib/api.js` and `lib/socket.js` with your backend URL
 
+#### ML Service (Render / Railway / Fly.io)
+1. Create a new **Web Service**
+2. Set root directory: `ml`
+3. Set build command: `pip install -r requirements.txt`
+4. Set start command: `gunicorn app:app --bind 0.0.0.0:$PORT`
+5. Set `ML_SERVICE_URL` in the backend environment variables
+
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Here's how you can help:
+Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines.
+
+### Quick Start
 
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
@@ -724,6 +1083,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 | `refactor:` | Code refactoring |
 | `test:` | Adding or updating tests |
 | `chore:` | Maintenance tasks |
+| `security:` | Security improvements |
 
 ---
 
