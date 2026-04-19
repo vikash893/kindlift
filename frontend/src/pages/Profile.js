@@ -71,8 +71,115 @@ export const Profile = () => {
     <div className="max-w-4xl mx-auto px-6 lg:px-8 py-8 pt-28">
       {/* Profile Header */}
       <div className="bg-white rounded-3xl border border-brand-gray-light overflow-hidden mb-8">
-        <div className="h-32 bg-gradient-to-r from-brand-dark via-brand-charcoal to-brand-dark relative">
-          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(232,168,56,0.4) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(232,168,56,0.2) 0%, transparent 50%)' }} />
+        {/* ── Kindlift Profile Banner ── */}
+        <div className="h-44 sm:h-48 relative overflow-hidden" style={{
+          background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 40%, #16213e 70%, #0f3460 100%)',
+        }}>
+          {/* Animated gradient orbs */}
+          <div className="absolute w-[400px] h-[400px] rounded-full opacity-30"
+            style={{
+              background: 'radial-gradient(circle, rgba(232,168,56,0.5) 0%, transparent 70%)',
+              left: '-5%', top: '-40%', filter: 'blur(50px)',
+              animation: 'bannerOrb1 8s ease-in-out infinite',
+            }}
+          />
+          <div className="absolute w-[300px] h-[300px] rounded-full opacity-20"
+            style={{
+              background: 'radial-gradient(circle, rgba(99,102,241,0.4) 0%, transparent 70%)',
+              right: '-5%', bottom: '-30%', filter: 'blur(50px)',
+              animation: 'bannerOrb2 10s ease-in-out infinite',
+            }}
+          />
+
+          {/* Grid pattern */}
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+            backgroundSize: '30px 30px',
+          }} />
+
+          {/* City skyline silhouette */}
+          <svg className="absolute bottom-0 left-0 right-0 w-full" viewBox="0 0 1200 100" fill="none" preserveAspectRatio="none" style={{ height: '60px', opacity: 0.08 }}>
+            <path d="M0,100 L0,70 L40,70 L40,55 L60,55 L60,45 L80,45 L80,60 L120,60 L120,40 L130,40 L130,30 L145,30 L145,40 L160,40 L160,55 L200,55 L200,50 L220,50 L220,35 L235,35 L235,25 L250,25 L250,35 L270,35 L270,55 L300,55 L300,65 L340,65 L340,45 L360,45 L360,30 L375,30 L375,20 L395,20 L395,30 L410,30 L410,45 L440,45 L440,60 L480,60 L480,50 L510,50 L510,35 L530,35 L530,40 L560,40 L560,55 L600,55 L600,45 L620,45 L620,30 L640,30 L640,20 L660,15 L680,20 L680,30 L700,30 L700,50 L740,50 L740,55 L780,55 L780,40 L800,40 L800,25 L820,25 L820,35 L850,35 L850,50 L880,50 L880,60 L920,60 L920,45 L940,45 L940,35 L960,35 L960,50 L1000,50 L1000,55 L1040,55 L1040,40 L1060,40 L1060,30 L1080,30 L1080,45 L1120,45 L1120,60 L1160,60 L1160,70 L1200,70 L1200,100 Z" fill="white"/>
+          </svg>
+
+          {/* Animated road with dashes */}
+          <div className="absolute bottom-5 left-0 right-0 h-[2px] bg-white/10">
+            <div className="absolute inset-0" style={{
+              background: 'repeating-linear-gradient(90deg, rgba(255,255,255,0.25) 0px, rgba(255,255,255,0.25) 12px, transparent 12px, transparent 28px)',
+              animation: 'roadDash 1.2s linear infinite',
+            }} />
+          </div>
+
+          {/* Small animated car on the road */}
+          <div className="absolute bottom-[10px]" style={{ animation: 'bannerCar 6s linear infinite' }}>
+            <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
+              <path d="M3 8h1l1.5-4h8L16 8h5a2 2 0 012 2v1a1 1 0 01-1 1H2a1 1 0 01-1-1v-1a2 2 0 012-2z" fill="rgba(232,168,56,0.7)"/>
+              <circle cx="6" cy="12" r="1.5" fill="rgba(232,168,56,0.9)"/>
+              <circle cx="18" cy="12" r="1.5" fill="rgba(232,168,56,0.9)"/>
+              <path d="M7 4.5L8.5 1h7L17 4.5" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5"/>
+            </svg>
+          </div>
+
+          {/* Stars / dots */}
+          {[
+            { top: '15%', left: '10%', delay: '0s', size: 2 },
+            { top: '25%', left: '35%', delay: '1s', size: 1.5 },
+            { top: '12%', left: '55%', delay: '2s', size: 2 },
+            { top: '30%', left: '75%', delay: '0.5s', size: 1 },
+            { top: '18%', left: '90%', delay: '1.5s', size: 1.5 },
+            { top: '8%', left: '45%', delay: '3s', size: 1 },
+          ].map((star, i) => (
+            <div key={i} className="absolute rounded-full bg-white" style={{
+              width: star.size, height: star.size,
+              top: star.top, left: star.left,
+              animation: `starTwinkle 3s ease-in-out ${star.delay} infinite`,
+            }} />
+          ))}
+
+          {/* Branding text */}
+          <div className="absolute top-5 right-6 flex items-center gap-2 opacity-40">
+            <div className="w-6 h-6 bg-brand-accent/30 rounded-lg flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-2-2.2-3.3C13 5.6 12 5 11 5H6c-.6 0-1.1.2-1.4.6L3 7.5C2.4 8.1 2 8.8 2 9.5V16c0 .6.4 1 1 1h1" />
+                <circle cx="7" cy="17" r="2" />
+                <circle cx="17" cy="17" r="2" />
+              </svg>
+            </div>
+            <span className="text-white/70 text-xs font-display font-bold tracking-wider">KINDLIFT</span>
+          </div>
+
+          {/* Tagline */}
+          <div className="absolute bottom-8 left-6">
+            <p className="text-white/20 text-[10px] font-display font-bold uppercase tracking-[0.25em]">
+              Your ride, your community
+            </p>
+          </div>
+
+          {/* Inline banner animations */}
+          <style>{`
+            @keyframes bannerOrb1 {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(30px, 10px) scale(1.1); }
+            }
+            @keyframes bannerOrb2 {
+              0%, 100% { transform: translate(0, 0) scale(1); }
+              50% { transform: translate(-20px, -15px) scale(1.15); }
+            }
+            @keyframes roadDash {
+              from { transform: translateX(0); }
+              to { transform: translateX(-28px); }
+            }
+            @keyframes bannerCar {
+              0% { left: -30px; opacity: 0; }
+              5% { opacity: 0.7; }
+              95% { opacity: 0.7; }
+              100% { left: calc(100% + 10px); opacity: 0; }
+            }
+            @keyframes starTwinkle {
+              0%, 100% { opacity: 0.2; }
+              50% { opacity: 0.8; }
+            }
+          `}</style>
         </div>
         <div className="px-8 pb-8 -mt-14">
           <div className="flex flex-col sm:flex-row items-start gap-6">
