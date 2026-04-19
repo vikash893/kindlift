@@ -207,16 +207,14 @@ router.post("/google", async (req, res) => {
 
     let user = await User.findOne({ email });
 
-    // 🆕 If user doesn't exist → create
     if (!user) {
       user = await User.create({
         name,
         email,
-        profilePhoto: photo
+        profilePhoto: photo,
       });
     }
 
-    // 🔑 Generate JWT token
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
@@ -224,9 +222,8 @@ router.post("/google", async (req, res) => {
     );
 
     res.json({ token, user });
-
-  } catch (error) {
-    console.error("Google auth error:", error);
+  } catch (err) {
+    console.error("Google auth error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
