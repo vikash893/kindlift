@@ -141,10 +141,10 @@ export const Login = () => {
                       id: firebaseUser.uid,
                       name: firebaseUser.displayName,
                       email: firebaseUser.email,
-                      photo: firebaseUser.photoURL
+                      profilePhoto: firebaseUser.photoURL
                     };
 
-                    login(null, user);
+                    login("google-auth", user);
                     navigate("/dashboard");
                   }
                 }}

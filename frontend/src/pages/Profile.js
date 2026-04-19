@@ -18,7 +18,7 @@ export const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setFormData({ name: user.name || '', phone: user.phone || '', profilePhoto: user.profilePhoto || '' });
+      setFormData({ name: user.name || '', phone: user.phone || '', profilePhoto: user.profilePhoto || user.photo || '' });
       fetchProfileData();
     }
   }, [user]);
@@ -76,7 +76,7 @@ export const Profile = () => {
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <div className="relative group">
               <div className="h-28 w-28 rounded-3xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center">
-                {(editing ? formData.profilePhoto : user?.profilePhoto) ? (
+                {(editing ? formData.profilePhoto : user?.profilePhoto || user?.photo) ? (
                   <img src={editing ? formData.profilePhoto : user?.profilePhoto} alt={user?.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="h-full w-full bg-brand-accent/10 flex items-center justify-center">
