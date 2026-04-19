@@ -137,15 +137,21 @@ export const Login = () => {
                   const firebaseUser = await signInWithGoogle();
 
                   if (firebaseUser) {
-                    const user = {
-                      id: firebaseUser.uid,
-                      name: firebaseUser.displayName,
-                      email: firebaseUser.email,
-                      profilePhoto: firebaseUser.photoURL
-                    };
+                    try {
+                      const res = await api.post("/auth/google", {
+                        name: firebaseUser.displayName,
+                        email: firebaseUser.email,
+                        photo: firebaseUser.photoURL,
+                      });
 
-                    login("google-auth", user);
-                    navigate("/dashboard");
+                      console.log("Backend response:", res.data); // optional debug
+
+                      login(res.data.token, res.data.user);
+                      navigate("/dashboard");
+
+                    } catch (error) {
+                      console.error("Google login error:", error);
+                    }
                   }
                 }}
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-300 rounded-full bg-white hover:bg-gray-50 transition-all"

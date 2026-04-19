@@ -200,7 +200,36 @@ router.post('/login', validateLogin, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// ================= GOOGLE LOGIN =================
+router.post("/google", async (req, res) => {
+  try {
+    const { name, email, photo } = req.body;
 
+    let user = await User.findOne({ email });
+
+    // 🆕 If user doesn't exist → create
+    if (!user) {
+      user = await User.create({
+        name,
+        email,
+        profilePhoto: photo
+      });
+    }
+
+    // 🔑 Generate JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({ token, user });
+
+  } catch (error) {
+    console.error("Google auth error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // ================= ME =================
 router.get('/me', async (req, res) => {
   try {
