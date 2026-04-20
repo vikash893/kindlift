@@ -148,7 +148,7 @@ router.get('/search', authMiddleware, validateSearchRides, async (req, res) => {
           ride.source.lat, ride.source.lng
         );
         return {
-          ...ride.toObject(),
+          ...ride,
           distanceToDriver: sourceDist.toFixed(1)
         };
       });
