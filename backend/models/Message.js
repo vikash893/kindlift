@@ -34,6 +34,9 @@ const messageSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// ─── Performance Indexes ─────────────────────────────
+messageSchema.index({ requestId: 1, createdAt: 1 });    // Chat messages for a ride (sorted)
+
 const Message = mongoose.model('Message', messageSchema);
 
 module.exports = { Message };

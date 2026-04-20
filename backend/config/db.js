@@ -24,7 +24,12 @@ const mongoose = require('mongoose');
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 20,              // Allow up to 20 concurrent connections
+      minPoolSize: 5,               // Keep 5 connections warm for instant responses
+      socketTimeoutMS: 30000,       // Close sockets after 30s of inactivity
+      maxIdleTimeMS: 60000,         // Release idle connections after 60s
+      autoIndex: process.env.NODE_ENV !== 'production', // Build indexes in dev only
     });
     console.log("✅ Database connected successfully");
   } catch (error) {
