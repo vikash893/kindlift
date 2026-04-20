@@ -331,3 +331,81 @@
     font-size: clamp(2.5rem, 10vw, 4rem);
   }
 }
+
+/* ─── MapLibre GL JS Custom Styles ──────────────────── */
+@keyframes mapPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Custom popup styling */
+.maplibregl-popup-content {
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15),
+              0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: #ffffff !important;
+}
+
+.maplibregl-popup-close-button {
+  font-size: 18px !important;
+  color: #6b7280 !important;
+  padding: 4px 8px !important;
+  right: 4px !important;
+  top: 4px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.maplibregl-popup-close-button:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #1a1a2e !important;
+}
+
+/* Navigation controls styling */
+.maplibregl-ctrl-group {
+  background: rgba(26, 26, 46, 0.9) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  overflow: hidden !important;
+}
+
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  width: 36px !important;
+  height: 36px !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  background: rgba(232, 168, 56, 0.15) !important;
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1) !important;
+}
+
+/* Attribution styling */
+.maplibregl-ctrl-attrib {
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+  font-size: 10px !important;
+  border-radius: 6px 0 0 0 !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: rgba(232, 168, 56, 0.6) !important;
+}
