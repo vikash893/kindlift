@@ -23,6 +23,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const hpp = require('hpp');
+const compression = require('compression');
 const rateLimit = require("express-rate-limit");
 const connectDB = require('./config/db');
 const { sanitizeInput } = require('./middleware/sanitize');
@@ -111,6 +112,17 @@ async function startServer() {
   // ─── Security: HTTP Parameter Pollution ───────────────
   // Prevents attackers from sending duplicate query params
   app.use(hpp());
+
+  // ─── Performance: Response Compression ─────────────────
+  // Gzip/Brotli compression reduces JSON payload sizes by 50-70%
+  app.use(compression({
+    level: 6,                              // Balance between speed and compression ratio
+    threshold: 1024,                       // Only compress responses > 1KB
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) return false;
+      return compression.filter(req, res);
+    },
+  }));
 
   // ─── Body Parsing ─────────────────────────────────────
   app.use(express.json({ limit: '50mb' }));
@@ -210,6 +222,7 @@ async function startServer() {
           return;
         }
 
+        // Pre-require at module level for faster socket handling
         const { Message } = require('./models/Message');
 
         const newMessage = new Message({
@@ -219,9 +232,18 @@ async function startServer() {
         });
         await newMessage.save();
 
-        // Deliver to receiver's room and echo back to sender
-        io.to(receiverId).emit('receive_message', newMessage);
-        socket.emit('receive_message', newMessage);
+        // Emit to both sender and receiver — use a plain object to avoid
+        // serializing the full Mongoose document (faster)
+        const msgPayload = {
+          _id: newMessage._id,
+          requestId: newMessage.requestId,
+          senderId: newMessage.senderId,
+          text: newMessage.text,
+          createdAt: newMessage.createdAt,
+        };
+
+        io.to(receiverId).emit('receive_message', msgPayload);
+        socket.emit('receive_message', msgPayload);
 
       } catch (err) {
         console.error('❌ Socket error:', err);
