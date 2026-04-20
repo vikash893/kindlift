@@ -197,7 +197,15 @@ export const RideDetails = () => {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-
+  // Memoize coordinate arrays BEFORE early returns (React hooks must be called unconditionally)
+  const sourceCoords = useMemo(
+    () => request ? [request.source.lat, request.source.lng] : [0, 0],
+    [request?.source?.lat, request?.source?.lng]
+  );
+  const destCoords = useMemo(
+    () => request ? [request.destination.lat, request.destination.lng] : [0, 0],
+    [request?.destination?.lat, request?.destination?.lng]
+  );
 
   const fetchRideData = async () => {
     try {
@@ -259,9 +267,6 @@ export const RideDetails = () => {
   const isPassenger = user?.id === request.passengerId._id;
   const otherUser = isPassenger ? request.offerId.driverId : request.passengerId;
   const roleText = isPassenger ? 'Driver' : 'Passenger';
-  // Memoize coordinate arrays to prevent map re-initialization on unrelated state changes (e.g., chat input)
-  const sourceCoords = useMemo(() => [request.source.lat, request.source.lng], [request.source.lat, request.source.lng]);
-  const destCoords = useMemo(() => [request.destination.lat, request.destination.lng], [request.destination.lat, request.destination.lng]);
 
   const statusBadge = (s) => {
     if (s === 'accepted') return 'bg-emerald-500/10 text-emerald-600';
