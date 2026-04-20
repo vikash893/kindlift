@@ -1,14 +1,13 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
+import { useLocationSearch } from '../lib/useLocationSearch';
 import { MapPin, Users, Calendar, Clock, Save, FileText, Hash, Camera, XCircle, ArrowRight } from 'lucide-react';
 
 export const OfferRide = () => {
   const location = useLocation();
   const { user, updateUser } = useAuth();
-  const [source, setSource] = useState(location.state?.source || '');
-  const [destination, setDestination] = useState(location.state?.destination || '');
   const [seats, setSeats] = useState(location.state?.seats || 3);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -21,53 +20,9 @@ export const OfferRide = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const [sourceSuggestions, setSourceSuggestions] = useState([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
-  const [sourceCoords, setSourceCoords] = useState(null);
-  const [destinationCoords, setDestinationCoords] = useState(null);
-
-  const timeoutRef = useRef(null);
-  const abortControllerRef = useRef(null);
-  const cacheRef = useRef(new Map());
-
-  const cleanupRequests = useCallback(() => {
-    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
-    if (abortControllerRef.current) { abortControllerRef.current.abort(); abortControllerRef.current = null; }
-  }, []);
-
-  const fetchLocationSuggestions = useCallback((query, type) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (!query || query.length < 3) {
-      type === "source" ? setSourceSuggestions([]) : setDestinationSuggestions([]);
-      return;
-    }
-    timeoutRef.current = setTimeout(async () => {
-      const key = `${query.toLowerCase()}_${type}`;
-      const cached = cacheRef.current.get(key);
-      if (cached && Date.now() - cached.timestamp < 3600000) {
-        type === "source" ? setSourceSuggestions(cached.data) : setDestinationSuggestions(cached.data);
-        return;
-      }
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-      abortControllerRef.current = new AbortController();
-      try {
-        const res = await api.get(`/location/search?q=${encodeURIComponent(query)}`, {
-          signal: abortControllerRef.current.signal, timeout: 10000,
-        });
-        if (res.data && Array.isArray(res.data)) {
-          const limited = res.data.slice(0, 5);
-          cacheRef.current.set(key, { data: limited, timestamp: Date.now() });
-          type === "source" ? setSourceSuggestions(limited) : setDestinationSuggestions(limited);
-        }
-      } catch (err) {
-        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
-          type === "source" ? setSourceSuggestions([]) : setDestinationSuggestions([]);
-        }
-      } finally { abortControllerRef.current = null; }
-    }, 800);
-  }, []);
-
-  useEffect(() => { return () => cleanupRequests(); }, [cleanupRequests]);
+  // Each field gets its own isolated hook instance — no cross-field interference
+  const source = useLocationSearch(location.state?.source || '');
+  const destination = useLocationSearch(location.state?.destination || '');
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -83,15 +38,15 @@ export const OfferRide = () => {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      if (!sourceCoords || !destinationCoords) {
+      if (!source.coords || !destination.coords) {
         setError("Please select valid locations from the suggestions dropdown");
         setLoading(false);
         return;
       }
       const departureTime = new Date(`${date}T${time}`).toISOString();
       const payload = {
-        source: { name: source, lat: parseFloat(sourceCoords.lat), lng: parseFloat(sourceCoords.lng) },
-        destination: { name: destination, lat: parseFloat(destinationCoords.lat), lng: parseFloat(destinationCoords.lng) },
+        source: { name: source.query, lat: parseFloat(source.coords.lat), lng: parseFloat(source.coords.lng) },
+        destination: { name: destination.query, lat: parseFloat(destination.coords.lat), lng: parseFloat(destination.coords.lng) },
         seatsAvailable: seats,
         departureTime
       };
@@ -101,7 +56,7 @@ export const OfferRide = () => {
       }
       const response = await api.post('/rides', payload);
       if (!user?.isDriverVerified && response.data) updateUser({ isDriverVerified: true });
-      if (saveRoute) await api.post('/saved-rides', { sourceName: source, destinationName: destination, seats });
+      if (saveRoute) await api.post('/saved-rides', { sourceName: source.query, destinationName: destination.query, seats });
       navigate('/dashboard');
     } catch (err) { setError(err.response?.data?.message || 'Failed to create ride offer'); }
     finally { setLoading(false); }
@@ -134,16 +89,16 @@ export const OfferRide = () => {
             </label>
             <div className="relative">
               <input type="text" required className="input-modern" placeholder="Enter pickup location"
-                value={source}
-                onChange={(e) => { setSource(e.target.value); setSourceCoords(null); fetchLocationSuggestions(e.target.value, "source"); }}
-                onBlur={() => setTimeout(() => setSourceSuggestions([]), 300)}
+                value={source.query}
+                onChange={(e) => source.handleInputChange(e.target.value)}
+                onBlur={source.dismissSuggestions}
               />
-              {sourceSuggestions.length > 0 && (
+              {source.suggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
-                  {sourceSuggestions.map((item, index) => (
+                  {source.suggestions.map((item, index) => (
                     <li key={`source-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => { setSource(item.display_name); setSourceCoords({ lat: item.lat, lng: item.lon }); setSourceSuggestions([]); cleanupRequests(); }}>
+                      onClick={() => source.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}
@@ -158,16 +113,16 @@ export const OfferRide = () => {
             </label>
             <div className="relative">
               <input type="text" required className="input-modern" placeholder="Enter destination"
-                value={destination}
-                onChange={(e) => { setDestination(e.target.value); setDestinationCoords(null); fetchLocationSuggestions(e.target.value, "destination"); }}
-                onBlur={() => setTimeout(() => setDestinationSuggestions([]), 300)}
+                value={destination.query}
+                onChange={(e) => destination.handleInputChange(e.target.value)}
+                onBlur={destination.dismissSuggestions}
               />
-              {destinationSuggestions.length > 0 && (
+              {destination.suggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
-                  {destinationSuggestions.map((item, index) => (
+                  {destination.suggestions.map((item, index) => (
                     <li key={`dest-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => { setDestination(item.display_name); setDestinationCoords({ lat: item.lat, lng: item.lon }); setDestinationSuggestions([]); cleanupRequests(); }}>
+                      onClick={() => destination.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}
