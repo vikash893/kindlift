@@ -95,7 +95,8 @@ router.post('/', authMiddleware, validateCreateRide, async (req, res) => {
 router.get('/my-offers', authMiddleware, async (req, res) => {
   try {
     const rides = await RideOffer.find({ driverId: req.user.id })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(rides);
   } catch (err) {
@@ -124,7 +125,7 @@ router.get('/search', authMiddleware, validateSearchRides, async (req, res) => {
       status: 'waiting',
       seatsAvailable: { $gte: Number(seats) },
       driverId: { $ne: req.user.id }
-    }).populate('driverId', 'name email phone');
+    }).populate('driverId', 'name email phone').lean();
 
     /** @constant {number} MAX_DISTANCE_KM - Maximum matching radius */
     const MAX_DISTANCE_KM = 5;
@@ -206,10 +207,10 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
 
     const coins = 10;
 
-    await User.findByIdAndUpdate(driverId, { $inc: { coins } });
-    await User.findByIdAndUpdate(request.passengerId, {
-      $inc: { coins: Math.floor(coins / 2) }
-    });
+    await Promise.all([
+      User.updateOne({ _id: driverId }, { $inc: { coins } }),
+      User.updateOne({ _id: request.passengerId }, { $inc: { coins: Math.floor(coins / 2) } }),
+    ]);
 
     res.json({
       message: 'Ride completed successfully',

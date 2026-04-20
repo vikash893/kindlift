@@ -89,7 +89,8 @@ router.get('/incoming', authMiddleware, async (req, res) => {
     const requests = await RideRequest.find({ offerId: { $in: offerIds } })
       .populate('passengerId', 'name phone')
       .populate('offerId', 'source destination departureTime seatsAvailable')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(requests);
   } catch (err) {
@@ -107,7 +108,8 @@ router.get('/my-requests', authMiddleware, async (req, res) => {
         path: 'offerId',
         populate: { path: 'driverId', select: 'name phone email' }
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.json(requests);
   } catch (err) {
@@ -219,7 +221,7 @@ router.get('/:id/messages', authMiddleware, validateMongoId, async (req, res) =>
     }
 
     const { Message } = require('../models/Message');
-    const messages = await Message.find({ requestId: req.params.id }).sort({ createdAt: 1 });
+    const messages = await Message.find({ requestId: req.params.id }).sort({ createdAt: 1 }).lean();
     res.json(messages);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
@@ -269,19 +271,11 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     );
     const coinsAllocated = Math.max(1, Math.floor(distance));
 
-    // Driver gets full coins
-    const driver = await User.findById(request.offerId.driverId);
-    if (driver) {
-      driver.coins = (driver.coins || 0) + coinsAllocated;
-      await driver.save();
-    }
-
-    // Passenger gets half
-    const passenger = await User.findById(request.passengerId);
-    if (passenger) {
-      passenger.coins = (passenger.coins || 0) + Math.floor(coinsAllocated / 2);
-      await passenger.save();
-    }
+    // Atomic coin updates — much faster than find-then-save
+    await Promise.all([
+      User.updateOne({ _id: request.offerId.driverId }, { $inc: { coins: coinsAllocated } }),
+      User.updateOne({ _id: request.passengerId }, { $inc: { coins: Math.floor(coinsAllocated / 2) } }),
+    ]);
 
     // Notify passenger in real-time
     const io = req.app.get('io');

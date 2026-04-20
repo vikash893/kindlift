@@ -64,13 +64,11 @@ router.post('/', authMiddleware, validateCreateRating, async (req, res) => {
 
     await newRating.save();
 
-    // Update the rated user's aggregate rating
-    const ratedUser = await User.findById(ratedUserId);
-    if (ratedUser) {
-      ratedUser.ratingSum += rating;
-      ratedUser.totalRatings += 1;
-      await ratedUser.save();
-    }
+    // Atomic update for the rated user's aggregate rating (much faster than find-then-save)
+    await User.updateOne(
+      { _id: ratedUserId },
+      { $inc: { ratingSum: rating, totalRatings: 1 } }
+    );
 
     // Update rating flags on the ride request
     if (request) {
@@ -107,7 +105,8 @@ router.get('/user/:userId', async (req, res) => {
 
     const ratings = await Rating.find({ ratedUserId: req.params.userId })
       .populate('raterId', 'name profilePhoto')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
     res.json(ratings);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });

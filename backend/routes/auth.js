@@ -238,7 +238,7 @@ router.get('/me', async (req, res) => {
       process.env.JWT_SECRET || 'fallback_secret'
     );
 
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select('-password').lean();
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
