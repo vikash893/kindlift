@@ -1,14 +1,13 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAlert } from '../components/CustomAlert';
+import { useLocationSearch } from '../lib/useLocationSearch';
 import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const BookRide = () => {
   const { toast, success: showSuccess } = useAlert();
-  const [source, setSource] = useState('');
-  const [destination, setDestination] = useState('');
   const [seats, setSeats] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,53 +15,9 @@ export const BookRide = () => {
   const [searched, setSearched] = useState(false);
   const navigate = useNavigate();
 
-  const [sourceSuggestions, setSourceSuggestions] = useState([]);
-  const [destinationSuggestions, setDestinationSuggestions] = useState([]);
-  const [sourceCoords, setSourceCoords] = useState(null);
-  const [destinationCoords, setDestinationCoords] = useState(null);
-
-  const timeoutRef = useRef(null);
-  const abortControllerRef = useRef(null);
-  const cacheRef = useRef(new Map());
-
-  const cleanupRequests = useCallback(() => {
-    if (timeoutRef.current) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
-    if (abortControllerRef.current) { abortControllerRef.current.abort(); abortControllerRef.current = null; }
-  }, []);
-
-  const fetchLocationSuggestions = useCallback((query, type) => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (!query || query.length < 3) {
-      type === "source" ? setSourceSuggestions([]) : setDestinationSuggestions([]);
-      return;
-    }
-    timeoutRef.current = setTimeout(async () => {
-      const key = `${query.toLowerCase()}_${type}`;
-      const cached = cacheRef.current.get(key);
-      if (cached && Date.now() - cached.timestamp < 3600000) {
-        type === "source" ? setSourceSuggestions(cached.data) : setDestinationSuggestions(cached.data);
-        return;
-      }
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-      abortControllerRef.current = new AbortController();
-      try {
-        const res = await api.get(`/location/search?q=${encodeURIComponent(query)}`, {
-          signal: abortControllerRef.current.signal, timeout: 10000,
-        });
-        if (res.data && Array.isArray(res.data)) {
-          const limited = res.data.slice(0, 5);
-          cacheRef.current.set(key, { data: limited, timestamp: Date.now() });
-          type === "source" ? setSourceSuggestions(limited) : setDestinationSuggestions(limited);
-        }
-      } catch (err) {
-        if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
-          type === "source" ? setSourceSuggestions([]) : setDestinationSuggestions([]);
-        }
-      } finally { abortControllerRef.current = null; }
-    }, 800);
-  }, []);
-
-  useEffect(() => { return () => cleanupRequests(); }, [cleanupRequests]);
+  // Each field gets its own isolated hook instance — no cross-field interference
+  const source = useLocationSearch();
+  const destination = useLocationSearch();
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -70,7 +25,7 @@ export const BookRide = () => {
     setError('');
     setSearched(true);
     try {
-      if (!sourceCoords || !destinationCoords) {
+      if (!source.coords || !destination.coords) {
         setError("Please select valid locations from the suggestions dropdown");
         setLoading(false);
         return;
@@ -82,8 +37,8 @@ export const BookRide = () => {
       }
       const res = await api.get('/rides/search', {
         params: {
-          sourceLat: sourceCoords.lat, sourceLng: sourceCoords.lng,
-          destLat: destinationCoords.lat, destLng: destinationCoords.lng, seats
+          sourceLat: source.coords.lat, sourceLng: source.coords.lng,
+          destLat: destination.coords.lat, destLng: destination.coords.lng, seats
         },
         timeout: 15000
       });
@@ -96,12 +51,12 @@ export const BookRide = () => {
   };
 
   const requestRide = async (offerId) => {
-    if (!sourceCoords || !destinationCoords) { toast('warning', 'Please select valid locations from suggestions'); return; }
+    if (!source.coords || !destination.coords) { toast('warning', 'Please select valid locations from suggestions'); return; }
     try {
       await api.post('/requests', {
         offerId, seatsRequested: seats,
-        source: { name: source, lat: sourceCoords.lat, lng: sourceCoords.lng },
-        destination: { name: destination, lat: destinationCoords.lat, lng: destinationCoords.lng },
+        source: { name: source.query, lat: source.coords.lat, lng: source.coords.lng },
+        destination: { name: destination.query, lat: destination.coords.lat, lng: destination.coords.lng },
       });
       showSuccess('Ride requested successfully! Check your dashboard for updates.', 'Request Sent 🚗');
       navigate('/dashboard');
@@ -136,16 +91,16 @@ export const BookRide = () => {
               </label>
               <input
                 type="text" required className="input-modern" placeholder="Enter departure city..."
-                value={source}
-                onChange={(e) => { setSource(e.target.value); setSourceCoords(null); fetchLocationSuggestions(e.target.value, "source"); }}
-                onBlur={() => setTimeout(() => setSourceSuggestions([]), 300)}
+                value={source.query}
+                onChange={(e) => source.handleInputChange(e.target.value)}
+                onBlur={source.dismissSuggestions}
               />
-              {sourceSuggestions.length > 0 && (
+              {source.suggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
-                  {sourceSuggestions.map((item, index) => (
+                  {source.suggestions.map((item, index) => (
                     <li key={`source-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => { setSource(item.display_name); setSourceCoords({ lat: Number(item.lat), lng: Number(item.lon) }); setSourceSuggestions([]); cleanupRequests(); }}>
+                      onClick={() => source.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}
@@ -158,16 +113,16 @@ export const BookRide = () => {
               </label>
               <input
                 type="text" required className="input-modern" placeholder="Enter destination city..."
-                value={destination}
-                onChange={(e) => { setDestination(e.target.value); setDestinationCoords(null); fetchLocationSuggestions(e.target.value, "destination"); }}
-                onBlur={() => setTimeout(() => setDestinationSuggestions([]), 300)}
+                value={destination.query}
+                onChange={(e) => destination.handleInputChange(e.target.value)}
+                onBlur={destination.dismissSuggestions}
               />
-              {destinationSuggestions.length > 0 && (
+              {destination.suggestions.length > 0 && (
                 <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
-                  {destinationSuggestions.map((item, index) => (
+                  {destination.suggestions.map((item, index) => (
                     <li key={`dest-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => { setDestination(item.display_name); setDestinationCoords({ lat: Number(item.lat), lng: Number(item.lon) }); setDestinationSuggestions([]); cleanupRequests(); }}>
+                      onClick={() => destination.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}
