@@ -13,7 +13,7 @@
 
 **A modern ride-sharing web application that connects solo travelers with vehicle owners for safe, shared journeys — powered by AI-driven sentiment analysis.**
 
-[Live Demo](https://kindlift.onrender.com) · [Report Bug](https://github.com/vikash893/kindlift/issues) · [Request Feature](https://github.com/vikash893/kindlift/issues)
+[Live Demo](https://kindlift.in) · [Report Bug](https://github.com/vikash893/kindlift/issues) · [Request Feature](https://github.com/vikash893/kindlift/issues)
 
 </div>
 
