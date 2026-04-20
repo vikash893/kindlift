@@ -1,19 +1,146 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import { useAlert } from '../components/CustomAlert';
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Send, MapPin, Navigation, ArrowLeft, Phone, Mail, User, Calendar, Clock, MessageCircle, Users, Star, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-let DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconAnchor: [12, 41] });
-L.Marker.prototype.options.icon = DefaultIcon;
+/* ── Helper: generate a curved arc between two coordinates ── */
+const generateArc = (start, end, numPoints = 80) => {
+  const coords = [];
+  const midLng = (start[0] + end[0]) / 2;
+  const midLat = (start[1] + end[1]) / 2;
+  const dx = end[0] - start[0];
+  const dy = end[1] - start[1];
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const offsetLat = midLat + dist * 0.15;
+  const offsetLng = midLng - dist * 0.05;
+  for (let i = 0; i <= numPoints; i++) {
+    const t = i / numPoints;
+    const lng = (1 - t) * (1 - t) * start[0] + 2 * (1 - t) * t * offsetLng + t * t * end[0];
+    const lat = (1 - t) * (1 - t) * start[1] + 2 * (1 - t) * t * offsetLat + t * t * end[1];
+    coords.push([lng, lat]);
+  }
+  return coords;
+};
+
+/* ── MapLibre Map Component ── */
+const RideMap = ({ sourceCoords, destCoords, sourceName, destName }) => {
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    if (mapRef.current || !mapContainerRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      center: [(sourceCoords[1] + destCoords[1]) / 2, (sourceCoords[0] + destCoords[0]) / 2],
+      zoom: 10,
+      pitch: 20,
+      attributionControl: false,
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+
+    mapRef.current = map;
+
+    map.on('load', () => {
+      /* ── Fit bounds to show both markers ── */
+      const bounds = new maplibregl.LngLatBounds();
+      bounds.extend([sourceCoords[1], sourceCoords[0]]);
+      bounds.extend([destCoords[1], destCoords[0]]);
+      map.fitBounds(bounds, { padding: { top: 60, bottom: 60, left: 60, right: 60 }, maxZoom: 14, duration: 1200 });
+
+      /* ── Route arc line (glow + main) ── */
+      const arcCoords = generateArc(
+        [sourceCoords[1], sourceCoords[0]],
+        [destCoords[1], destCoords[0]]
+      );
+
+      map.addSource('route', {
+        type: 'geojson',
+        data: { type: 'Feature', geometry: { type: 'LineString', coordinates: arcCoords } }
+      });
+
+      // Outer glow
+      map.addLayer({
+        id: 'route-glow',
+        type: 'line',
+        source: 'route',
+        paint: {
+          'line-color': '#e8a838',
+          'line-width': 8,
+          'line-opacity': 0.25,
+          'line-blur': 6,
+        }
+      });
+
+      // Main line
+      map.addLayer({
+        id: 'route-line',
+        type: 'line',
+        source: 'route',
+        paint: {
+          'line-color': '#e8a838',
+          'line-width': 3,
+          'line-opacity': 0.9,
+          'line-dasharray': [2, 1],
+        }
+      });
+
+      /* ── Custom Pickup Marker (amber pulsing) ── */
+      const pickupEl = document.createElement('div');
+      pickupEl.innerHTML = `
+        <div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(232,168,56,0.2);animation:mapPulse 2s ease-out infinite;"></div>
+          <div style="position:absolute;width:26px;height:26px;border-radius:50%;background:rgba(232,168,56,0.35);animation:mapPulse 2s ease-out infinite 0.3s;"></div>
+          <div style="width:14px;height:14px;border-radius:50%;background:#e8a838;border:3px solid #fff;box-shadow:0 0 12px rgba(232,168,56,0.6);position:relative;z-index:2;"></div>
+        </div>
+      `;
+
+      new maplibregl.Marker({ element: pickupEl, anchor: 'center' })
+        .setLngLat([sourceCoords[1], sourceCoords[0]])
+        .setPopup(
+          new maplibregl.Popup({ offset: 25, className: 'maplibre-popup-custom' })
+            .setHTML(`<div style="font-family:'Inter',sans-serif;padding:4px 0;"><p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1a1a2e;">📍 Pickup</p><p style="font-size:11px;color:#6b7280;margin:0;">${sourceName}</p></div>`)
+        )
+        .addTo(map);
+
+      /* ── Custom Dropoff Marker (red pulsing) ── */
+      const dropoffEl = document.createElement('div');
+      dropoffEl.innerHTML = `
+        <div style="position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+          <div style="position:absolute;width:40px;height:40px;border-radius:50%;background:rgba(239,68,68,0.2);animation:mapPulse 2s ease-out infinite;"></div>
+          <div style="position:absolute;width:26px;height:26px;border-radius:50%;background:rgba(239,68,68,0.35);animation:mapPulse 2s ease-out infinite 0.3s;"></div>
+          <div style="width:14px;height:14px;border-radius:50%;background:#ef4444;border:3px solid #fff;box-shadow:0 0 12px rgba(239,68,68,0.6);position:relative;z-index:2;"></div>
+        </div>
+      `;
+
+      new maplibregl.Marker({ element: dropoffEl, anchor: 'center' })
+        .setLngLat([destCoords[1], destCoords[0]])
+        .setPopup(
+          new maplibregl.Popup({ offset: 25, className: 'maplibre-popup-custom' })
+            .setHTML(`<div style="font-family:'Inter',sans-serif;padding:4px 0;"><p style="font-weight:700;font-size:13px;margin:0 0 2px;color:#1a1a2e;">🏁 Dropoff</p><p style="font-size:11px;color:#6b7280;margin:0;">${destName}</p></div>`)
+        )
+        .addTo(map);
+    });
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [sourceCoords, destCoords, sourceName, destName]);
+
+  return <div ref={mapContainerRef} className="h-full w-full" />;
+};
 
 export const RideDetails = () => {
   const { id } = useParams();
@@ -107,7 +234,6 @@ export const RideDetails = () => {
   const roleText = isPassenger ? 'Driver' : 'Passenger';
   const sourceCoords = [request.source.lat, request.source.lng];
   const destCoords = [request.destination.lat, request.destination.lng];
-  const centerCoords = [(sourceCoords[0] + destCoords[0]) / 2, (sourceCoords[1] + destCoords[1]) / 2];
 
   const statusBadge = (s) => {
     if (s === 'accepted') return 'bg-emerald-500/10 text-emerald-600';
@@ -126,13 +252,15 @@ export const RideDetails = () => {
         {/* LEFT — Map & Details */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl border border-brand-gray-light overflow-hidden">
-            <div className="h-64 sm:h-80 w-full bg-gray-100">
-              <MapContainer center={centerCoords} zoom={11} className="h-full w-full" style={{ background: '#f3f4f6' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
-                <Marker position={sourceCoords}><Popup><p className="font-display font-bold text-sm">Pickup</p><p className="text-xs text-gray-600">{request.source.name}</p></Popup></Marker>
-                <Marker position={destCoords}><Popup><p className="font-display font-bold text-sm">Dropoff</p><p className="text-xs text-gray-600">{request.destination.name}</p></Popup></Marker>
-                <Polyline positions={[sourceCoords, destCoords]} color="#e8a838" weight={3} opacity={0.8} />
-              </MapContainer>
+            <div className="h-72 sm:h-96 w-full relative" style={{ background: '#1a1a2e' }}>
+              <RideMap
+                sourceCoords={sourceCoords}
+                destCoords={destCoords}
+                sourceName={request.source.name}
+                destName={request.destination.name}
+              />
+              {/* Overlay gradient at bottom for smooth transition */}
+              <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white/80 to-transparent pointer-events-none" />
             </div>
 
             <div className="p-6 space-y-5">
