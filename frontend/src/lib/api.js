@@ -45,12 +45,16 @@ api.interceptors.request.use((config) => {
     }
 
     // Deduplication: If the same GET is already in-flight, reuse it
-    const cacheKey = `${config.url}|${JSON.stringify(config.params || {})}`;
-    const inflight = getInflight(cacheKey);
-    if (inflight) {
-      config._deduped = true;
-      config.adapter = () => inflight;
-      return config;
+    // Skip for location search — it uses its own AbortController
+    const isLocationSearch = config.url && config.url.includes('/location/search');
+    if (!isLocationSearch) {
+      const cacheKey = `${config.url}|${JSON.stringify(config.params || {})}`;
+      const inflight = getInflight(cacheKey);
+      if (inflight) {
+        config._deduped = true;
+        config.adapter = () => inflight;
+        return config;
+      }
     }
   }
 
@@ -98,6 +102,10 @@ api.interceptors.response.use(
 const originalRequest = api.request.bind(api);
 api.request = function (config) {
   if (config.method === 'get' || (!config.method && !config.data)) {
+    // Skip dedup for location search — it uses AbortController for cancellation
+    const isLocationSearch = config.url && config.url.includes('/location/search');
+    if (isLocationSearch) return originalRequest(config);
+
     const url = config.url;
     const cacheKey = `${url}|${JSON.stringify(config.params || {})}`;
     const existing = getInflight(cacheKey);
