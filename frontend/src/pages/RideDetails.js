@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -28,8 +28,8 @@ const generateArc = (start, end, numPoints = 80) => {
   return coords;
 };
 
-/* ── MapLibre Map Component ── */
-const RideMap = ({ sourceCoords, destCoords, sourceName, destName }) => {
+/* ── MapLibre Map Component (memoized to prevent re-renders on chat input) ── */
+const RideMap = React.memo(({ sourceCoords, destCoords, sourceName, destName }) => {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
 
@@ -140,7 +140,17 @@ const RideMap = ({ sourceCoords, destCoords, sourceName, destName }) => {
   }, [sourceCoords, destCoords, sourceName, destName]);
 
   return <div ref={mapContainerRef} className="h-full w-full" />;
-};
+}, (prevProps, nextProps) => {
+  // Custom equality: only re-render if actual coordinate values change
+  return (
+    prevProps.sourceCoords[0] === nextProps.sourceCoords[0] &&
+    prevProps.sourceCoords[1] === nextProps.sourceCoords[1] &&
+    prevProps.destCoords[0] === nextProps.destCoords[0] &&
+    prevProps.destCoords[1] === nextProps.destCoords[1] &&
+    prevProps.sourceName === nextProps.sourceName &&
+    prevProps.destName === nextProps.destName
+  );
+});
 
 export const RideDetails = () => {
   const { id } = useParams();
@@ -160,12 +170,29 @@ export const RideDetails = () => {
 
   useEffect(() => {
     fetchRideData();
+
+    // Listen for new chat messages
     socket.on('receive_message', (message) => {
       if (message.requestId === id) {
         setMessages(prev => { if (prev.some(m => m._id === message._id)) return prev; return [...prev, message]; });
       }
     });
-    return () => { socket.off('receive_message'); };
+
+    // Listen for ride status updates (e.g., driver completes ride → passenger gets notified)
+    socket.on('request_updated', (updatedRequest) => {
+      if (updatedRequest._id === id) {
+        // Refresh ride data to get the latest status
+        fetchRideData();
+        if (updatedRequest.status === 'completed') {
+          showSuccess('Ride has been completed! Please rate your experience.', 'Ride Complete 🎉');
+        }
+      }
+    });
+
+    return () => {
+      socket.off('receive_message');
+      socket.off('request_updated');
+    };
   }, [id]);
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
@@ -183,14 +210,14 @@ export const RideDetails = () => {
     finally { setLoading(false); }
   };
 
-  const sendMessage = (e) => {
+  const sendMessage = useCallback((e) => {
     e.preventDefault();
     if (!newMessage.trim() || !request || !user) return;
     const isPassenger = user.id === request.passengerId._id;
     const receiverId = isPassenger ? request.offerId.driverId._id : request.passengerId._id;
     socket.emit('send_message', { requestId: id, senderId: user.id, receiverId, text: newMessage });
     setNewMessage('');
-  };
+  }, [newMessage, request, user, id]);
 
   const handleCompleteRide = async () => {
     if (!inputCode || inputCode.length !== 4) { toast('warning', 'Please enter the 4-digit code.'); return; }
@@ -232,8 +259,9 @@ export const RideDetails = () => {
   const isPassenger = user?.id === request.passengerId._id;
   const otherUser = isPassenger ? request.offerId.driverId : request.passengerId;
   const roleText = isPassenger ? 'Driver' : 'Passenger';
-  const sourceCoords = [request.source.lat, request.source.lng];
-  const destCoords = [request.destination.lat, request.destination.lng];
+  // Memoize coordinate arrays to prevent map re-initialization on unrelated state changes (e.g., chat input)
+  const sourceCoords = useMemo(() => [request.source.lat, request.source.lng], [request.source.lat, request.source.lng]);
+  const destCoords = useMemo(() => [request.destination.lat, request.destination.lng], [request.destination.lat, request.destination.lng]);
 
   const statusBadge = (s) => {
     if (s === 'accepted') return 'bg-emerald-500/10 text-emerald-600';
