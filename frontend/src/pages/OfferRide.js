@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { useLocationSearch } from '../lib/useLocationSearch';
-import { MapPin, Users, Calendar, Clock, Save, FileText, Hash, Camera, XCircle, ArrowRight } from 'lucide-react';
+import { MapPin, Users, Calendar, Clock, Save, FileText, Hash, Camera, XCircle, ArrowRight, ShieldCheck, AlertTriangle, Loader2 } from 'lucide-react';
 
 export const OfferRide = () => {
   const location = useLocation();
@@ -24,6 +24,10 @@ export const OfferRide = () => {
   const source = useLocationSearch(location.state?.source || '');
   const destination = useLocationSearch(location.state?.destination || '');
 
+  const verificationStatus = user?.driverVerificationStatus || 'none';
+  const isPending = verificationStatus === 'pending';
+  const isRejected = verificationStatus === 'rejected';
+
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -32,6 +36,10 @@ export const OfferRide = () => {
       reader.onloadend = () => { setVehiclePhoto(reader.result); setPhotoPreview(reader.result); };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleResubmit = () => {
+    updateUser({ driverVerificationStatus: 'none', isDriverVerified: false });
   };
 
   const handleSubmit = async (e) => {
@@ -55,10 +63,26 @@ export const OfferRide = () => {
         payload.vehicleNumber = vehicleNumber; payload.licenseNumber = licenseNumber; payload.vehiclePhoto = vehiclePhoto;
       }
       const response = await api.post('/rides', payload);
-      if (!user?.isDriverVerified && response.data) updateUser({ isDriverVerified: true });
+
+      // Handle 202 — docs submitted, pending review
+      if (response.status === 202) {
+        updateUser({ driverVerificationStatus: 'pending' });
+        return;
+      }
+
+      if (!user?.isDriverVerified && response.data) updateUser({ isDriverVerified: true, driverVerificationStatus: 'approved' });
       if (saveRoute) await api.post('/saved-rides', { sourceName: source.query, destinationName: destination.query, seats });
       navigate('/dashboard');
-    } catch (err) { setError(err.response?.data?.message || 'Failed to create ride offer'); }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to create ride offer';
+      const vs = err.response?.data?.verificationStatus;
+      if (vs === 'pending') {
+        updateUser({ driverVerificationStatus: 'pending' });
+      } else if (vs === 'rejected') {
+        updateUser({ driverVerificationStatus: 'rejected' });
+      }
+      setError(msg);
+    }
     finally { setLoading(false); }
   };
 
@@ -74,6 +98,56 @@ export const OfferRide = () => {
         <p className="text-brand-muted ml-[60px]">Share your journey and split costs</p>
       </div>
 
+      {/* ─── Verification Status Banners ─────────────────── */}
+      {isPending && (
+        <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+              <Loader2 className="h-6 w-6 text-amber-600 animate-spin" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-amber-900 text-lg mb-1">Verification In Progress</h3>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Your documents have been submitted and are being reviewed by our admin team.
+                You will be able to offer rides once your verification is approved.
+              </p>
+              <div className="mt-4 flex items-center gap-2 text-xs text-amber-600">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="font-semibold">Typical review time: 24-48 hours</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isRejected && (
+        <div className="mb-8 bg-gradient-to-r from-red-50 to-rose-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="h-12 w-12 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-display font-bold text-red-900 text-lg mb-1">Verification Rejected</h3>
+              <p className="text-red-700 text-sm leading-relaxed mb-3">
+                Your driver verification was not approved. Please review the feedback below and re-submit your documents.
+              </p>
+              {user?.driverVerificationNote && (
+                <div className="bg-white/60 rounded-xl p-3 mb-3 border border-red-100">
+                  <p className="text-sm text-red-800 font-medium">Admin feedback:</p>
+                  <p className="text-sm text-red-700 mt-1">{user.driverVerificationNote}</p>
+                </div>
+              )}
+              <button onClick={handleResubmit}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white rounded-full text-sm font-display font-bold hover:bg-red-700 transition-all">
+                <FileText className="h-4 w-4" /> Re-submit Documents
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Main Form ──────────────────────────────────── */}
+      {!isPending && (
       <div className="bg-white rounded-2xl border border-brand-gray-light p-6 md:p-8">
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm flex items-center gap-2">
@@ -152,11 +226,11 @@ export const OfferRide = () => {
             <span className="text-sm text-brand-muted flex items-center gap-1"><Save className="h-3.5 w-3.5" /> Save this route</span>
           </label>
 
-          {!user?.isDriverVerified && (
+          {!user?.isDriverVerified && !isRejected && (
             <div className="border-t border-brand-gray-light pt-8 mt-4 space-y-6">
               <div>
                 <h3 className="font-display text-lg font-bold text-brand-dark flex items-center gap-2 mb-1"><FileText className="h-4 w-4 text-brand-accent" /> Driver Verification</h3>
-                <p className="text-sm text-brand-muted">First-time driver? Provide your vehicle details.</p>
+                <p className="text-sm text-brand-muted">First-time driver? Provide your vehicle details for admin verification.</p>
               </div>
               <div>
                 <label className="block text-sm font-display font-semibold text-brand-dark mb-3"><Hash className="h-3.5 w-3.5 inline mr-1" />Vehicle Number</label>
@@ -192,6 +266,7 @@ export const OfferRide = () => {
           </button>
         </form>
       </div>
+      )}
     </div>
   );
 };
