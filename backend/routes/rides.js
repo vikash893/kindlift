@@ -47,8 +47,24 @@ router.post('/', authMiddleware, validateCreateRide, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ─── One-Time Driver Verification ────────────────────
-    if (!user.isDriverVerified) {
+    // ─── Driver Verification Gate ─────────────────────────
+    // Drivers must be admin-approved before offering rides
+    if (user.driverVerificationStatus === 'pending') {
+      return res.status(403).json({
+        message: 'Your verification is in progress. You will be able to offer rides once approved by the admin.',
+        verificationStatus: 'pending'
+      });
+    }
+
+    if (user.driverVerificationStatus === 'rejected') {
+      return res.status(403).json({
+        message: `Your driver verification was rejected. ${user.driverVerificationNote || 'Please re-submit your documents.'}`,
+        verificationStatus: 'rejected'
+      });
+    }
+
+    // First-time driver: submit documents for admin review
+    if (!user.isDriverVerified && user.driverVerificationStatus !== 'approved') {
       if (!vehicleNumber || !licenseNumber || !vehiclePhoto) {
         return res.status(400).json({
           message: 'First time drivers must provide vehicle details'
@@ -58,9 +74,14 @@ router.post('/', authMiddleware, validateCreateRide, async (req, res) => {
       user.vehicleNumber = vehicleNumber;
       user.licenseNumber = licenseNumber;
       user.vehiclePhoto = vehiclePhoto;
-      user.isDriverVerified = true;
+      user.driverVerificationStatus = 'pending';
 
       await user.save();
+
+      return res.status(202).json({
+        message: 'Your documents have been submitted for verification. You will be able to offer rides once approved by the admin.',
+        verificationStatus: 'pending'
+      });
     }
 
     // ─── Create Ride Offer ───────────────────────────────
