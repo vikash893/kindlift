@@ -62,17 +62,18 @@ router.post('/send', authMiddleware, requireFriendship, async (req, res) => {
 
     const msgPayload = {
       _id: message._id,
-      senderId: message.senderId,
-      receiverId: message.receiverId,
+      senderId: message.senderId.toString(),
+      receiverId: message.receiverId.toString(),
       text: message.text,
       read: message.read,
       createdAt: message.createdAt,
     };
 
-    // Real-time delivery
+    // Real-time delivery — emit to BOTH sender and receiver rooms
     const io = req.app.get('io');
     if (io) {
       io.to(receiverId).emit('dm_message', msgPayload);
+      io.to(req.user.id).emit('dm_message', msgPayload);
     }
 
     res.status(201).json(msgPayload);

@@ -289,8 +289,8 @@ async function startServer() {
 
         const msgPayload = {
           _id: newMsg._id,
-          senderId: newMsg.senderId,
-          receiverId: newMsg.receiverId,
+          senderId: newMsg.senderId.toString(),
+          receiverId: newMsg.receiverId.toString(),
           text: newMsg.text,
           read: newMsg.read,
           createdAt: newMsg.createdAt,

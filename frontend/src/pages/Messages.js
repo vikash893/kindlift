@@ -7,6 +7,15 @@ import {
   MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight
 } from 'lucide-react';
 
+/**
+ * Safe ID comparison — handles MongoDB ObjectId objects, strings, and undefined.
+ * Always converts both sides to string before comparing.
+ */
+const idMatch = (a, b) => {
+  if (!a || !b) return false;
+  return String(a) === String(b);
+};
+
 // ─── Conversation List ────────────────────────────────
 const ConversationList = ({ onSelect, selectedId }) => {
   const [conversations, setConversations] = useState([]);
@@ -91,6 +100,10 @@ const ChatView = ({ friendId, friend, onBack }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  // Resolve the current user's ID — check both .id and ._id to handle
+  // all possible shapes the AuthContext user object might have.
+  const myId = user?.id || user?._id;
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -114,39 +127,83 @@ const ChatView = ({ friendId, friend, onBack }) => {
   // Real-time incoming messages
   useEffect(() => {
     const handler = (msg) => {
-      if (
-        (msg.senderId === friendId && msg.receiverId === user?.id) ||
-        (msg.senderId === user?.id && msg.receiverId === friendId)
-      ) {
-        setMessages(prev => {
-          if (prev.some(m => m._id === msg._id)) return prev;
-          return [...prev, msg];
-        });
-        // Mark as read immediately
-        if (msg.senderId === friendId) {
-          api.put(`/dm/${friendId}/read`).catch(() => {});
+      // Accept messages that belong to this conversation (either direction)
+      const isForThisChat =
+        (idMatch(msg.senderId, friendId) && idMatch(msg.receiverId, myId)) ||
+        (idMatch(msg.senderId, myId) && idMatch(msg.receiverId, friendId));
+
+      if (!isForThisChat) return;
+
+      setMessages(prev => {
+        // Deduplicate: skip if we already have this message by _id or tempId
+        if (msg._id && prev.some(m => idMatch(m._id, msg._id))) return prev;
+        if (msg.tempId && prev.some(m => m.tempId === msg.tempId)) {
+          // Replace the optimistic message with the server-confirmed one
+          return prev.map(m => m.tempId === msg.tempId ? { ...msg } : m);
         }
+        return [...prev, msg];
+      });
+
+      // Mark as read immediately if it's from the friend
+      if (idMatch(msg.senderId, friendId)) {
+        api.put(`/dm/${friendId}/read`).catch(() => {});
       }
     };
     socket.on('dm_message', handler);
     return () => socket.off('dm_message', handler);
-  }, [friendId, user?.id]);
+  }, [friendId, myId]);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!text.trim() || sending) return;
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
     setSending(true);
+
+    // Generate a temp ID for optimistic update & deduplication
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    // Optimistic: add the message to the UI immediately
+    const optimisticMsg = {
+      _id: tempId,
+      tempId,
+      senderId: myId,
+      receiverId: friendId,
+      text: trimmed,
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setText('');
+    inputRef.current?.focus();
+
     try {
-      // Use socket for real-time delivery
-      socket.emit('send_dm', {
-        senderId: user.id,
+      // Send via REST API (more reliable than socket-only) — also triggers socket emit on server
+      const res = await api.post('/dm/send', {
         receiverId: friendId,
-        text: text.trim()
+        text: trimmed,
       });
-      setText('');
-      inputRef.current?.focus();
-    } catch (err) { console.error(err); }
+
+      // Replace optimistic message with the server-confirmed one
+      if (res.data?._id) {
+        setMessages(prev =>
+          prev.map(m => m.tempId === tempId ? { ...res.data } : m)
+        );
+      }
+    } catch (err) {
+      console.error('Send failed:', err);
+      // Mark optimistic message as failed
+      setMessages(prev =>
+        prev.map(m => m.tempId === tempId ? { ...m, failed: true } : m)
+      );
+    }
     finally { setSending(false); }
+  };
+
+  const handleRetry = async (failedMsg) => {
+    // Remove the failed message
+    setMessages(prev => prev.filter(m => m.tempId !== failedMsg.tempId));
+    // Resend
+    setText(failedMsg.text);
   };
 
   const formatTime = (dateStr) => {
@@ -164,7 +221,6 @@ const ChatView = ({ friendId, friend, onBack }) => {
     return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // Group messages by date
   const getDateKey = (dateStr) => new Date(dateStr).toDateString();
 
   return (
@@ -204,10 +260,10 @@ const ChatView = ({ friendId, friend, onBack }) => {
         ) : (
           <>
             {messages.map((msg, i) => {
-              const isMine = msg.senderId === user?.id;
+              const isMine = idMatch(msg.senderId, myId);
               const showDate = i === 0 || getDateKey(msg.createdAt) !== getDateKey(messages[i - 1].createdAt);
               return (
-                <React.Fragment key={msg._id}>
+                <React.Fragment key={msg._id || msg.tempId}>
                   {showDate && (
                     <div className="flex justify-center py-3">
                       <span className="px-3 py-1 bg-brand-dark/5 rounded-full text-[10px] font-display font-bold text-brand-muted uppercase tracking-wider">
@@ -220,9 +276,16 @@ const ChatView = ({ friendId, friend, onBack }) => {
                       isMine
                         ? 'bg-brand-dark text-white rounded-br-md'
                         : 'bg-white border border-brand-gray-light text-brand-dark rounded-bl-md'
-                    }`}>
+                    } ${msg.failed ? 'opacity-60' : ''}`}>
                       <p>{msg.text}</p>
-                      <p className={`text-[10px] mt-1 ${isMine ? 'text-white/50' : 'text-brand-muted/50'}`}>{formatTime(msg.createdAt)}</p>
+                      <div className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}>
+                        <p className={`text-[10px] ${isMine ? 'text-white/50' : 'text-brand-muted/50'}`}>{formatTime(msg.createdAt)}</p>
+                        {msg.failed && (
+                          <button onClick={() => handleRetry(msg)} className="text-[10px] text-red-300 hover:text-red-200 underline">
+                            Retry
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </React.Fragment>
@@ -266,13 +329,10 @@ export const Messages = () => {
   useEffect(() => {
     if (userId) {
       setSelectedId(userId);
-      api.get(`/friends/search?q=`).then(res => {
-        // Just set minimal info, chat will load
-        setSelectedFriend({ _id: userId });
-      }).catch(() => {});
-      // Fetch friend details
+      setSelectedFriend({ _id: userId }); // Minimal placeholder until friend loads
+      // Fetch friend details from friends list
       api.get(`/friends/list`).then(res => {
-        const friend = res.data.find(f => f._id === userId);
+        const friend = res.data.find(f => idMatch(f._id, userId));
         if (friend) setSelectedFriend(friend);
       }).catch(() => {});
     }
