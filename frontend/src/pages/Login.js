@@ -34,7 +34,7 @@ export const Login = () => {
         }
       } catch (err) {
         console.error("Google redirect error:", err);
-        setError("Google sign-in failed. Please try again.");
+        setError(`Google sign-in failed: ${err.code || err.message || JSON.stringify(err)}`);
       } finally {
         setGoogleLoading(false);
       }
@@ -177,7 +177,7 @@ export const Login = () => {
                     }
                   } catch (error) {
                     console.error("Google login error:", error);
-                    setError("Google sign-in failed. Please try again.");
+                    setError(`Popup failed: ${error.code || error.message || JSON.stringify(error)}`);
                     setGoogleLoading(false);
                   }
                 }}
