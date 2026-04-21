@@ -210,11 +210,18 @@ router.post("/google", async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
+      // New user — create with Google profile photo
       user = await User.create({
         name,
         email,
-        profilePhoto: photo,
+        profilePhoto: photo || '',
       });
+    } else {
+      // Existing user — update profile photo if they don't have one
+      if (!user.profilePhoto && photo) {
+        user.profilePhoto = photo;
+        await user.save();
+      }
     }
 
     const token = jwt.sign(
@@ -223,7 +230,25 @@ router.post("/google", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({ token, user });
+    // Return full user data matching what AuthContext expects
+    res.json({
+      token,
+      user: {
+        _id: user._id,
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profilePhoto: user.profilePhoto,
+        isDriverVerified: user.isDriverVerified,
+        driverVerificationStatus: user.driverVerificationStatus || 'none',
+        isAdmin: user.isAdmin,
+        role: user.role,
+        coins: user.coins || 0,
+        ratingSum: user.ratingSum || 0,
+        totalRatings: user.totalRatings || 0,
+      }
+    });
   } catch (err) {
     console.error("Google auth error:", err);
     res.status(500).json({ message: "Server error" });
