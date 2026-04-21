@@ -7,9 +7,18 @@ import {
 // ─── Base URL Detection ─────────────────────────────
 const getBaseURL = () => {
   const hostname = window.location.hostname;
+  
+  // Localhost
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:8000/api';
   }
+  
+  // Local Network IP (for testing on mobile phone on same WiFi)
+  if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+    return `http://${hostname}:8000/api`;
+  }
+  
+  // Production
   return 'https://kindlift-1.onrender.com/api';
 };
 

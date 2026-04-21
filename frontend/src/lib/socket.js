@@ -8,6 +8,11 @@ const getSocketURL = () => {
     return 'http://localhost:8000';
   }
   
+  // Local network testing on mobile
+  if (hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.')) {
+    return `http://${hostname}:8000`;
+  }
+  
   return 'https://kindlift-1.onrender.com';
 };
 

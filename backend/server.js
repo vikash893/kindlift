@@ -90,23 +90,26 @@ async function startServer() {
 
   // ─── Security: CORS Configuration ─────────────────────
   // Restricts which domains can access the API
- const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+  const corsOptions = {
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
 
-    const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
-      origin.startsWith(allowedOrigin)
-    );
+      const allowed = ALLOWED_ORIGINS.some(allowedOrigin =>
+        origin.startsWith(allowedOrigin)
+      );
 
-    if (allowed) {
-      return callback(null, true);
-    }
+      // Allow local network IP testing explicitly (192.168.x.x, 10.x.x.x, 172.x.x.x)
+      const isLocalIP = /^http:\/\/(192\.168|10|172)\.\d+\.\d+\.\d+:\d+$/.test(origin);
 
-    console.log('❌ CORS blocked:', origin);
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-};
+      if (allowed || isLocalIP) {
+        return callback(null, true);
+      }
+
+      console.log('❌ CORS blocked:', origin);
+      return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  };
   app.use(cors(corsOptions));
   // Handle preflight requests explicitly
   app.options('*', cors(corsOptions));
