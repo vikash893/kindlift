@@ -37,6 +37,8 @@ const ratingRoutes = require('./routes/ratings');
 const locationRoutes = require('./routes/location');
 const adminRouter = require('./admin/getuser');
 const feedbackRouter = require('./routes/Feedback');
+const friendRoutes = require('./routes/friends');
+const dmRoutes = require('./routes/dm');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -253,6 +255,54 @@ async function startServer() {
     socket.on('disconnect', () => {
       console.log('User disconnected:', socket.id);
     });
+
+    /**
+     * Direct message event — persists a DM and delivers it in real-time.
+     * @param {Object} data - { senderId, receiverId, text }
+     */
+    socket.on('send_dm', async (data) => {
+      try {
+        const { senderId, receiverId, text } = data;
+
+        if (!senderId || !receiverId || !text) return;
+        if (typeof text !== 'string' || text.trim().length === 0) return;
+
+        const { DirectMessage } = require('./models/DirectMessage');
+        const { Friendship } = require('./models/Friendship');
+
+        // Verify friendship
+        const friendship = await Friendship.findOne({
+          $or: [
+            { requester: senderId, recipient: receiverId, status: 'accepted' },
+            { requester: receiverId, recipient: senderId, status: 'accepted' }
+          ]
+        });
+
+        if (!friendship) return;
+
+        const newMsg = new DirectMessage({
+          senderId,
+          receiverId,
+          text: text.substring(0, 2000),
+        });
+        await newMsg.save();
+
+        const msgPayload = {
+          _id: newMsg._id,
+          senderId: newMsg.senderId,
+          receiverId: newMsg.receiverId,
+          text: newMsg.text,
+          read: newMsg.read,
+          createdAt: newMsg.createdAt,
+        };
+
+        io.to(receiverId).emit('dm_message', msgPayload);
+        socket.emit('dm_message', msgPayload);
+
+      } catch (err) {
+        console.error('❌ DM Socket error:', err);
+      }
+    });
   });
 
   // ─── API Routes ───────────────────────────────────────
@@ -264,6 +314,8 @@ async function startServer() {
   app.use("/api/location", locationLimiter, locationRoutes);
   app.use('/api/admin', adminRouter);
   app.use('/api', feedbackRouter);
+  app.use('/api/friends', friendRoutes);                   // Friend system
+  app.use('/api/dm', dmRoutes);                            // Direct messaging
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
