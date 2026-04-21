@@ -64,6 +64,7 @@ router.post('/register', validateRegister, async (req, res) => {
         email: user.email,
         profilePhoto: user.profilePhoto,
         isDriverVerified: user.isDriverVerified,
+        driverVerificationStatus: user.driverVerificationStatus,
         isAdmin: user.isAdmin,
         role: user.role,
       }
@@ -190,6 +191,7 @@ router.post('/login', validateLogin, async (req, res) => {
         email: user.email,
         profilePhoto: user.profilePhoto,
         isDriverVerified: user.isDriverVerified,
+        driverVerificationStatus: user.driverVerificationStatus,
         isAdmin: user.isAdmin,
         role: user.role,
       }
@@ -278,6 +280,7 @@ router.put('/update-profile', async (req, res) => {
       phone: user.phone,
       profilePhoto: user.profilePhoto,
       isDriverVerified: user.isDriverVerified,
+      driverVerificationStatus: user.driverVerificationStatus,
       isAdmin: user.isAdmin,
       role: user.role,
       coins: user.coins || 0,
