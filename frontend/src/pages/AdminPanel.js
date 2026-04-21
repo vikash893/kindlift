@@ -7,14 +7,45 @@ import {
   ChevronLeft, ChevronRight, Trash2, UserCheck, UserX, Eye, X,
   TrendingUp, Activity, Award, MapPin, Clock, CheckCircle, XCircle,
   BarChart3, Coins, AlertTriangle, User as UserIcon, ArrowUpRight, RefreshCw,
-  ShieldAlert, FileText, Image,
+  ShieldAlert, FileText, Image, Menu,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAlert } from '../components/CustomAlert';
 
 // ─── ADMIN DASHBOARD TAB ────────────────────────────
 const DashboardTab = ({ stats, loading }) => {
-  if (loading) return <LoadingSpinner />;
+  if (loading) return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {[...Array(12)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-brand-gray-light p-5 animate-pulse">
+            <div className="flex items-center justify-between mb-3">
+              <div className="h-10 w-10 rounded-xl bg-gray-200" />
+              <div className="h-3 w-16 bg-gray-100 rounded-full" />
+            </div>
+            <div className="h-7 w-20 bg-gray-200 rounded-full mb-2" />
+            <div className="h-3 w-24 bg-gray-100 rounded-full" />
+          </div>
+        ))}
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-brand-gray-light p-6 animate-pulse space-y-4">
+            <div className="h-5 w-36 bg-gray-200 rounded-full" />
+            {[...Array(4)].map((_, j) => (
+              <div key={j} className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-gray-200" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-gray-200 rounded-full w-2/3" />
+                  <div className="h-2.5 bg-gray-100 rounded-full w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   if (!stats) return <EmptyState icon={BarChart3} text="No data available" />;
   const o = stats.overview;
 
@@ -769,8 +800,10 @@ const StatusBadge = ({ status }) => {
 };
 
 const LoadingSpinner = () => (
-  <div className="flex items-center justify-center py-16">
-    <div className="text-center"><div className="loader-spinner mx-auto mb-4" /><p className="text-brand-muted text-sm">Loading...</p></div>
+  <div className="space-y-4 py-4">
+    {[...Array(5)].map((_, i) => (
+      <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+    ))}
   </div>
 );
 
@@ -796,6 +829,28 @@ const Pagination = ({ pagination, page, setPage }) => {
   );
 };
 
+// ─── SKELETON LOADERS ───────────────────────────────
+const StatCardSkeleton = () => (
+  <div className="bg-white rounded-2xl border border-brand-gray-light p-5 animate-pulse">
+    <div className="flex items-center justify-between mb-3">
+      <div className="h-10 w-10 rounded-xl bg-gray-200" />
+      <div className="h-3 w-16 bg-gray-200 rounded-full" />
+    </div>
+    <div className="h-7 w-20 bg-gray-200 rounded-full mb-2" />
+    <div className="h-3 w-24 bg-gray-100 rounded-full" />
+  </div>
+);
+
+const TableRowSkeleton = ({ cols = 5 }) => (
+  <tr className="border-b border-brand-gray-light/50">
+    {[...Array(cols)].map((_, i) => (
+      <td key={i} className="py-3 px-4">
+        <div className="h-3 bg-gray-100 rounded-full animate-pulse" style={{ width: `${50 + Math.random() * 40}%` }} />
+      </td>
+    ))}
+  </tr>
+);
+
 // ═══════════════════ MAIN ADMIN PANEL ═══════════════════
 export const AdminPanel = () => {
   const { user } = useAuth();
@@ -804,6 +859,7 @@ export const AdminPanel = () => {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [viewUserId, setViewUserId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user?.isAdmin && user?.role !== 'admin' && user?.role !== 'superadmin') {
@@ -823,53 +879,136 @@ export const AdminPanel = () => {
   };
 
   const tabs = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { key: 'users', label: 'Users', icon: Users },
-    { key: 'rides', label: 'Rides', icon: Car },
-    { key: 'requests', label: 'Requests', icon: MessageSquare },
-    { key: 'ratings', label: 'Ratings', icon: Star },
-    { key: 'verifications', label: 'Verifications', icon: ShieldAlert },
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Platform overview & analytics' },
+    { key: 'users', label: 'Users', icon: Users, description: 'Manage all registered users' },
+    { key: 'rides', label: 'Rides', icon: Car, description: 'Manage ride offers' },
+    { key: 'requests', label: 'Requests', icon: MessageSquare, description: 'Manage ride requests' },
+    { key: 'ratings', label: 'Ratings', icon: Star, description: 'Review & AI sentiment analysis' },
+    { key: 'verifications', label: 'Verifications', icon: ShieldAlert, description: 'Driver verification queue', badge: stats?.overview?.pendingVerifications },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 pt-28">
-      {/* Admin Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-brand-dark">Admin Panel</h1>
-            <p className="text-brand-muted text-sm mt-0.5">Manage your KindLift platform</p>
+    <div className="min-h-screen bg-gray-50 flex pt-20">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* ─── Sidebar ─────────────────────────────────────── */}
+      <aside className={`
+        fixed top-20 left-0 bottom-0 z-[160] w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300
+        lg:translate-x-0 lg:sticky lg:top-20 lg:h-[calc(100vh-80px)]
+        ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
+      `}>
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+              <Shield className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="font-display font-bold text-sm text-brand-dark">Admin Panel</p>
+              <p className="text-xs text-brand-muted capitalize">{user?.role || 'admin'}</p>
+            </div>
           </div>
         </div>
-        <button onClick={fetchStats} className="flex items-center gap-2 px-4 py-2 bg-white border border-brand-gray-light rounded-full text-sm font-display font-bold text-brand-muted hover:text-brand-dark hover:border-brand-dark transition-all">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </button>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-8 overflow-x-auto pb-2 scrollbar-hide">
-        {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-display font-bold rounded-xl whitespace-nowrap transition-all duration-300 ${
-              activeTab === tab.key ? 'bg-brand-dark text-white shadow-lg' : 'text-brand-muted hover:bg-brand-dark/5 hover:text-brand-dark'
-            }`}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => { setActiveTab(tab.key); setSidebarOpen(false); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
+                activeTab === tab.key
+                  ? 'bg-gradient-to-r from-brand-dark to-brand-dark/90 text-white shadow-lg'
+                  : 'text-brand-muted hover:bg-brand-dark/5 hover:text-brand-dark'
+              }`}
+            >
+              <tab.icon className={`h-4 w-4 flex-shrink-0 ${activeTab === tab.key ? 'text-brand-accent' : ''}`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-display font-bold truncate">{tab.label}</p>
+                <p className={`text-[10px] truncate ${activeTab === tab.key ? 'text-white/60' : 'text-brand-muted/60'}`}>{tab.description}</p>
+              </div>
+              {tab.badge > 0 && (
+                <span className="flex-shrink-0 min-w-[20px] h-5 px-1.5 flex items-center justify-center bg-orange-500 text-white text-[9px] font-bold rounded-full">
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-4 border-t border-gray-100 space-y-2">
+          <button
+            onClick={fetchStats}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-dark/5 hover:bg-brand-dark/10 text-brand-dark text-xs font-display font-bold rounded-xl transition-all"
           >
-            <tab.icon className="h-4 w-4" />
-            {tab.label}
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh Data
           </button>
-        ))}
-      </div>
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-brand-muted hover:text-brand-dark text-xs font-medium rounded-xl transition-all hover:bg-brand-dark/5"
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+      </aside>
 
-      {/* Tab Content */}
-      {activeTab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
-      {activeTab === 'users' && <UsersTab onViewUser={setViewUserId} />}
-      {activeTab === 'rides' && <RidesTab />}
-      {activeTab === 'requests' && <RequestsTab />}
-      {activeTab === 'ratings' && <RatingsTab />}
-      {activeTab === 'verifications' && <VerificationsTab />}
+      {/* ─── Main Content ─────────────────────────────────── */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Top bar */}
+        <div className="sticky top-20 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-lg hover:bg-brand-dark/5 text-brand-dark"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="font-display font-bold text-lg text-brand-dark">
+                {tabs.find(t => t.key === activeTab)?.label || 'Dashboard'}
+              </h1>
+              <p className="text-xs text-brand-muted hidden sm:block">
+                {tabs.find(t => t.key === activeTab)?.description}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {stats && (
+              <div className="hidden lg:flex items-center gap-3 bg-brand-dark/5 rounded-full px-4 py-2 text-xs">
+                <span className="font-bold text-brand-dark">{stats.overview?.totalUsers} users</span>
+                <span className="h-3 w-px bg-brand-dark/20" />
+                <span className="font-bold text-brand-dark">{stats.overview?.activeRides} active rides</span>
+                {stats.overview?.pendingVerifications > 0 && (
+                  <>
+                    <span className="h-3 w-px bg-brand-dark/20" />
+                    <span className="font-bold text-orange-600">{stats.overview.pendingVerifications} pending</span>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden">
+                {user?.profilePhoto
+                  ? <img src={user.profilePhoto} alt="" className="h-full w-full object-cover" />
+                  : user?.name?.charAt(0)?.toUpperCase()
+                }
+              </div>
+              <span className="text-sm font-medium text-brand-dark hidden sm:block">{user?.name?.split(' ')[0]}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-6 lg:p-8">
+          {activeTab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
+          {activeTab === 'users' && <UsersTab onViewUser={setViewUserId} />}
+          {activeTab === 'rides' && <RidesTab />}
+          {activeTab === 'requests' && <RequestsTab />}
+          {activeTab === 'ratings' && <RatingsTab />}
+          {activeTab === 'verifications' && <VerificationsTab />}
+        </div>
+      </div>
 
       {/* User Detail Modal */}
       <UserDetailModal userId={viewUserId} onClose={() => setViewUserId(null)} />

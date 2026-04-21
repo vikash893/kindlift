@@ -19,6 +19,21 @@ const { RideRequest } = require('../models/RideRequest');
 const { Rating } = require('../models/Rating');
 const { Message } = require('../models/Message');
 const { authMiddleware } = require('../middleware/auth');
+const { Notification } = require('../models/Notification');
+
+// ─── Notification Helper ─────────────────────────────
+async function sendNotification(io, { recipientId, recipientRole, type, title, message, metadata, actionUrl }) {
+  try {
+    const notif = new Notification({ recipientId, recipientRole, type, title, message, metadata: metadata || {}, actionUrl });
+    await notif.save();
+    if (io) {
+      if (recipientId) io.to(recipientId.toString()).emit('notification', notif);
+      if (recipientRole === 'admin') io.to('admin_room').emit('notification', notif);
+      if (recipientRole === 'all') io.emit('notification', notif);
+    }
+    return notif;
+  } catch (e) { console.error('Notification emit error:', e); }
+}
 
 const router = express.Router();
 
@@ -538,6 +553,18 @@ router.put('/verifications/:id', authMiddleware, adminMiddleware, async (req, re
     if (note) user.driverVerificationNote = note;
 
     await user.save();
+
+    // Emit real-time notification to the driver
+    const io = req.app.get('io');
+    await sendNotification(io, {
+      recipientId: user._id,
+      type: status === 'approved' ? 'verification_approved' : 'verification_rejected',
+      title: status === 'approved' ? '🎉 Driver Verification Approved!' : '❌ Driver Verification Rejected',
+      message: status === 'approved'
+        ? 'Congratulations! Your driver verification has been approved. You can now offer rides.'
+        : `Your driver verification was rejected. ${note ? 'Reason: ' + note : 'Please check your documents and resubmit.'}`,
+      actionUrl: '/profile',
+    });
 
     res.json({
       message: `Driver verification ${status}`,

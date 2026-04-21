@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { AlertProvider } from './components/CustomAlert';
 import { Navbar } from './components/Navbar';
 import { Loader } from './components/Loader';
@@ -52,7 +53,7 @@ const ConditionalNavbar = () => {
 };
 
 function App() {
-  return (<AuthProvider> <AlertProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <ConditionalNavbar />      <main className="flex-1">
+  return (<AuthProvider> <AlertProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <NotificationProvider> <ConditionalNavbar />      <main className="flex-1">
     <Suspense fallback={<Loader />}>
     <Routes>
       <Route path="/" element={<Home />} />
@@ -141,6 +142,7 @@ function App() {
     </Routes>
     </Suspense>
   </main>
+  </NotificationProvider>
   </div>
   </Router>
   </AlertProvider>
