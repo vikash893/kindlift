@@ -49,6 +49,11 @@ router.post('/register', validateRegister, async (req, res) => {
     // Clean up verified OTP record after successful registration
     await OTP.deleteMany({ email });
 
+    // Send Welcome Email (non-blocking)
+    const welcomeSubject = "Welcome to Kindlift! 🚗";
+    const welcomeText = `Hi ${name},<br/><br/>Welcome to Kindlift! We are so excited to have you join our community.<br/>Start offering or booking your rides today and experience the best way to travel together.<br/><br/>Safe Travels,<br/>The Kindlift Team`;
+    sendEmail(email, welcomeSubject, welcomeText).catch(err => console.error("Failed to send welcome email:", err));
+
     const payload = { id: user.id, name: user.name };
     const token = jwt.sign(
       payload,
@@ -220,6 +225,11 @@ router.post("/google", async (req, res) => {
         password: randomPassword, // Required by Mongoose schema
         profilePhoto: photo || '',
       });
+
+      // Send Welcome Email (non-blocking)
+      const welcomeSubject = "Welcome to Kindlift! 🚗";
+      const welcomeText = `Hi ${name},<br/><br/>Welcome to Kindlift! We are so excited to have you join our community.<br/>Start offering or booking your rides today and experience the best way to travel together.<br/><br/>Safe Travels,<br/>The Kindlift Team`;
+      sendEmail(email, welcomeSubject, welcomeText).catch(err => console.error("Failed to send welcome email:", err));
     } else {
       // Existing user — update profile photo if they don't have one
       if (!user.profilePhoto && photo) {
