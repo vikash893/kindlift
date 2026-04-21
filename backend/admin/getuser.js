@@ -72,7 +72,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
     if (cached) return res.json(cached);
 
     const [
-      totalUsers, activeUsers, verifiedDrivers,
+      totalUsers, activeUsers, verifiedDrivers, pendingVerifications,
       totalRides, activeRides, completedRides,
       totalRequests, pendingRequests, acceptedRequests, completedRequests,
       totalRatings, totalMessages,
@@ -80,6 +80,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
       User.countDocuments(),
       User.countDocuments({ isActive: { $ne: false } }),
       User.countDocuments({ isDriverVerified: true }),
+      User.countDocuments({ driverVerificationStatus: 'pending' }),
       RideOffer.countDocuments(),
       RideOffer.countDocuments({ status: 'waiting' }),
       RideOffer.countDocuments({ status: 'completed' }),
@@ -123,7 +124,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
 
     const response = {
       overview: {
-        totalUsers, activeUsers, verifiedDrivers,
+        totalUsers, activeUsers, verifiedDrivers, pendingVerifications,
         totalRides, activeRides, completedRides,
         totalRequests, pendingRequests, acceptedRequests, completedRequests,
         totalRatings, totalMessages,
@@ -243,7 +244,7 @@ router.get('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
  */
 router.put('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { isActive, isAdmin, role, coins, isDriverVerified } = req.body;
+    const { isActive, isAdmin, role, coins, isDriverVerified, driverVerificationStatus } = req.body;
     const updates = {};
 
     if (typeof isActive === 'boolean') updates.isActive = isActive;
@@ -251,6 +252,9 @@ router.put('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
     if (role && ['user', 'admin', 'superadmin'].includes(role)) updates.role = role;
     if (typeof coins === 'number') updates.coins = coins;
     if (typeof isDriverVerified === 'boolean') updates.isDriverVerified = isDriverVerified;
+    if (driverVerificationStatus && ['none', 'pending', 'approved', 'rejected'].includes(driverVerificationStatus)) {
+      updates.driverVerificationStatus = driverVerificationStatus;
+    }
 
     const user = await User.findByIdAndUpdate(
       req.params.id,
@@ -466,6 +470,88 @@ router.delete('/ratings/:id', authMiddleware, adminMiddleware, async (req, res) 
 
     res.json({ message: 'Rating deleted and user aggregate updated' });
   } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ═══════════════════ DRIVER VERIFICATION ═══════════════════
+
+/**
+ * GET /verifications — List drivers pending verification
+ */
+router.get('/verifications', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const statusFilter = req.query.status || 'pending';
+
+    let query = {};
+    if (['pending', 'approved', 'rejected'].includes(statusFilter)) {
+      query.driverVerificationStatus = statusFilter;
+    } else if (statusFilter === 'all') {
+      query.driverVerificationStatus = { $ne: 'none' };
+    }
+
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
+      .select('name email phone profilePhoto vehicleNumber licenseNumber vehiclePhoto driverVerificationStatus driverVerificationNote createdAt')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    res.json({
+      users,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error('Admin verifications error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * PUT /verifications/:id — Approve or reject a driver verification
+ */
+router.put('/verifications/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { status, note } = req.body;
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Status must be "approved" or "rejected"' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (user.driverVerificationStatus === 'none') {
+      return res.status(400).json({ message: 'User has not submitted verification documents' });
+    }
+
+    user.driverVerificationStatus = status;
+    user.isDriverVerified = status === 'approved';
+    if (note) user.driverVerificationNote = note;
+
+    await user.save();
+
+    res.json({
+      message: `Driver verification ${status}`,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        driverVerificationStatus: user.driverVerificationStatus,
+        isDriverVerified: user.isDriverVerified,
+      },
+    });
+    invalidateStatsCache();
+  } catch (err) {
+    console.error('Verification update error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });
