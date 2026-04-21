@@ -34,7 +34,8 @@ export const Login = () => {
         }
       } catch (err) {
         console.error("Google redirect error:", err);
-        setError(`Google sign-in failed: ${err.code || err.message || JSON.stringify(err)}`);
+        const serverMsg = err.response?.data?.message;
+        setError(`Google sign-in failed: ${serverMsg || err.code || err.message || JSON.stringify(err)}`);
       } finally {
         setGoogleLoading(false);
       }
@@ -177,7 +178,8 @@ export const Login = () => {
                     }
                   } catch (error) {
                     console.error("Google login error:", error);
-                    setError(`Popup failed: ${error.code || error.message || JSON.stringify(error)}`);
+                    const serverMsg = error.response?.data?.message;
+                    setError(`Popup failed: ${serverMsg || error.code || error.message || JSON.stringify(error)}`);
                     setGoogleLoading(false);
                   }
                 }}

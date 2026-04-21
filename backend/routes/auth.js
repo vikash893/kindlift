@@ -251,7 +251,7 @@ router.post("/google", async (req, res) => {
     });
   } catch (err) {
     console.error("Google auth error:", err);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: `Server error: ${err.message}` });
   }
 });
 // ================= ME =================
