@@ -1,5 +1,5 @@
-import { signInWithGoogle } from "../auth";
-import React, { useState } from 'react';
+import { signInWithGoogle, getGoogleRedirectResult } from "../auth";
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar'; // Import the Navbar component
@@ -13,8 +13,34 @@ export const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Handle Google redirect result (mobile flow)
+  useEffect(() => {
+    const handleRedirect = async () => {
+      setGoogleLoading(true);
+      try {
+        const firebaseUser = await getGoogleRedirectResult();
+        if (firebaseUser) {
+          const res = await api.post("/auth/google", {
+            name: firebaseUser.displayName,
+            email: firebaseUser.email,
+            photo: firebaseUser.photoURL,
+          });
+          login(res.data.token, res.data.user);
+          navigate("/dashboard");
+        }
+      } catch (err) {
+        console.error("Google redirect error:", err);
+        setError("Google sign-in failed. Please try again.");
+      } finally {
+        setGoogleLoading(false);
+      }
+    };
+    handleRedirect();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -133,37 +159,44 @@ export const Login = () => {
               </div>
               <button
                 type="button"
+                disabled={googleLoading}
                 onClick={async () => {
-                  const firebaseUser = await signInWithGoogle();
-
-                  if (firebaseUser) {
-                    try {
+                  setGoogleLoading(true);
+                  setError('');
+                  try {
+                    const firebaseUser = await signInWithGoogle();
+                    // If null, redirect flow is in progress (mobile) — page will reload
+                    if (firebaseUser) {
                       const res = await api.post("/auth/google", {
                         name: firebaseUser.displayName,
                         email: firebaseUser.email,
                         photo: firebaseUser.photoURL,
                       });
-
-                      console.log("Backend response:", res.data); // optional debug
-
                       login(res.data.token, res.data.user);
                       navigate("/dashboard");
-
-                    } catch (error) {
-                      console.error("Google login error:", error);
                     }
+                  } catch (error) {
+                    console.error("Google login error:", error);
+                    setError("Google sign-in failed. Please try again.");
+                    setGoogleLoading(false);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-300 rounded-full bg-white hover:bg-gray-50 transition-all"
+                className="w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-300 rounded-full bg-white hover:bg-gray-50 transition-all disabled:opacity-50"
               >
-                <img
-                  src="https://developers.google.com/identity/images/g-logo.png"
-                  alt="google"
-                  className="w-5 h-5"
-                />
-                <span className="font-semibold text-gray-700">
-                  Continue with Google
-                </span>
+                {googleLoading ? (
+                  <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Connecting...</span>
+                ) : (
+                  <>
+                    <img
+                      src="https://developers.google.com/identity/images/g-logo.png"
+                      alt="google"
+                      className="w-5 h-5"
+                    />
+                    <span className="font-semibold text-gray-700">
+                      Continue with Google
+                    </span>
+                  </>
+                )}
               </button>
 
               <Link to="/register" className="block w-full">
