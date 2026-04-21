@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Trash2, UserCheck, UserX, Eye, X,
   TrendingUp, Activity, Award, MapPin, Clock, CheckCircle, XCircle,
   BarChart3, Coins, AlertTriangle, User as UserIcon, ArrowUpRight, RefreshCw,
+  ShieldAlert, FileText, Image,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAlert } from '../components/CustomAlert';
@@ -20,6 +21,7 @@ const DashboardTab = ({ stats, loading }) => {
   const cards = [
     { label: 'Total Users', value: o.totalUsers, icon: Users, color: 'bg-blue-500', change: `+${o.newUsersThisWeek} this week` },
     { label: 'Verified Drivers', value: o.verifiedDrivers, icon: UserCheck, color: 'bg-emerald-500' },
+    { label: 'Pending Verifications', value: o.pendingVerifications || 0, icon: ShieldAlert, color: 'bg-orange-500' },
     { label: 'Total Rides', value: o.totalRides, icon: Car, color: 'bg-violet-500', change: `+${o.newRidesThisWeek} this week` },
     { label: 'Active Rides', value: o.activeRides, icon: Activity, color: 'bg-amber-500' },
     { label: 'Completed Rides', value: o.completedRides, icon: CheckCircle, color: 'bg-teal-500' },
@@ -619,13 +621,149 @@ const RequestsTab = () => {
   );
 };
 
+// ─── VERIFICATIONS TAB ──────────────────────────────
+const VerificationsTab = () => {
+  const { toast } = useAlert();
+  const [users, setUsers] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [statusFilter, setStatusFilter] = useState('pending');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [viewDoc, setViewDoc] = useState(null);
+  const [noteText, setNoteText] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
+
+  const fetchVerifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/admin/verifications?page=${page}&status=${statusFilter}&limit=15`);
+      setUsers(res.data.users);
+      setPagination(res.data.pagination);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [page, statusFilter]);
+
+  useEffect(() => { fetchVerifications(); }, [fetchVerifications]);
+
+  const handleVerification = async (userId, status) => {
+    setActionLoading(userId);
+    try {
+      await api.put(`/admin/verifications/${userId}`, { status, note: noteText || undefined });
+      toast('success', `Driver ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
+      setNoteText('');
+      fetchVerifications();
+    } catch (err) { toast('error', 'Failed to update verification'); }
+    finally { setActionLoading(null); }
+  };
+
+  const statuses = ['pending', 'approved', 'rejected', 'all'];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 flex-wrap">
+        {statuses.map(s => (
+          <button key={s} onClick={() => { setStatusFilter(s); setPage(1); }}
+            className={`px-4 py-2 text-xs font-display font-bold rounded-full capitalize transition-all ${statusFilter === s ? 'bg-brand-dark text-white' : 'bg-white text-brand-muted border border-brand-gray-light hover:border-brand-dark'}`}>
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <LoadingSpinner /> : users.length === 0 ? <EmptyState icon={ShieldAlert} text={`No ${statusFilter} verifications`} /> : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {users.map(u => (
+            <div key={u._id} className="bg-white rounded-2xl border border-brand-gray-light p-5 card-lift">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="h-12 w-12 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-lg overflow-hidden flex-shrink-0">
+                  {u.profilePhoto ? <img src={u.profilePhoto} alt="" className="h-full w-full object-cover" /> : u.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display font-bold text-brand-dark truncate">{u.name}</p>
+                  <p className="text-xs text-brand-muted truncate">{u.email}</p>
+                  <div className="mt-1">
+                    <StatusBadge status={u.driverVerificationStatus} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Document Details */}
+              <div className="bg-brand-dark/[0.02] rounded-xl p-3 mb-4 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-brand-muted font-semibold">Vehicle Number</span>
+                  <span className="font-mono font-bold text-brand-dark">{u.vehicleNumber || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-brand-muted font-semibold">License Number</span>
+                  <span className="font-mono font-bold text-brand-dark">{u.licenseNumber || 'N/A'}</span>
+                </div>
+                {u.vehiclePhoto && (
+                  <div>
+                    <button onClick={() => setViewDoc(u.vehiclePhoto)}
+                      className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-semibold mt-1">
+                      <Image className="h-3.5 w-3.5" /> View Vehicle Photo
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {u.driverVerificationNote && (
+                <div className="bg-amber-50 rounded-xl p-3 mb-4">
+                  <p className="text-xs text-amber-800 font-semibold">Admin Note:</p>
+                  <p className="text-xs text-amber-700 mt-1">{u.driverVerificationNote}</p>
+                </div>
+              )}
+
+              {/* Actions */}
+              {u.driverVerificationStatus === 'pending' && (
+                <div className="space-y-3">
+                  <input type="text" placeholder="Optional note for driver..."
+                    value={actionLoading === u._id ? noteText : ''}
+                    onChange={(e) => { setNoteText(e.target.value); setActionLoading(u._id); }}
+                    className="w-full px-3 py-2 bg-brand-dark/[0.03] rounded-lg border-0 text-xs outline-none focus:ring-1 focus:ring-brand-accent"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={() => handleVerification(u._id, 'approved')}
+                      disabled={actionLoading === u._id && actionLoading !== u._id}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-xs font-display font-bold hover:bg-emerald-600 transition-all">
+                      <CheckCircle className="h-3.5 w-3.5" /> Approve
+                    </button>
+                    <button onClick={() => handleVerification(u._id, 'rejected')}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-500 text-white rounded-xl text-xs font-display font-bold hover:bg-red-600 transition-all">
+                      <XCircle className="h-3.5 w-3.5" /> Reject
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      <Pagination pagination={pagination} page={page} setPage={setPage} />
+
+      {/* Document Viewer Modal */}
+      {viewDoc && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setViewDoc(null)}>
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-display font-bold text-brand-dark">Vehicle Photo</h3>
+              <button onClick={() => setViewDoc(null)} className="p-2 rounded-full hover:bg-brand-dark/5"><X className="h-5 w-5" /></button>
+            </div>
+            <img src={viewDoc} alt="Vehicle" className="w-full rounded-2xl object-contain max-h-[60vh]" />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── SHARED COMPONENTS ──────────────────────────────
 const StatusBadge = ({ status }) => {
   const styles = {
     waiting: 'bg-amber-100 text-amber-700', ongoing: 'bg-blue-100 text-blue-700',
     completed: 'bg-emerald-100 text-emerald-700', cancelled: 'bg-red-100 text-red-700',
     pending: 'bg-amber-100 text-amber-700', accepted: 'bg-emerald-100 text-emerald-700',
-    rejected: 'bg-red-100 text-red-700',
+    rejected: 'bg-red-100 text-red-700', approved: 'bg-emerald-100 text-emerald-700',
+    none: 'bg-gray-100 text-gray-500',
   };
   return <span className={`px-2.5 py-0.5 text-xs rounded-full font-bold capitalize ${styles[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>;
 };
@@ -690,6 +828,7 @@ export const AdminPanel = () => {
     { key: 'rides', label: 'Rides', icon: Car },
     { key: 'requests', label: 'Requests', icon: MessageSquare },
     { key: 'ratings', label: 'Ratings', icon: Star },
+    { key: 'verifications', label: 'Verifications', icon: ShieldAlert },
   ];
 
   return (
@@ -730,6 +869,7 @@ export const AdminPanel = () => {
       {activeTab === 'rides' && <RidesTab />}
       {activeTab === 'requests' && <RequestsTab />}
       {activeTab === 'ratings' && <RatingsTab />}
+      {activeTab === 'verifications' && <VerificationsTab />}
 
       {/* User Detail Modal */}
       <UserDetailModal userId={viewUserId} onClose={() => setViewUserId(null)} />
