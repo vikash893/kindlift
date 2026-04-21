@@ -61,6 +61,7 @@ export const AuthProvider = ({ children }) => {
           phone: res.data.phone,
           profilePhoto: res.data.profilePhoto,
           isDriverVerified: res.data.isDriverVerified,
+          driverVerificationStatus: res.data.driverVerificationStatus || 'none',
           isAdmin: res.data.isAdmin,
           role: res.data.role,
           coins: res.data.coins || 0,
