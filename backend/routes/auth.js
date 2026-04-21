@@ -203,6 +203,8 @@ router.post('/login', validateLogin, async (req, res) => {
   }
 });
 // ================= GOOGLE LOGIN =================
+const crypto = require('crypto');
+
 router.post("/google", async (req, res) => {
   try {
     const { name, email, photo } = req.body;
@@ -210,10 +212,12 @@ router.post("/google", async (req, res) => {
     let user = await User.findOne({ email });
 
     if (!user) {
-      // New user — create with Google profile photo
+      // New user — create with Google profile photo and a secure random placeholder password
+      const randomPassword = crypto.randomBytes(32).toString('hex');
       user = await User.create({
         name,
         email,
+        password: randomPassword, // Required by Mongoose schema
         profilePhoto: photo || '',
       });
     } else {
