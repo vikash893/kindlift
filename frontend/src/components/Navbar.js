@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, Menu, X } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, X, Users, MessageCircle } from 'lucide-react';
+import api from '../lib/api';
+import { socket } from '../lib/socket';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -10,6 +12,7 @@ export const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadDMs, setUnreadDMs] = useState(0);
   const lastScroll = useRef(0);
 
   useEffect(() => {
@@ -44,6 +47,28 @@ export const Navbar = () => {
     navigate('/login');
   };
 
+  // Fetch unread DM count
+  useEffect(() => {
+    if (!user) return;
+    const fetchUnread = async () => {
+      try {
+        const res = await api.get('/dm/unread/count');
+        setUnreadDMs(res.data.count);
+      } catch {}  // silent fail
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000); // refresh every 30s
+
+    const handleNewDM = () => {
+      setUnreadDMs(prev => prev + 1);
+    };
+    socket.on('dm_message', handleNewDM);
+    return () => {
+      clearInterval(interval);
+      socket.off('dm_message', handleNewDM);
+    };
+  }, [user]);
+
   const isHome = location.pathname === '/';
   // Always use dark text on feedback page since it has light background on the right
   const shouldUseDarkText = isHome ? !scrolled : true;
@@ -63,6 +88,8 @@ export const Navbar = () => {
         { to: '/offer-ride', label: 'Offer Ride' },
         { to: '/book-ride', label: 'Book Ride' },
         { to: '/dashboard', label: 'Dashboard' },
+        { to: '/friends', label: 'Friends' },
+        { to: '/messages', label: 'Messages', badge: unreadDMs },
         { to: '/profile', label: 'Profile' },
         ...(user.isAdmin || user.role === 'admin' || user.role === 'superadmin'
           ? [{ to: '/admin', label: 'Admin' }]
@@ -105,13 +132,18 @@ export const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`px-4 py-2 text-sm font-medium transition-all duration-300 link-hover ${
+                  className={`relative px-4 py-2 text-sm font-medium transition-all duration-300 link-hover ${
                     location.pathname === link.to
                       ? 'text-brand-accent'
                       : 'text-brand-dark/60 hover:text-brand-dark'
                   }`}
                 >
                   {link.label}
+                  {link.badge > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 flex items-center justify-center bg-red-500 text-white text-[9px] font-bold rounded-full">
+                      {link.badge > 99 ? '99+' : link.badge}
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
