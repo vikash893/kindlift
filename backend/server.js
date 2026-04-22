@@ -39,6 +39,7 @@ const adminRouter = require('./admin/getuser');
 const feedbackRouter = require('./routes/Feedback');
 const friendRoutes = require('./routes/friends');
 const dmRoutes = require('./routes/dm');
+const statsRoutes = require('./routes/stats');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -319,6 +320,7 @@ async function startServer() {
   app.use('/api', feedbackRouter);
   app.use('/api/friends', friendRoutes);                   // Friend system
   app.use('/api/dm', dmRoutes);                            // Direct messaging
+  app.use('/api/stats', statsRoutes);                      // Public stats segment
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────

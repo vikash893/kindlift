@@ -18,6 +18,7 @@ const useCounter = (end, duration = 2000) => {
   const started = useRef(false);
 
   useEffect(() => {
+    started.current = false;
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
@@ -125,9 +126,32 @@ export const Home = () => {
     },
   ];
 
-  const [journeysRef, journeys] = useCounter(10000, 2500);
-  const [matchRef, matchRate] = useCounter(98, 2000);
-  const [citiesRef, cities] = useCounter(50, 1800);
+  const [stats, setStats] = useState({
+    happyJourneys: 10000,
+    matchAccuracy: 98,
+    activeCities: 50
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/stats`);
+        const data = await response.json();
+        setStats({
+          happyJourneys: data.happyJourneys || 0,
+          matchAccuracy: data.matchAccuracy || 0,
+          activeCities: data.activeCities || 0
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const [journeysRef, journeys] = useCounter(stats.happyJourneys, 2500);
+  const [matchRef, matchRate] = useCounter(stats.matchAccuracy, 2000);
+  const [citiesRef, cities] = useCounter(stats.activeCities, 1800);
 
   return (
     <div className="overflow-x-hidden">
@@ -198,9 +222,9 @@ export const Home = () => {
               style={{ animationDelay: '0.6s' }}
             >
               {[
-                { value: '10k+', label: 'Happy Journeys' },
-                { value: '98%', label: 'Match Accuracy' },
-                { value: '50+', label: 'Active Cities' },
+                { value: `${stats.happyJourneys >= 1000 ? Math.floor(stats.happyJourneys / 1000) + 'k+' : stats.happyJourneys}`, label: 'Happy Journeys' },
+                { value: `${stats.matchAccuracy}%`, label: 'Match Accuracy' },
+                { value: `${stats.activeCities}+`, label: 'Active Cities' },
               ].map((stat, i) => (
                 <div key={i}>
                   <p className="font-display text-3xl font-bold text-white">{stat.value}</p>
@@ -306,7 +330,9 @@ export const Home = () => {
           <RevealSection>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
               <div ref={journeysRef}>
-                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">{Math.floor(journeys / 1000)}k+</p>
+                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">
+                  {stats.happyJourneys >= 1000 ? Math.floor(journeys / 1000) + 'k+' : journeys}
+                </p>
                 <p className="text-brand-muted mt-4 text-lg">Happy Journeys</p>
               </div>
               <div ref={matchRef}>
