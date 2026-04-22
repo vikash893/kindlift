@@ -106,9 +106,9 @@ export const Home = () => {
 
   const testimonials = [
     {
-      name: 'Priya Sharma',
-      route: 'Mumbai → Pune',
-      quote: 'I used to dread the 3-hour drive alone. Now I actually look forward to it! Found a regular travel buddy who loves the same podcasts.',
+      name: 'Rahul Rathore',
+      route: 'Mathura → palwal',
+      quote: 'KindLift presents a highly relevant and impactful solution to modern urban transportation challenges. By focusing on ride sharing, the platform directly addresses key issues such as traffic congestion, rising fuel costs, and environmental sustainability, making it both practical and socially responsible.Overall, KindLift is a well-thought-out and practical platform with strong real-world applicability. With further refinement and feature enhancement, it has the potential to evolve into a powerful, user-friendly, and impactful mobility solution.' , 
       rating: 5,
     },
     {
