@@ -168,11 +168,12 @@ export const OfferRide = () => {
                 onBlur={source.dismissSuggestions}
               />
               {source.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
+                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
+                    onMouseDown={(e) => e.preventDefault()}>
                   {source.suggestions.map((item, index) => (
                     <li key={`source-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => source.selectSuggestion(item)}>
+                      onMouseDown={() => source.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}
@@ -192,11 +193,12 @@ export const OfferRide = () => {
                 onBlur={destination.dismissSuggestions}
               />
               {destination.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card">
+                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
+                    onMouseDown={(e) => e.preventDefault()}>
                   {destination.suggestions.map((item, index) => (
                     <li key={`dest-${index}-${item.place_id || index}`}
                       className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onClick={() => destination.selectSuggestion(item)}>
+                      onMouseDown={() => destination.selectSuggestion(item)}>
                       {item.display_name}
                     </li>
                   ))}

@@ -21,6 +21,17 @@ const {
   validateCompleteRequest,
   validateMongoId,
 } = require('../middleware/validate');
+const { Notification } = require('../models/Notification');
+
+// ─── Notification Helper ─────────────────────────────
+async function sendNotification(io, { recipientId, recipientRole, type, title, message, metadata, actionUrl }) {
+  try {
+    const notif = new Notification({ recipientId, recipientRole, type, title, message, metadata: metadata || {}, actionUrl });
+    await notif.save();
+    if (io && recipientId) io.to(recipientId.toString()).emit('notification', notif);
+    return notif;
+  } catch (e) { console.error('Notification error:', e); }
+}
 
 const router = express.Router();
 
@@ -70,6 +81,17 @@ router.post('/', authMiddleware, validateCreateRequest, async (req, res) => {
     if (io) {
       io.to(offer.driverId.toString()).emit('new_request', newRequest);
     }
+
+    // Persistent notification for driver
+    const passenger = await User.findById(req.user.id).select('name').lean();
+    await sendNotification(io, {
+      recipientId: offer.driverId,
+      type: 'ride_request',
+      title: '🚗 New Ride Request',
+      message: `${passenger?.name || 'Someone'} wants to join your ride from ${source?.name || 'unknown'} to ${destination?.name || 'unknown'}.`,
+      metadata: { requestId: newRequest._id, offerId },
+      actionUrl: `/ride/${offerId}`,
+    });
 
     res.status(201).json(newRequest);
   } catch (err) {
@@ -165,6 +187,28 @@ router.put('/:id/status', authMiddleware, validateUpdateStatus, async (req, res)
     const io = req.app.get('io');
     if (io) {
       io.to(request.passengerId.toString()).emit('request_updated', request);
+    }
+
+    // Persistent notification for passenger
+    const driver = await User.findById(req.user.id).select('name').lean();
+    if (status === 'accepted') {
+      await sendNotification(io, {
+        recipientId: request.passengerId,
+        type: 'ride_accepted',
+        title: '✅ Ride Request Accepted!',
+        message: `${driver?.name || 'Your driver'} has accepted your ride request! Your completion code is: ${request.completionCode}`,
+        metadata: { requestId: request._id, offerId: offer._id },
+        actionUrl: `/ride/${offer._id}`,
+      });
+    } else if (status === 'rejected') {
+      await sendNotification(io, {
+        recipientId: request.passengerId,
+        type: 'ride_rejected',
+        title: '❌ Ride Request Rejected',
+        message: `${driver?.name || 'The driver'} has rejected your ride request. Try booking another ride.`,
+        metadata: { requestId: request._id },
+        actionUrl: '/book-ride',
+      });
     }
 
     res.json(request);
@@ -282,6 +326,26 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     if (io) {
       io.to(request.passengerId.toString()).emit('request_updated', request);
     }
+
+    // Persistent completion notification for both parties
+    await Promise.all([
+      sendNotification(io, {
+        recipientId: request.passengerId,
+        type: 'ride_completed',
+        title: '🎉 Ride Completed!',
+        message: `Your ride has been marked complete. You earned ${Math.floor(coinsAllocated / 2)} coins! Please rate your driver.`,
+        metadata: { requestId: request._id },
+        actionUrl: '/dashboard',
+      }),
+      sendNotification(io, {
+        recipientId: request.offerId.driverId,
+        type: 'ride_completed',
+        title: '🎉 Ride Completed!',
+        message: `Ride completed successfully! You earned ${coinsAllocated} coins.`,
+        metadata: { requestId: request._id },
+        actionUrl: '/dashboard',
+      }),
+    ]);
 
     res.json({ message: 'Ride completed successfully', coinsAllocated });
   } catch (err) {

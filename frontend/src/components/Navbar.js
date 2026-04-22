@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { LogOut, User as UserIcon, Menu, X, Users, MessageCircle } from 'lucide-react';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
+import { NotificationBell } from './NotificationBell';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
@@ -167,6 +168,8 @@ export const Navbar = () => {
                       <span className="block text-xs text-brand-accent font-semibold">{user.coins || 0} coins</span>
                     </div>
                   </div>
+                  {/* Notification Bell */}
+                  <NotificationBell />
                   <button
                     onClick={handleLogout}
                     className="p-2 rounded-full transition-all text-brand-muted hover:text-red-500 hover:bg-red-50"

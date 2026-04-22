@@ -40,6 +40,7 @@ const feedbackRouter = require('./routes/Feedback');
 const friendRoutes = require('./routes/friends');
 const dmRoutes = require('./routes/dm');
 const statsRoutes = require('./routes/stats');
+const notificationRoutes = require('./routes/notifications');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -212,6 +213,16 @@ async function startServer() {
     });
 
     /**
+     * Join admin room — admins join a shared 'admin_room' for broadcast notifications
+     * @param {string} userId
+     */
+    socket.on('join_admin', (userId) => {
+      if (typeof userId === 'string' && userId.length > 0) {
+        socket.join('admin_room');
+      }
+    });
+
+    /**
      * Send message event — persists a chat message and delivers it in real-time.
      * @param {Object} data - { requestId, senderId, receiverId, text }
      */
@@ -321,6 +332,7 @@ async function startServer() {
   app.use('/api/friends', friendRoutes);                   // Friend system
   app.use('/api/dm', dmRoutes);                            // Direct messaging
   app.use('/api/stats', statsRoutes);                      // Public stats segment
+  app.use('/api/notifications', notificationRoutes);         // Notification system
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
