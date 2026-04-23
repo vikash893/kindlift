@@ -19,7 +19,7 @@ export const About = () => {
     },
     {
       name: 'Vishnu Singh Rajput',
-      role: 'UI/UX Designer & Frontend Developer',
+      role: 'UI/UX Designer & Frontend Developer And Ml developers',
       description: 'Creates beautiful, intuitive interfaces that users love.',
       image: vishnu,
       github: 'https://github.com/vish3456',
