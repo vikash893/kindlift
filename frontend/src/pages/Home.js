@@ -113,10 +113,10 @@ export const Home = () => {
       rating: 5,
     },
     {
-      name: 'Rahul Verma',
+      name: 'Shivendra Pratap Singh',
       route: 'Delhi → Jaipur',
-      quote: 'Split fuel costs, great conversation, and even made a business connection. Kindlift is a game-changer for solo travelers.',
-      rating: 5,
+      quote: 'This is amazing step towards making our journey affordable and comfortable Lets begin with full enthusiasm.',
+      rating: 3,
     },
     {
       name: 'Anjali Nair',
