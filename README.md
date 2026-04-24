@@ -53,6 +53,10 @@
 
 - 🎯 **Route Matching** — Smart proximity-based ride matching using the Haversine formula (5 km radius)
 - 💬 **Real-Time Chat** — Instant messaging between drivers and passengers via Socket.IO
+- 👥 **Friend System** — Send, accept, and manage friend connections with real-time notifications
+- 📩 **Direct Messaging** — Private conversations between friends with emoji reactions
+- 😍 **Emoji Reactions** — WhatsApp/Instagram-style react to messages (❤️ 😂 😮 😢 🙏 👍)
+- 🔔 **Notification Center** — Role-based notifications with real-time delivery and badge counts
 - 🔒 **Secure Completion** — 4-digit OTP codes ensure verified ride completion
 - 🪙 **Coin Rewards** — Gamified incentive system rewarding both drivers and passengers
 - ⭐ **Rating System** — Mutual driver/passenger ratings build trust and accountability
@@ -81,6 +85,9 @@
 | **Real-Time Chat** | Message drivers in real-time after booking                          |
 | **Rate Drivers** | Leave 1-5 star ratings with text reviews post-ride                    |
 | **Save Routes** | Bookmark frequently used routes for quick access                       |
+| **Add Friends** | Search users, send/accept friend requests, manage connections          |
+| **Direct Messages** | Private DM conversations with friends (separate from ride chat)    |
+| **Emoji Reactions** | React to DMs with emojis — double-click for ❤️, long-press for picker |
 | **Submit Feedback** | Provide general platform feedback via the dedicated feedback page |
 
 ### For Admins
@@ -99,8 +106,9 @@
 | **OTP Email Verification** | Email-based OTP verification during registration             |
 | **Forgot Password** | Secure multi-step password reset via OTP (email → verify → reset)  |
 | **Google OAuth Login** | One-click sign-in with Google account                             |
-| **Interactive Maps** | Leaflet-powered maps for location selection and ride visualization |
+| **Interactive Maps** | MapLibre GL JS-powered maps for location selection and ride visualization |
 | **3D Hero Section** | Immersive Three.js-powered landing page with animated car model     |
+| **Notification Bell** | Real-time notification badge with dropdown panel in navbar         |
 | **Responsive Design** | Fully responsive UI with mobile-first approach                    |
 | **Custom Cursor** | Cuberto-style custom cursor for premium feel                          |
 | **Custom Alert System** | Toast notifications and modal dialogs replacing native `alert()`  |
@@ -121,7 +129,7 @@
 | **React Router v7** | Client-side routing with protected & public routes |
 | **Tailwind CSS 3.4** | Utility-first CSS framework for styling |
 | **Three.js / React Three Fiber** | 3D hero section with animated car model |
-| **Leaflet / React Leaflet** | Interactive maps for ride location display |
+| **MapLibre GL JS** | Open-source vector maps for ride location display |
 | **Socket.IO Client** | Real-time messaging with WebSocket transport |
 | **Firebase Auth** | Google OAuth sign-in integration |
 | **Axios** | HTTP client with JWT auth interceptors |
@@ -143,6 +151,7 @@
 | **xss** | XSS sanitization of all request inputs |
 | **express-validator** | Request body/query/param validation |
 | **express-rate-limit** | API rate limiting (300/min global, 20/15min auth, 60/min location) |
+| **compression** | Gzip/Brotli response compression (50-70% payload reduction) |
 | **node-cache** | In-memory caching for geocoding results (1 hour TTL) |
 | **p-queue** | Request queuing for Nominatim API (1 req/sec) |
 
@@ -164,11 +173,11 @@
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        FRONTEND                               │
-│   React 19 + Tailwind CSS + Three.js + Leaflet + Firebase     │
+│   React 19 + Tailwind CSS + Three.js + MapLibre GL + Firebase  │
 │                                                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │  Pages   │  │Components│  │ Context  │  │  Code Split  │  │
-│  │(18 pages)│  │(10 comps)│  │(AuthCtx) │  │ (lazy load)  │  │
+│  │(20 pages)│  │(11 comps)│  │(AuthCtx) │  │ (lazy load)  │  │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────────┘  │
 │       │              │             │                            │
 │  ┌────┴──────────────┴─────────────┴──────┐                    │
@@ -195,16 +204,21 @@
 │  │  │Requests │  │ Ratings │  │ Saved  │        │               │
 │  │  │ Routes  │  │ Routes  │  │ Rides  │        │               │
 │  │  └─────────┘  └─────────┘  └────────┘        │               │
-│  │  ┌─────────┐  ┌─────────┐                     │               │
-│  │  │ Admin   │  │Feedback │                     │               │
-│  │  │ Routes  │  │ Routes  │                     │               │
-│  │  └─────────┘  └─────────┘                     │               │
+│  │  ┌─────────┐  ┌─────────┐  ┌────────┐        │               │
+│  │  │ Friends │  │   DM    │  │Notifs  │        │               │
+│  │  │ Routes  │  │ Routes  │  │ Routes │        │               │
+│  │  └─────────┘  └─────────┘  └────────┘        │               │
+│  │  ┌─────────┐  ┌─────────┐  ┌────────┐        │               │
+│  │  │ Admin   │  │Feedback │  │ Stats  │        │               │
+│  │  │ Routes  │  │ Routes  │  │ Routes │        │               │
+│  │  └─────────┘  └─────────┘  └────────┘        │               │
 │  └────────────────┬──────────────────────────────┘               │
 │                   │                                               │
 │  ┌────────────────┼───────────────────────┐                      │
 │  │  Socket.IO     ▼    Server             │                      │
 │  │  • join room  • send_message           │                      │
-│  │  • receive_message  • request_updated  │                      │
+│  │  • dm_message • dm_reaction            │                      │
+│  │  • friend_request • notification       │                      │
 │  └────────────────┬───────────────────────┘                      │
 └───────────────────┼──────────────────────────────────────────────┘
                     │
@@ -220,8 +234,11 @@
 │ │RideOffers│ │  │                                        │
 │ │RideReqs  │ │  │  Random Forest (200 trees)             │
 │ │ Messages │ │  │  TF-IDF (5000 features, bigrams)       │
-│ │ Ratings  │ │  │  3-class: positive/neutral/negative    │
-│ │SavedRides│ │  └──────────────────────────────────────┘
+│ │DirectMsgs│ │  │  3-class: positive/neutral/negative    │
+│ │Friendshps│ │  └──────────────────────────────────────┘
+│ │ Ratings  │ │
+│ │SavedRides│ │
+│ │Notificatn│ │
 │ │ Feedback │ │
 │ │  OTPs    │ │
 │ └──────────┘ │
@@ -248,6 +265,9 @@ kindlift/
 │   │   ├── RideOffer.js            # Ride offer schema (source, destination, seats, status)
 │   │   ├── RideRequest.js          # Ride request schema (booking, OTP, rating flags)
 │   │   ├── Message.js              # Chat message schema (linked to ride requests)
+│   │   ├── DirectMessage.js        # DM schema (friend-to-friend, emoji reactions)
+│   │   ├── Friendship.js           # Friendship schema (send, accept, reject, block)
+│   │   ├── Notification.js         # Notification schema (role-based, real-time, TTL)
 │   │   ├── Rating.js               # Rating schema (1-5 stars, reviews, duplicate prevention)
 │   │   ├── SavedRide.js            # Saved ride/route schema
 │   │   ├── Feedback.js             # General platform feedback schema
@@ -258,6 +278,10 @@ kindlift/
 │   │   ├── requests.js             # Request handling (create, accept/reject, complete, messages)
 │   │   ├── ratings.js              # Rating submission, retrieval, and ML sentiment proxy
 │   │   ├── savedRides.js           # Saved routes CRUD operations
+│   │   ├── friends.js              # Friend system (send, accept, reject, search, status)
+│   │   ├── dm.js                   # Direct messaging with emoji reactions
+│   │   ├── notifications.js        # Notification management (CRUD, read/unread, broadcast)
+│   │   ├── stats.js                # Public platform statistics
 │   │   ├── location.js             # Location search with Nominatim geocoding
 │   │   └── Feedback.js             # Feedback submission route
 │   ├── tests/                      # Unit tests
@@ -283,6 +307,7 @@ kindlift/
 │   │   │   ├── MagneticButton.js   # Magnetic hover effect button
 │   │   │   ├── MarqueeText.js      # Scrolling marquee text
 │   │   │   ├── Navbar.js           # Responsive navigation bar
+│   │   │   ├── NotificationBell.js # Notification bell with dropdown panel
 │   │   │   ├── ScrollToTop.js      # Route-change scroll restoration
 │   │   │   └── TextReveal.js       # Scroll-triggered text animation
 │   │   ├── context/
@@ -302,6 +327,8 @@ kindlift/
 │   │   │   ├── BookRide.js         # Search and book rides
 │   │   │   ├── RideDetails.js      # Ride details with chat and map
 │   │   │   ├── Profile.js          # User profile management
+│   │   │   ├── Friends.js          # Friend system (search, send, accept, manage)
+│   │   │   ├── Messages.js         # Direct messaging with emoji reactions
 │   │   │   ├── AdminPanel.js       # Admin dashboard with analytics + CRUD management
 │   │   │   ├── Feedback.js         # Platform feedback submission page
 │   │   │   ├── FAQs.js             # Frequently asked questions
@@ -794,6 +821,76 @@ Proxies the request to the Python ML microservice.
 
 ---
 
+### 👥 Friends (`/api/friends`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/request` | ✅ | Send a friend request |
+| `PUT` | `/:id/respond` | ✅ | Accept or reject a friend request |
+| `GET` | `/list` | ✅ | Get all accepted friends |
+| `GET` | `/pending` | ✅ | Get incoming pending friend requests |
+| `GET` | `/sent` | ✅ | Get outgoing pending friend requests |
+| `GET` | `/search?q=<query>` | ✅ | Search users to add as friends |
+| `GET` | `/status/:userId` | ✅ | Check friendship status with a user |
+| `DELETE` | `/:id` | ✅ | Remove a friend or cancel a request |
+
+**Features:**
+- Duplicate request prevention via unique compound index
+- Re-send support after rejection (auto-updates existing record)
+- Real-time Socket.IO notifications for friend requests/responses
+- User search returns friendship status per result (none/pending/accepted/blocked)
+
+---
+
+### 📩 Direct Messages (`/api/dm`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/send` | ✅ | Send a DM to an accepted friend |
+| `GET` | `/conversations` | ✅ | Get all conversations with latest message + unread count |
+| `GET` | `/:userId/messages` | ✅ | Get paginated messages with a friend |
+| `GET` | `/unread/count` | ✅ | Get total unread DM count |
+| `PUT` | `/:userId/read` | ✅ | Mark all messages from a user as read |
+| `PUT` | `/react` | ✅ | Toggle emoji reaction on a message |
+
+**Emoji Reactions:**
+- Quick emojis: ❤️ 😂 😮 😢 🙏 👍
+- Toggle behavior: same emoji = remove, different emoji = replace
+- One reaction per user per message
+- Real-time sync via `dm_reaction` Socket.IO event
+
+**Access Control:** Only accepted friends can exchange messages (enforced by `requireFriendship` middleware).
+
+---
+
+### 🔔 Notifications (`/api/notifications`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/` | ✅ | Get paginated notifications (supports `?unreadOnly=true`) |
+| `GET` | `/unread/count` | ✅ | Get unread notification count (navbar bell) |
+| `PUT` | `/read-all` | ✅ | Mark all notifications as read |
+| `PUT` | `/:id/read` | ✅ | Mark a single notification as read |
+| `DELETE` | `/:id` | ✅ | Delete a notification |
+| `POST` | `/` | ✅ 🔒 | Create broadcast/targeted notification (admin only) |
+
+**Notification Types:** `ride_accepted`, `ride_rejected`, `ride_completed`, `ride_request`, `verification_approved`, `verification_rejected`, `new_verification`, `new_user`, `new_feedback`, `new_rating`, `friend_request`, `friend_accepted`, `dm_message`, `system`
+
+**Features:**
+- Role-based targeting: specific user, all admins, all users, or broadcast
+- Auto-cleanup via TTL index (90-day expiration)
+- Real-time delivery via Socket.IO `notification` event
+
+---
+
+### 📊 Public Stats (`/api/stats`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/` | ❌ | Get platform statistics (happy journeys, match accuracy, active cities) |
+
+---
+
 ### 🛡 Admin (`/api/admin`)
 
 All admin endpoints require JWT authentication **and** admin privileges.
@@ -870,6 +967,41 @@ All admin endpoints require JWT authentication **and** admin privileges.
 | `requestId` | ObjectId → RideRequest | Associated ride request |
 | `senderId` | ObjectId → User | Message sender |
 | `text` | String | Message content (max 2000 chars, validated via Socket.IO) |
+
+### DirectMessage
+| Field | Type | Description |
+|-------|------|-------------|
+| `senderId` | ObjectId → User | User who sent the message |
+| `receiverId` | ObjectId → User | User who receives the message |
+| `text` | String | Message content (max 2000 chars) |
+| `read` | Boolean | Whether the recipient has read the message |
+| `reactions` | Array | Emoji reactions: `[{ userId, emoji }]` |
+
+> **Indexes:** `{ senderId, receiverId, createdAt }` for conversation lookup; `{ receiverId, read }` for unread counts.
+
+### Friendship
+| Field | Type | Description |
+|-------|------|-------------|
+| `requester` | ObjectId → User | User who sent the friend request |
+| `recipient` | ObjectId → User | User who received the request |
+| `status` | Enum | `pending` · `accepted` · `rejected` · `blocked` |
+
+> **Index:** `{ requester, recipient }` is unique — prevents duplicate friend requests.
+
+### Notification
+| Field | Type | Description |
+|-------|------|-------------|
+| `recipientId` | ObjectId → User | Target user (null for broadcasts) |
+| `recipientRole` | Enum | `user` · `admin` · `all` · `null` (role-based targeting) |
+| `type` | Enum | Notification type (14 types — see API docs) |
+| `title` | String | Notification title (required) |
+| `message` | String | Notification body (required) |
+| `metadata` | Mixed | Optional context data (ride ID, user ID, etc.) |
+| `actionUrl` | String | Optional deep link URL |
+| `read` | Boolean | Whether notification has been read |
+| `readAt` | Date | When it was marked as read |
+
+> **TTL Index:** Notifications auto-delete after **90 days**.
 
 ### Rating
 | Field | Type | Description |
@@ -961,24 +1093,41 @@ This generates three `.pkl` files in `ml/models/` that the Flask app loads on st
 
 ## 🔌 Real-Time Events (Socket.IO)
 
-KindLift uses **Socket.IO** for real-time communication between drivers and passengers.
+KindLift uses **Socket.IO** for real-time communication across the entire platform — ride chat, direct messaging, friend system, and notifications.
 
 ### Connection Flow
 ```
 Client connects → emits 'join' with userId → Server joins user to their room
 ```
 
-### Events
+### Ride Chat Events
 
 | Event | Direction | Payload | Description |
 |-------|-----------|---------|-------------|
 | `join` | Client → Server | `userId` | Join user's personal room |
-| `send_message` | Client → Server | `{ requestId, senderId, receiverId, text }` | Send a chat message |
-| `receive_message` | Server → Client | Message object | Receive a new message |
+| `join_admin` | Client → Server | `userId` | Join shared admin broadcast room |
+| `send_message` | Client → Server | `{ requestId, senderId, receiverId, text }` | Send a ride chat message |
+| `receive_message` | Server → Client | Message object | Receive a ride chat message |
 | `new_request` | Server → Client | RideRequest object | Notify driver of new booking request |
 | `request_updated` | Server → Client | RideRequest object | Notify passenger of status change |
 
-> **Validation:** Socket messages are validated for required fields and text is limited to 2000 characters.
+### Direct Messaging Events
+
+| Event | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `send_dm` | Client → Server | `{ senderId, receiverId, text }` | Send a DM (socket-based) |
+| `dm_message` | Server → Client | DirectMessage object | Receive a new DM (or sent confirmation) |
+| `dm_reaction` | Server → Client | `{ messageId, reactions }` | Emoji reaction added/removed/changed |
+
+### Social & Notification Events
+
+| Event | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `friend_request` | Server → Client | `{ _id, requester, status }` | New friend request received |
+| `friend_response` | Server → Client | `{ _id, responderId, responderName, status }` | Friend request accepted/rejected |
+| `notification` | Server → Client | Notification object | Real-time notification delivery |
+
+> **Validation:** Socket messages are validated for required fields and text is limited to 2000 characters. DM socket events verify friendship status before persisting.
 
 ---
 
