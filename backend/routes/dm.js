@@ -66,6 +66,7 @@ router.post('/send', authMiddleware, requireFriendship, async (req, res) => {
       receiverId: message.receiverId.toString(),
       text: message.text,
       read: message.read,
+      reactions: message.reactions || [],
       createdAt: message.createdAt,
     };
 
@@ -216,6 +217,70 @@ router.put('/:userId/read', authMiddleware, async (req, res) => {
     res.json({ message: 'Messages marked as read' });
   } catch (err) {
     console.error('Mark read error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * PUT /react — Toggle an emoji reaction on a message
+ * If the user already reacted with the same emoji, remove it (toggle off).
+ * If the user reacted with a different emoji, replace it.
+ * If no reaction exists, add it.
+ */
+router.put('/react', authMiddleware, async (req, res) => {
+  try {
+    const { messageId, emoji } = req.body;
+
+    if (!messageId || !emoji) {
+      return res.status(400).json({ message: 'messageId and emoji are required' });
+    }
+
+    const message = await DirectMessage.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ message: 'Message not found' });
+    }
+
+    // Verify the current user is either sender or receiver
+    const userId = req.user.id;
+    if (message.senderId.toString() !== userId && message.receiverId.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to react to this message' });
+    }
+
+    // Check if user already has a reaction
+    const existingIdx = message.reactions.findIndex(
+      r => r.userId.toString() === userId
+    );
+
+    if (existingIdx !== -1) {
+      if (message.reactions[existingIdx].emoji === emoji) {
+        // Same emoji — toggle off (remove)
+        message.reactions.splice(existingIdx, 1);
+      } else {
+        // Different emoji — replace
+        message.reactions[existingIdx].emoji = emoji;
+      }
+    } else {
+      // No existing reaction — add new
+      message.reactions.push({ userId, emoji });
+    }
+
+    await message.save();
+
+    const reactionPayload = {
+      messageId: message._id,
+      reactions: message.reactions,
+    };
+
+    // Real-time delivery to both parties
+    const io = req.app.get('io');
+    if (io) {
+      io.to(message.senderId.toString()).emit('dm_reaction', reactionPayload);
+      io.to(message.receiverId.toString()).emit('dm_reaction', reactionPayload);
+    }
+
+    res.json(reactionPayload);
+  } catch (err) {
+    console.error('React error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 });

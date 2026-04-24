@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import {
-  MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight
+  MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight, SmilePlus
 } from 'lucide-react';
 
 /**
@@ -14,6 +14,173 @@ import {
 const idMatch = (a, b) => {
   if (!a || !b) return false;
   return String(a) === String(b);
+};
+
+/** Quick-reaction emojis (WhatsApp/Instagram style) */
+const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '🙏', '👍'];
+
+// ─── Emoji Reaction Picker ────────────────────────────
+const EmojiPicker = ({ onSelect, onClose, position }) => {
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target)) {
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={pickerRef}
+      className={`emoji-picker-container ${position}`}
+      style={{ zIndex: 50 }}
+    >
+      <div className="emoji-picker-bubble">
+        {QUICK_EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={(e) => { e.stopPropagation(); onSelect(emoji); }}
+            className="emoji-picker-btn"
+            title={emoji}
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Reaction Pills (shown under a message) ──────────
+const ReactionPills = ({ reactions, myId, onReactionClick }) => {
+  if (!reactions || reactions.length === 0) return null;
+
+  // Group reactions by emoji: { "❤️": ["userId1", "userId2"], ... }
+  const grouped = {};
+  reactions.forEach(r => {
+    if (!grouped[r.emoji]) grouped[r.emoji] = [];
+    grouped[r.emoji].push(r.userId?.toString?.() || String(r.userId));
+  });
+
+  return (
+    <div className="reaction-pills-row">
+      {Object.entries(grouped).map(([emoji, userIds]) => {
+        const iReacted = userIds.some(id => idMatch(id, myId));
+        return (
+          <button
+            key={emoji}
+            onClick={() => onReactionClick(emoji)}
+            className={`reaction-pill ${iReacted ? 'reaction-pill-mine' : ''}`}
+            title={`${userIds.length} reaction${userIds.length > 1 ? 's' : ''}`}
+          >
+            <span className="reaction-pill-emoji">{emoji}</span>
+            {userIds.length > 1 && <span className="reaction-pill-count">{userIds.length}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+// ─── Single Message Bubble ────────────────────────────
+const MessageBubble = ({ msg, isMine, myId, onReact, formatTime }) => {
+  const [showPicker, setShowPicker] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const longPressTimer = useRef(null);
+  const bubbleRef = useRef(null);
+
+  const handleDoubleClick = (e) => {
+    e.preventDefault();
+    // Quick-react with ❤️ on double-click (Instagram-style)
+    onReact(msg._id || msg.tempId, '❤️');
+  };
+
+  const handleTouchStart = () => {
+    longPressTimer.current = setTimeout(() => {
+      setShowPicker(true);
+    }, 500);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    onReact(msg._id || msg.tempId, emoji);
+    setShowPicker(false);
+  };
+
+  const handleRetry = (failedMsg) => {
+    // Bubble up to parent for retry
+  };
+
+  return (
+    <div
+      className={`msg-bubble-wrapper ${isMine ? 'msg-mine' : 'msg-theirs'}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); }}
+      ref={bubbleRef}
+    >
+      <div className="msg-bubble-inner">
+        {/* Reaction trigger button — shows on hover (desktop) */}
+        {hovered && !showPicker && !msg.tempId?.startsWith('temp_') && (
+          <button
+            className={`msg-react-trigger ${isMine ? 'msg-react-trigger-left' : 'msg-react-trigger-right'}`}
+            onClick={(e) => { e.stopPropagation(); setShowPicker(true); }}
+            title="React"
+          >
+            <SmilePlus className="h-3.5 w-3.5" />
+          </button>
+        )}
+
+        {/* Emoji Picker */}
+        {showPicker && (
+          <EmojiPicker
+            onSelect={handleEmojiSelect}
+            onClose={() => setShowPicker(false)}
+            position={isMine ? 'picker-left' : 'picker-right'}
+          />
+        )}
+
+        {/* Message Bubble */}
+        <div
+          className={`msg-bubble ${isMine ? 'msg-bubble-mine' : 'msg-bubble-theirs'} ${msg.failed ? 'msg-bubble-failed' : ''}`}
+          onDoubleClick={handleDoubleClick}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          <p>{msg.text}</p>
+          <div className={`msg-meta ${isMine ? 'msg-meta-mine' : ''}`}>
+            <span className="msg-time">{formatTime(msg.createdAt)}</span>
+            {msg.failed && (
+              <button onClick={() => handleRetry(msg)} className="msg-retry">
+                Retry
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Reaction Pills */}
+        <ReactionPills
+          reactions={msg.reactions}
+          myId={myId}
+          onReactionClick={(emoji) => onReact(msg._id || msg.tempId, emoji)}
+        />
+      </div>
+    </div>
+  );
 };
 
 // ─── Conversation List ────────────────────────────────
@@ -153,6 +320,55 @@ const ChatView = ({ friendId, friend, onBack }) => {
     return () => socket.off('dm_message', handler);
   }, [friendId, myId]);
 
+  // Real-time reaction updates
+  useEffect(() => {
+    const handler = (data) => {
+      setMessages(prev =>
+        prev.map(m =>
+          idMatch(m._id, data.messageId)
+            ? { ...m, reactions: data.reactions }
+            : m
+        )
+      );
+    };
+    socket.on('dm_reaction', handler);
+    return () => socket.off('dm_reaction', handler);
+  }, []);
+
+  const handleReact = async (messageId, emoji) => {
+    // Don't react to optimistic (unsaved) messages
+    if (String(messageId).startsWith('temp_')) return;
+
+    // Optimistic update
+    setMessages(prev =>
+      prev.map(m => {
+        if (!idMatch(m._id, messageId)) return m;
+        const reactions = [...(m.reactions || [])];
+        const existingIdx = reactions.findIndex(r =>
+          idMatch(r.userId, myId)
+        );
+        if (existingIdx !== -1) {
+          if (reactions[existingIdx].emoji === emoji) {
+            reactions.splice(existingIdx, 1);
+          } else {
+            reactions[existingIdx] = { ...reactions[existingIdx], emoji };
+          }
+        } else {
+          reactions.push({ userId: myId, emoji });
+        }
+        return { ...m, reactions };
+      })
+    );
+
+    try {
+      await api.put('/dm/react', { messageId, emoji });
+    } catch (err) {
+      console.error('React failed:', err);
+      // Revert on failure — re-fetch messages
+      fetchMessages();
+    }
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     const trimmed = text.trim();
@@ -170,6 +386,7 @@ const ChatView = ({ friendId, friend, onBack }) => {
       receiverId: friendId,
       text: trimmed,
       read: false,
+      reactions: [],
       createdAt: new Date().toISOString(),
     };
     setMessages(prev => [...prev, optimisticMsg]);
@@ -271,23 +488,13 @@ const ChatView = ({ friendId, friend, onBack }) => {
                       </span>
                     </div>
                   )}
-                  <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-1`}>
-                    <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isMine
-                        ? 'bg-brand-dark text-white rounded-br-md'
-                        : 'bg-white border border-brand-gray-light text-brand-dark rounded-bl-md'
-                    } ${msg.failed ? 'opacity-60' : ''}`}>
-                      <p>{msg.text}</p>
-                      <div className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : ''}`}>
-                        <p className={`text-[10px] ${isMine ? 'text-white/50' : 'text-brand-muted/50'}`}>{formatTime(msg.createdAt)}</p>
-                        {msg.failed && (
-                          <button onClick={() => handleRetry(msg)} className="text-[10px] text-red-300 hover:text-red-200 underline">
-                            Retry
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <MessageBubble
+                    msg={msg}
+                    isMine={isMine}
+                    myId={myId}
+                    onReact={handleReact}
+                    formatTime={formatTime}
+                  />
                 </React.Fragment>
               );
             })}

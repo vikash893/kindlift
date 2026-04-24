@@ -15,6 +15,7 @@ const mongoose = require('mongoose');
  * @property {ObjectId} receiverId  - The User who receives this message
  * @property {string}   text        - Message content
  * @property {boolean}  read        - Whether the recipient has read the message
+ * @property {Array}    reactions   - Emoji reactions on this message
  * @property {Date}     createdAt   - Auto-generated timestamp
  * @property {Date}     updatedAt   - Auto-generated timestamp
  */
@@ -38,6 +39,18 @@ const directMessageSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  reactions: [{
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    emoji: {
+      type: String,
+      required: true,
+      maxlength: 10
+    }
+  }],
 }, { timestamps: true });
 
 // ─── Performance Indexes ─────────────────────────────
