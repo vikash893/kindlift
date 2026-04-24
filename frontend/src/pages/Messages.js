@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import {
-  MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight, SmilePlus
+  MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight, SmilePlus, Smile, X
 } from 'lucide-react';
 
 /**
@@ -18,6 +18,98 @@ const idMatch = (a, b) => {
 
 /** Quick-reaction emojis (WhatsApp/Instagram style) */
 const QUICK_EMOJIS = ['❤️', '😂', '😮', '😢', '🙏', '👍'];
+
+/** Emoji keyboard categories */
+const EMOJI_CATEGORIES = [
+  { id: 'smileys', icon: '😊', label: 'Smileys', emojis: ['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🫡','🤐','🤨','😐','😑','😶','🫥','😏','😒','🙄','😬','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐','😕','🫤','😟','🙁','😮','😯','😲','😳','🥺','🥹','😦','😧','😨','😰','😥','😢','😭','😱','😖','😣','😞','😓','😩','😫','🥱','😤','😡','😠','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖'] },
+  { id: 'gestures', icon: '👋', label: 'People', emojis: ['👋','🤚','🖐️','✋','🖖','🫱','🫲','🫳','🫴','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉','👆','🖕','👇','☝️','🫵','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝','🙏','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🧠','🫀','🫁','🦷','🦴','👀','👁️','👅','👄','🫦','💋','❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❤️‍🔥','❤️‍🩹','💕','💞','💓','💗','💖','💘','💝'] },
+  { id: 'animals', icon: '🐶', label: 'Animals', emojis: ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🙈','🙉','🙊','🐒','🐔','🐧','🐦','🐤','🐣','🐥','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🪱','🐛','🦋','🐌','🐞','🐜','🪲','🪳','🦟','🦗','🕷️','🦂','🐢','🐍','🦎','🦖','🦕','🐙','🦑','🦐','🦞','🦀','🪸','🐡','🐠','🐟','🐬','🐳','🐋','🦈','🐊','🐅','🐆','🦓','🦍','🦧','🐘','🦛','🦏','🐪','🐫','🦒','🦘','🦬'] },
+  { id: 'food', icon: '🍔', label: 'Food', emojis: ['🍇','🍈','🍉','🍊','🍋','🍌','🍍','🥭','🍎','🍏','🍐','🍑','🍒','🍓','🫐','🥝','🍅','🫒','🥥','🥑','🍆','🥔','🥕','🌽','🌶️','🫑','🥒','🥬','🥦','🧄','🧅','🍄','🥜','🫘','🌰','🍞','🥐','🥖','🫓','🥨','🥯','🥞','🧇','🧀','🍖','🍗','🥩','🥓','🍔','🍟','🍕','🌭','🥪','🌮','🌯','🫔','🥙','🧆','🥚','🍳','🥘','🍲','🫕','🥣','🥗','🍿','🧈','🧂','🥫','🍱','🍘','🍙','🍚','🍛','🍜','🍝','🍠','🍢','🍣','🍤','🍥','🥮','🍡','🥟','🥠','🥡'] },
+  { id: 'travel', icon: '✈️', label: 'Travel', emojis: ['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🏍️','🛵','🚲','🛴','🛹','🛼','🚏','🛣️','🛤️','🛞','⛽','🚨','🚥','🚦','🛑','🚧','⚓','🛟','⛵','🛶','🚤','🛳️','⛴️','🛥️','🚢','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🚠','🚡','🛰️','🚀','🛸','🌍','🌎','🌏','🗺️','🏔️','⛰️','🌋','🗻','🏕️','🏖️','🏜️','🏝️','🏞️'] },
+  { id: 'activities', icon: '⚽', label: 'Activities', emojis: ['⚽','🏀','🏈','⚾','🥎','🎾','🏐','🏉','🥏','🎱','🪀','🏓','🏸','🏒','🏑','🥍','🏏','🪃','🥅','⛳','🪁','🏹','🎣','🤿','🥊','🥋','🎽','🛹','🛼','🛷','⛸️','🥌','🎿','⛷️','🏂','🪂','🏋️','🤸','🤺','⛹️','🤾','🏌️','🏇','🧘','🏄','🏊','🤽','🚣','🧗','🚵','🚴','🏆','🥇','🥈','🥉','🏅','🎖️','🏵️','🎗️','🎫','🎟️','🎪','🎭','🎨','🎬','🎤','🎧','🎼','🎹','🥁','🪘','🎷','🎺','🪗','🎸','🪕','🎻','🎲','♟️','🎯','🎳','🎮','🕹️'] },
+  { id: 'objects', icon: '💡', label: 'Objects', emojis: ['⌚','📱','📲','💻','⌨️','🖥️','🖨️','🖱️','🖲️','🕹️','🗜️','💽','💾','💿','📀','📼','📷','📸','📹','🎥','📽️','🎞️','📞','☎️','📟','📠','📺','📻','🎙️','🎚️','🎛️','🧭','⏱️','⏲️','⏰','🕰️','⌛','⏳','📡','🔋','🪫','🔌','💡','🔦','🕯️','🪔','🧯','🛢️','💸','💵','💴','💶','💷','🪙','💰','💳','💎','⚖️','🪜','🧰','🪛','🔧','🔨','⚒️','🛠️','⛏️','🪚','🔩','⚙️','🪤','🧱','⛓️','🧲','🔫','💣','🧨','🪓','🔪','🗡️','⚔️','🛡️','🚬'] },
+  { id: 'symbols', icon: '💯', label: 'Symbols', emojis: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐','⛎','♈','♉','♊','♋','♌','♍','♎','♏','♐','♑','♒','♓','🆔','⚛️','🉑','☢️','☣️','📴','📳','🈶','🈚','🈸','🈺','🈷️','✴️','🆚','💮','🉐','㊙️','㊗️','🈴','🈵','🈹','🈲','🅰️','🅱️','🆎','🆑','🅾️','🆘','❌','⭕','🛑','⛔','📛','🚫','💯','💢','♨️','🚷','🚯','🚳','🚱','🔞','📵','🚭','❗','❕','❓','❔','‼️','⁉️','🔅','🔆','〽️','⚠️','🚸','🔱','⚜️','🔰','♻️','✅','🈯','💹','❇️','✳️','❎','🌐','💠','Ⓜ️','🌀','💤','🏧','🚾','♿','🅿️','🛗','🈳','🈂️','🛂','🛃','🛄','🛅','🔣','ℹ️','🔤','🔡','🔠','🆖','🆗','🆙','🆒','🆕','🆓','0️⃣','1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣','9️⃣','🔟','🔢','#️⃣','*️⃣','⏏️','▶️','⏸️','⏯️','⏹️','⏺️','⏭️','⏮️','⏩','⏪','⏫','⏬','◀️','🔼','🔽','➡️','⬅️','⬆️','⬇️','↗️','↘️','↙️','↖️','↕️','↔️','↪️','↩️','⤴️','⤵️','🔀','🔁','🔂','🔄','🔃','🎵','🎶','✖️','➕','➖','➗','♾️','💲','💱','™️','©️','®️','👁️‍🗨️','🔚','🔙','🔛','🔝','🔜','〰️','➰','➿','✔️','☑️','🔘','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔺','🔻','🔸','🔹','🔶','🔷','🔳','🔲','▪️','▫️','◾','◽','◼️','◻️','🟥','🟧','🟨','🟩','🟦','🟪','⬛','⬜','🟫','🔈','🔇','🔉','🔊','🔔','🔕','📣','📢','🗨️','🗯️','💬','💭','🗣️','👣'] },
+];
+
+// ─── Emoji Keyboard (for message input) ───────────────
+const InputEmojiKeyboard = ({ onSelect, onClose }) => {
+  const [activeCategory, setActiveCategory] = useState('smileys');
+  const [searchQuery, setSearchQuery] = useState('');
+  const keyboardRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (keyboardRef.current && !keyboardRef.current.contains(e.target)) {
+        // Check if the click target is the emoji toggle button
+        if (e.target.closest('.emoji-keyboard-toggle')) return;
+        onClose();
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [onClose]);
+
+  const currentCategory = EMOJI_CATEGORIES.find(c => c.id === activeCategory);
+  
+  // Filter emojis by search
+  const displayEmojis = searchQuery.trim()
+    ? EMOJI_CATEGORIES.flatMap(c => c.emojis)
+        .filter((emoji, idx, arr) => arr.indexOf(emoji) === idx) // dedupe
+        .slice(0, 80)
+    : currentCategory?.emojis || [];
+
+  return (
+    <div ref={keyboardRef} className="emoji-keyboard">
+      {/* Header with search */}
+      <div className="emoji-kb-header">
+        <input
+          type="text"
+          placeholder="Search emoji..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="emoji-kb-search"
+          autoFocus={false}
+        />
+        <button onClick={onClose} className="emoji-kb-close">
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Category tabs */}
+      {!searchQuery && (
+        <div className="emoji-kb-tabs">
+          {EMOJI_CATEGORIES.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.id)}
+              className={`emoji-kb-tab ${activeCategory === cat.id ? 'emoji-kb-tab-active' : ''}`}
+              title={cat.label}
+            >
+              {cat.icon}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Emoji grid */}
+      <div className="emoji-kb-grid">
+        {displayEmojis.map((emoji, i) => (
+          <button
+            key={`${emoji}-${i}`}
+            onClick={() => onSelect(emoji)}
+            className="emoji-kb-emoji"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // ─── Emoji Reaction Picker ────────────────────────────
 const EmojiPicker = ({ onSelect, onClose, position }) => {
@@ -264,8 +356,28 @@ const ChatView = ({ friendId, friend, onBack }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showEmojiKeyboard, setShowEmojiKeyboard] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  /** Insert emoji at cursor position in the text input */
+  const handleInsertEmoji = (emoji) => {
+    const input = inputRef.current;
+    if (input) {
+      const start = input.selectionStart || text.length;
+      const end = input.selectionEnd || text.length;
+      const newText = text.slice(0, start) + emoji + text.slice(end);
+      setText(newText);
+      // Restore focus and cursor position after emoji insert
+      setTimeout(() => {
+        input.focus();
+        const newPos = start + emoji.length;
+        input.setSelectionRange(newPos, newPos);
+      }, 0);
+    } else {
+      setText(prev => prev + emoji);
+    }
+  };
 
   // Resolve the current user's ID — check both .id and ._id to handle
   // all possible shapes the AuthContext user object might have.
@@ -503,9 +615,29 @@ const ChatView = ({ friendId, friend, onBack }) => {
         )}
       </div>
 
+      {/* Emoji Keyboard */}
+      {showEmojiKeyboard && (
+        <InputEmojiKeyboard
+          onSelect={handleInsertEmoji}
+          onClose={() => setShowEmojiKeyboard(false)}
+        />
+      )}
+
       {/* Message Input */}
       <form onSubmit={handleSend} className="p-4 border-t border-brand-gray-light bg-white">
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowEmojiKeyboard(prev => !prev)}
+            className={`emoji-keyboard-toggle p-2.5 rounded-xl transition-all ${
+              showEmojiKeyboard
+                ? 'bg-brand-accent/15 text-brand-accent'
+                : 'text-brand-muted hover:text-brand-dark hover:bg-brand-dark/5'
+            }`}
+            title="Emoji"
+          >
+            <Smile className="h-5 w-5" />
+          </button>
           <input
             ref={inputRef}
             type="text"
