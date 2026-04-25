@@ -222,7 +222,7 @@ export const Home = () => {
 
             {/* Stats */}
             <div
-              className="flex flex-wrap gap-12 animate-fade-up"
+              className="flex flex-wrap gap-8 sm:gap-12 animate-fade-up"
               style={{ animationDelay: '0.6s' }}
             >
               {[
@@ -334,17 +334,17 @@ export const Home = () => {
           <RevealSection>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
               <div ref={journeysRef}>
-                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">
+                <p className="font-display text-5xl sm:text-7xl md:text-8xl font-bold text-brand-dark">
                   {stats.happyJourneys >= 1000 ? Math.floor(journeys / 1000) + 'k+' : journeys}
                 </p>
                 <p className="text-brand-muted mt-4 text-lg">Happy Journeys</p>
               </div>
               <div ref={matchRef}>
-                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">{matchRate}%</p>
+                <p className="font-display text-5xl sm:text-7xl md:text-8xl font-bold text-brand-dark">{matchRate}%</p>
                 <p className="text-brand-muted mt-4 text-lg">Match Accuracy</p>
               </div>
               <div ref={citiesRef}>
-                <p className="font-display text-7xl md:text-8xl font-bold text-brand-dark">{cities}+</p>
+                <p className="font-display text-5xl sm:text-7xl md:text-8xl font-bold text-brand-dark">{cities}+</p>
                 <p className="text-brand-muted mt-4 text-lg">Active Cities</p>
               </div>
             </div>
