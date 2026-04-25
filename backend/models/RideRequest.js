@@ -65,6 +65,11 @@ const rideRequestSchema = new mongoose.Schema({
   completionCode: {
     type: String
   },
+  // Coins deducted from passenger at booking time (2 coins/km)
+  coinsCharged: {
+    type: Number,
+    default: 0,
+  },
   isRatedByPassenger: {
     type: Boolean,
     default: false
