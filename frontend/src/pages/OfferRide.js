@@ -158,8 +158,7 @@ export const OfferRide = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <LocationInput
+          <LocationInput
             field={source}
             id="offer-source"
             label="Leaving from"
