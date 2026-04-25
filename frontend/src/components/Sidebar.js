@@ -93,13 +93,18 @@ export const Sidebar = () => {
               Kindlift
             </span>
           </Link>
-          {/* Close button — mobile only */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:block">
+              <NotificationBell />
+            </div>
+            {/* Close button — mobile only */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="lg:hidden p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -160,11 +165,6 @@ export const Sidebar = () => {
 
       {/* Bottom Actions */}
       <div className="p-3 border-t border-white/[0.06] space-y-2">
-        {/* Notification Bell Row */}
-        <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-xs text-white/30 font-medium">Notifications</span>
-          <NotificationBell />
-        </div>
 
         {/* Logout */}
         <button
