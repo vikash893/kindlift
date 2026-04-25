@@ -141,7 +141,7 @@ export const NotificationBell = () => {
 
       {/* Notification Panel */}
       {panelOpen && (
-        <div className="absolute right-0 top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[200] overflow-hidden">
+        <div className="absolute right-0 lg:left-0 lg:right-auto top-12 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[200] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-brand-dark/[0.02] to-transparent">
             <div className="flex items-center gap-2">
