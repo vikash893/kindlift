@@ -851,6 +851,93 @@ const TableRowSkeleton = ({ cols = 5 }) => (
   </tr>
 );
 
+// ─── FEEDBACK TAB ───────────────────────────────────
+const FeedbackTab = () => {
+  const { toast, confirm: confirmAlert } = useAlert();
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const fetchFeedback = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/admin/feedback?page=${page}&limit=15`);
+      setFeedbacks(res.data.feedbacks);
+      setPagination(res.data.pagination);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [page]);
+
+  useEffect(() => { fetchFeedback(); }, [fetchFeedback]);
+
+  const handleToggleFeature = async (id, currentStatus) => {
+    try {
+      await api.put(`/admin/feedback/${id}/feature`, { isFeatured: !currentStatus });
+      toast('success', `Feedback ${!currentStatus ? 'featured on Home page' : 'removed from Home page'}`);
+      fetchFeedback();
+    } catch (err) { toast('error', 'Failed to update feedback'); }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmed = await confirmAlert('Delete this feedback?', 'Delete Feedback');
+    if (!confirmed) return;
+    try { 
+      await api.delete(`/admin/feedback/${id}`); 
+      toast('success', 'Feedback deleted'); 
+      fetchFeedback(); 
+    } catch (err) { toast('error', 'Failed to delete feedback'); }
+  };
+
+  return (
+    <div className="space-y-6">
+      {loading ? <LoadingSpinner /> : feedbacks.length === 0 ? <EmptyState icon={MessageSquare} text="No feedback found" /> : (
+        <div className="bg-white rounded-2xl border border-brand-gray-light overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="bg-brand-dark/[0.02] border-b border-brand-gray-light">
+                <th className="text-left py-4 px-4 font-display font-bold text-brand-muted text-xs uppercase tracking-wider">User</th>
+                <th className="text-left py-4 px-4 font-display font-bold text-brand-muted text-xs uppercase tracking-wider">Feedback Message</th>
+                <th className="text-left py-4 px-4 font-display font-bold text-brand-muted text-xs uppercase tracking-wider">Status</th>
+                <th className="text-left py-4 px-4 font-display font-bold text-brand-muted text-xs uppercase tracking-wider">Actions</th>
+              </tr></thead>
+              <tbody>
+                {feedbacks.map(f => (
+                  <tr key={f._id} className="border-b border-brand-gray-light/50 hover:bg-brand-dark/[0.02] transition-colors">
+                    <td className="py-3 px-4">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-brand-dark truncate">{f.name}</p>
+                        <p className="text-xs text-brand-muted truncate">{f.email}</p>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <p className="text-brand-dark text-sm max-w-xs md:max-w-md break-words">{f.message}</p>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`px-2 py-0.5 text-xs rounded-full font-bold ${f.isFeatured ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {f.isFeatured ? 'Featured' : 'Hidden'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => handleToggleFeature(f._id, f.isFeatured)} title={f.isFeatured ? 'Remove from Home' : 'Add to Home'} className={`p-1.5 rounded-lg transition-colors ${f.isFeatured ? 'bg-amber-50 text-amber-600' : 'hover:bg-amber-50 text-gray-400 hover:text-amber-600'}`}>
+                          <Star className={`h-4 w-4 ${f.isFeatured ? 'fill-current' : ''}`} />
+                        </button>
+                        <button onClick={() => handleDelete(f._id)} title="Delete" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination pagination={pagination} page={page} setPage={setPage} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ═══════════════════ MAIN ADMIN PANEL ═══════════════════
 export const AdminPanel = () => {
   const { user } = useAuth();
@@ -885,6 +972,7 @@ export const AdminPanel = () => {
     { key: 'requests', label: 'Requests', icon: MessageSquare, description: 'Manage ride requests' },
     { key: 'ratings', label: 'Ratings', icon: Star, description: 'Review & AI sentiment analysis' },
     { key: 'verifications', label: 'Verifications', icon: ShieldAlert, description: 'Driver verification queue', badge: stats?.overview?.pendingVerifications },
+    { key: 'feedback', label: 'Feedback', icon: FileText, description: 'Manage user feedback' },
   ];
 
   return (
@@ -1007,6 +1095,7 @@ export const AdminPanel = () => {
           {activeTab === 'requests' && <RequestsTab />}
           {activeTab === 'ratings' && <RatingsTab />}
           {activeTab === 'verifications' && <VerificationsTab />}
+          {activeTab === 'feedback' && <FeedbackTab />}
         </div>
       </div>
 

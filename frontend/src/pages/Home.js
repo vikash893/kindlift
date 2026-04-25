@@ -105,26 +105,24 @@ export const Home = () => {
     },
   ];
 
-  const testimonials = [
+  const [testimonials, setTestimonials] = useState([
+    // Fallback/initial testimonials
     {
       name: 'Rahul Rathore',
       route: 'Mathura → palwal',
-      quote: 'KindLift presents a highly relevant and impactful solution to modern urban transportation challenges. By focusing on ride sharing, the platform directly addresses key issues such as traffic congestion, rising fuel costs, and environmental sustainability, making it both practical and socially responsible.Overall, KindLift is a well-thought-out and practical platform with strong real-world applicability. With further refinement and feature enhancement, it has the potential to evolve into a powerful, user-friendly, and impactful mobility solution.' , 
-      rating: 5,
+      message: 'KindLift presents a highly relevant and impactful solution to modern urban transportation challenges. By focusing on ride sharing, the platform directly addresses key issues such as traffic congestion, rising fuel costs, and environmental sustainability, making it both practical and socially responsible.Overall, KindLift is a well-thought-out and practical platform with strong real-world applicability. With further refinement and feature enhancement, it has the potential to evolve into a powerful, user-friendly, and impactful mobility solution.', 
     },
     {
       name: 'Shivendra Pratap Singh',
       route: 'Delhi → Jaipur',
-      quote: 'This is amazing step towards making our journey affordable and comfortable Lets begin with full enthusiasm.',
-      rating: 3,
+      message: 'This is amazing step towards making our journey affordable and comfortable Lets begin with full enthusiasm.',
     },
     {
       name: 'Anjali Nair',
       route: 'Bangalore → Coorg',
-      quote: 'Was nervous about sharing a ride at first. But the verification system is solid, and I\'ve made 3 good friends through Kindlift!',
-      rating: 5,
+      message: 'Was nervous about sharing a ride at first. But the verification system is solid, and I\'ve made 3 good friends through Kindlift!',
     },
-  ];
+  ]);
 
   const [stats, setStats] = useState({
     happyJourneys: 10000,
@@ -133,20 +131,26 @@ export const Home = () => {
   });
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        // Use centralized api instance — auto-selects localhost or production
-        const res = await api.get('/stats');
+        // Fetch stats
+        const statsRes = await api.get('/stats');
         setStats({
-          happyJourneys: res.data.happyJourneys || 0,
-          matchAccuracy: res.data.matchAccuracy || 0,
-          activeCities: res.data.activeCities || 0
+          happyJourneys: statsRes.data.happyJourneys || 0,
+          matchAccuracy: statsRes.data.matchAccuracy || 0,
+          activeCities: statsRes.data.activeCities || 0
         });
+
+        // Fetch featured feedback
+        const feedbackRes = await api.get('/feedback/featured');
+        if (feedbackRes.data && feedbackRes.data.length > 0) {
+          setTestimonials(feedbackRes.data);
+        }
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error('Failed to fetch home page data:', error);
       }
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   const [journeysRef, journeys] = useCounter(stats.happyJourneys, 2500);
@@ -416,18 +420,18 @@ export const Home = () => {
               <RevealSection key={i}>
                 <div className="bg-white rounded-2xl p-8 md:p-10 h-full flex flex-col border border-brand-gray-light group hover:border-brand-accent/30 transition-colors duration-500">
                   <div className="flex gap-1 mb-6">
-                    {[...Array(t.rating)].map((_, j) => (
+                    {[...Array(5)].map((_, j) => (
                       <Star key={j} className="h-4 w-4 fill-brand-accent text-brand-accent" />
                     ))}
                   </div>
-                  <p className="text-brand-dark/70 leading-relaxed flex-1 mb-8">"{t.quote}"</p>
+                  <p className="text-brand-dark/70 leading-relaxed flex-1 mb-8">"{t.message || t.quote}"</p>
                   <div className="flex items-center gap-4 pt-6 border-t border-brand-gray-light">
-                    <div className="w-12 h-12 bg-brand-dark rounded-full flex items-center justify-center text-white font-display font-bold text-lg">
+                    <div className="w-12 h-12 bg-brand-dark rounded-full flex items-center justify-center text-white font-display font-bold text-lg uppercase">
                       {t.name.charAt(0)}
                     </div>
                     <div>
                       <h4 className="font-display font-bold text-brand-dark">{t.name}</h4>
-                      <p className="text-sm text-brand-muted">{t.route}</p>
+                      <p className="text-sm text-brand-muted">{t.route || 'Kindlift User'}</p>
                     </div>
                   </div>
                 </div>

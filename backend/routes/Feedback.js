@@ -33,4 +33,19 @@ router.post("/feedback", async (req, res) => {
     }
 });
 
+// Get featured feedback for Home page
+router.get("/feedback/featured", async (req, res) => {
+    try {
+        const feedbacks = await Feedback.find({ isFeatured: true })
+            .sort({ _id: -1 })
+            .limit(10);
+        return res.status(200).json(feedbacks);
+    } catch (error) {
+        console.error('Fetch featured feedback error:', error);
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+});
+
 module.exports = router;

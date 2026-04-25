@@ -20,6 +20,7 @@ const { Rating } = require('../models/Rating');
 const { Message } = require('../models/Message');
 const { authMiddleware } = require('../middleware/auth');
 const { Notification } = require('../models/Notification');
+const Feedback = require('../models/Feedback');
 
 // ─── Notification Helper ─────────────────────────────
 async function sendNotification(io, { recipientId, recipientRole, type, title, message, metadata, actionUrl }) {
@@ -484,6 +485,68 @@ router.delete('/ratings/:id', authMiddleware, adminMiddleware, async (req, res) 
     await Rating.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Rating deleted and user aggregate updated' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ═══════════════════ FEEDBACK MANAGEMENT ═══════════════════
+
+/**
+ * GET /feedback — List all user feedback
+ */
+router.get('/feedback', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const total = await Feedback.countDocuments();
+    const feedbacks = await Feedback.find()
+      .sort({ _id: -1 }) // Sort by latest
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.json({
+      feedbacks,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * PUT /feedback/:id/feature — Toggle feedback visibility on Home Page
+ */
+router.put('/feedback/:id/feature', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { isFeatured } = req.body;
+    const feedback = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      { isFeatured },
+      { new: true }
+    );
+    if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+    
+    res.json({ message: 'Feedback featured status updated', feedback });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /feedback/:id — Delete feedback
+ */
+router.delete('/feedback/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const feedback = await Feedback.findByIdAndDelete(req.params.id);
+    if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+    res.json({ message: 'Feedback deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
