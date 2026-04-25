@@ -257,7 +257,7 @@ export const UserProfile = () => {
         </div>
 
         {/* Profile Info */}
-        <div className="px-6 sm:px-8 pb-8 -mt-14">
+        <div className="px-6 sm:px-8 pb-8 -mt-14 relative z-10">
           <div className="flex flex-col sm:flex-row items-start gap-5">
             {/* Avatar */}
             <div className="h-28 w-28 rounded-3xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center flex-shrink-0">
