@@ -60,6 +60,35 @@ const AppLayout = () => {
   const hideNav = hideNavOn.includes(location.pathname);
   const isAdminRoute = location.pathname.startsWith('/admin');
 
+  const appRoutes = (
+    <Suspense fallback={<Loader />}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/safety" element={<Safety />} />
+        <Route path="/faqs" element={<FAQs />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+        <Route path="/offer-ride" element={<PrivateRoute><OfferRide /></PrivateRoute>} />
+        <Route path="/book-ride" element={<PrivateRoute><BookRide /></PrivateRoute>} />
+        <Route path="/ride/:id" element={<PrivateRoute><RideDetails /></PrivateRoute>} />
+        <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
+        <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+        <Route path="/messages/:userId" element={<PrivateRoute><Messages /></PrivateRoute>} />
+        <Route path="/user/:userId" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+
   // Logged-in (but NOT admin route) → Sidebar layout
   if (user && !hideNav && !isAdminRoute) {
     return (
@@ -68,56 +97,19 @@ const AppLayout = () => {
         {/* Main content — offset by sidebar on desktop, offset by mobile top bar on mobile */}
         <div className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
           <main className="flex-1">
-            <Suspense fallback={<Loader />}>
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/safety" element={<Safety />} />
-                <Route path="/faqs" element={<FAQs />} />
-                <Route path="/feedback" element={<Feedback />} />
-                <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                <Route path="/offer-ride" element={<PrivateRoute><OfferRide /></PrivateRoute>} />
-                <Route path="/book-ride" element={<PrivateRoute><BookRide /></PrivateRoute>} />
-                <Route path="/ride/:id" element={<PrivateRoute><RideDetails /></PrivateRoute>} />
-                <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
-                <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-                <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
-                <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
-                <Route path="/messages/:userId" element={<PrivateRoute><Messages /></PrivateRoute>} />
-                <Route path="/user/:userId" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            {appRoutes}
           </main>
         </div>
       </div>
     );
   }
 
-  // Logged-out / Auth pages → Classic top navbar layout
+  // Logged-out / Auth pages / Admin route → Classic top navbar layout
   return (
     <div className="min-h-screen bg-brand-light flex flex-col font-sans">
       {!hideNav && <Navbar />}
       <main className="flex-1">
-        <Suspense fallback={<Loader />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            <Route path="/safety" element={<Safety />} />
-            <Route path="/faqs" element={<FAQs />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        {appRoutes}
       </main>
     </div>
   );
