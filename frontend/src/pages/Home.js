@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { HeroCar3D } from '../components/HeroCar3D';
 import { RevealSection, TextReveal } from '../components/TextReveal';
-
+import api from '../lib/api';
 import { MarqueeText } from '../components/MarqueeText';
 import { Footer } from '../components/Footer';
 
@@ -135,12 +135,12 @@ export const Home = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/stats`);
-        const data = await response.json();
+        // Use centralized api instance — auto-selects localhost or production
+        const res = await api.get('/stats');
         setStats({
-          happyJourneys: data.happyJourneys || 0,
-          matchAccuracy: data.matchAccuracy || 0,
-          activeCities: data.activeCities || 0
+          happyJourneys: res.data.happyJourneys || 0,
+          matchAccuracy: res.data.matchAccuracy || 0,
+          activeCities: res.data.activeCities || 0
         });
       } catch (error) {
         console.error('Failed to fetch stats:', error);

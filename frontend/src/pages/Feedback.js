@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Heart, MessageCircle, Star } from 'lucide-react';
-import axios from 'axios';
+import api from '../lib/api';
 
 function Feedback() {
   const [feedback, setFeedback] = useState({
@@ -29,32 +29,15 @@ function Feedback() {
     setSuccess('');
 
     try {
-      const hostname = window.location.hostname;
-      const baseURL = (hostname === 'localhost' || hostname === '127.0.0.1') 
-        ? 'http://localhost:8000/api' 
-        : 'https://kindlift-1.onrender.com/api';
-      
-      console.log('Submitting to:', `${baseURL}/feedback`);
-      console.log('Feedback data:', feedback);
-      
-      const response = await axios.post(`${baseURL}/feedback`, feedback, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      // Use centralized api instance — auto-selects localhost or production
+      const response = await api.post('/feedback', feedback);
       
       console.log('Response:', response.data);
       
       setSuccess("Thank you for your genuine feedback! Redirecting to home page...");
-      setFeedback({
-        name: "",
-        email: "",
-        message: ""
-      });
+      setFeedback({ name: "", email: "", message: "" });
       
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      setTimeout(() => { navigate('/'); }, 2000);
     } catch (err) {
       console.error('Full error:', err);
       

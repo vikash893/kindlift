@@ -21,19 +21,12 @@ export const Dashboard = () => {
   
 const handleAddCoins = async () => {
   try {
-    
     const amount = (coins / 1000) * 10;
     console.log("SENDING AMOUNT:", amount);
 
-    const res = await fetch("http://localhost:8000/api/payment/create-order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ amount }), // ✅ now defined
-    });
-
-    const order = await res.json();
+    // Use the centralized api instance — works on localhost AND production
+    const orderRes = await api.post("/payment/create-order", { amount });
+    const order = orderRes.data;
 
     const options = {
       key: process.env.REACT_APP_RAZORPAY_KEY,
@@ -45,33 +38,23 @@ const handleAddCoins = async () => {
         try {
           console.log("PAYMENT RESPONSE:", response);
 
-          const verifyRes = await fetch(
-            "http://localhost:8000/api/payment/verify-payment",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("token")}`, // if using auth
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            }
-          );
+          const verifyRes = await api.post("/payment/verify-payment", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
 
-          const data = await verifyRes.json();
+          const data = verifyRes.data;
 
           if (data.success) {
-            alert("✅ Payment Verified & Coins Added");
+            toast("success", "✅ Payment Verified & Coins Added!");
             window.location.reload();
           } else {
-            alert("❌ Verification failed");
+            toast("error", "❌ Verification failed");
           }
         } catch (err) {
           console.error(err);
-          alert("❌ Error verifying payment");
+          toast("error", "❌ Error verifying payment");
         }
       }
     };
@@ -81,6 +64,7 @@ const handleAddCoins = async () => {
 
   } catch (err) {
     console.error(err);
+    toast("error", "❌ Failed to create payment order");
   }
 };
 
@@ -118,20 +102,12 @@ const handleAddCoins = async () => {
     }
   };
   const handleDemoCoins = async () => {
-  const token = localStorage.getItem("token");
-  const amount = (coins / 1000) * 10; // same formula as handleAddCoins: 1000 coins = ₹10
+  const amount = (coins / 1000) * 10; // 1000 coins = ₹10
 
   try {
-    const res = await fetch("http://localhost:8000/api/payment/demo-add-coins", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ amount }),
-    });
-
-    const data = await res.json();
+    // Use the centralized api instance — works on localhost AND production
+    const res = await api.post("/payment/demo-add-coins", { amount });
+    const data = res.data;
 
     if (data.success) {
       toast("success", `+${data.coinsAdded} coins added 🎉`);
