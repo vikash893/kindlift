@@ -228,7 +228,7 @@ export const Profile = () => {
               </button>
             </div>
 
-            <div className="flex-1 pt-16 sm:pt-4">
+            <div className="flex-1 pt-16 sm:pt-16">
               <div className="flex items-start justify-between">
                 <div>
                   {editing ? (
