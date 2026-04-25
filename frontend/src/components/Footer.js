@@ -101,7 +101,7 @@ export const Footer = () => {
                 {/* Emails */}
                 <li>
                   <p className="text-white/80 font-medium mb-1">Emails</p>
-                  <div className="flex flex-col gap-1 text-white/50">
+                  <div className="flex flex-col gap-1 text-white/50 text-xs sm:text-sm break-all">
                     <span>rajputvishnu2513@gmail.com</span>
                     <span>vikashbhardwaj430@gmail.com</span>
                     <span>yash.gupta_cs.h24@gla.ac.in</span>

@@ -330,6 +330,21 @@
   .text-display-xl {
     font-size: clamp(2.5rem, 10vw, 4rem);
   }
+  .text-display-lg {
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .text-display-md {
+    font-size: clamp(1.75rem, 7vw, 2.5rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .text-display-xl {
+    font-size: clamp(2rem, 9vw, 3rem);
+  }
+  .text-display-lg {
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
+  }
 }
 
 /* ─── MapLibre GL JS Custom Styles ──────────────────── */

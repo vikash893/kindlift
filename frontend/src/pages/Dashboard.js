@@ -182,60 +182,59 @@ const handleAddCoins = async () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8 pt-28">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-28">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 mb-8">
-        <div className="flex items-center gap-5">
-          <div className="h-14 w-14 rounded-2xl overflow-hidden bg-brand-dark/5 border border-brand-gray-light flex items-center justify-center cursor-pointer" onClick={() => navigate('/profile')}>
+      <div className="flex flex-col gap-5 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl overflow-hidden bg-brand-dark/5 border border-brand-gray-light flex items-center justify-center cursor-pointer flex-shrink-0" onClick={() => navigate('/profile')}>
             {user?.profilePhoto ? (
               <img src={user.profilePhoto} alt={user.name} className="h-full w-full object-cover" />
             ) : (
-              <User className="h-6 w-6 text-brand-muted" />
+              <User className="h-5 w-5 sm:h-6 sm:w-6 text-brand-muted" />
             )}
           </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold text-brand-dark">
+          <div className="min-w-0">
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-brand-dark truncate">
               {myOffers.length === 0 && myRequests.length === 0 ? 'Welcome' : 'Welcome back'}, {user?.name}
             </h1>
-            <p className="text-brand-muted text-sm mt-1">
+            <p className="text-brand-muted text-xs sm:text-sm mt-1">
               {myOffers.length === 0 && myRequests.length === 0
                 ? 'Get started by offering or booking a ride'
                 : 'Manage your rides and bookings'}
             </p>
           </div>
         </div>
-        <div className="flex gap-2 items-center">
 
+        {/* Action Row — wraps on mobile */}
+        <div className="flex flex-wrap gap-2 items-center">
           {/* 🪙 Coins Input */}
-          <input
-            type="number"
-            value={coins}
-            onChange={(e) => {
-              const value = Number(e.target.value);
-              console.log("INPUT COINS:", value);   // 👈 ADD THIS
-              setCoins(value);
-            }}
-            className="px-3 py-2 border rounded-lg w-32"
-            placeholder="Coins"
-          />
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={coins}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                setCoins(value);
+              }}
+              className="px-3 py-2 border rounded-lg w-24 sm:w-32 text-sm"
+              placeholder="Coins"
+            />
+            <span className="text-sm font-bold whitespace-nowrap">
+              ₹{(coins / 1000) * 10}
+            </span>
+          </div>
 
-          {/* 💰 Price Display */}
-          <span className="text-sm font-bold">
-            ₹{(coins / 1000) * 10}
-          </span>
-
-          {/* 🪙 Add Coins Button */}
+          {/* Buttons */}
           <button
             onClick={handleAddCoins}
-            className="px-5 py-2.5 bg-amber-400 text-black rounded-full text-sm font-display font-bold hover:bg-amber-500 transition-all duration-500"
+            className="px-4 sm:px-5 py-2 sm:py-2.5 bg-amber-400 text-black rounded-full text-xs sm:text-sm font-display font-bold hover:bg-amber-500 transition-all duration-500"
           >
             + Add Coins
-          </button> 
-          <button onClick={() => navigate('/offer-ride')} className="px-5 py-2.5 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">
+          </button>
+          <button onClick={() => navigate('/offer-ride')} className="px-4 sm:px-5 py-2 sm:py-2.5 bg-brand-dark text-white rounded-full text-xs sm:text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">
             + Offer Ride
           </button>
-
-          <button onClick={() => navigate('/book-ride')} className="px-5 py-2.5 bg-brand-accent text-brand-dark rounded-full text-sm font-display font-bold hover:bg-brand-dark hover:text-white transition-all duration-500">
+          <button onClick={() => navigate('/book-ride')} className="px-4 sm:px-5 py-2 sm:py-2.5 bg-brand-accent text-brand-dark rounded-full text-xs sm:text-sm font-display font-bold hover:bg-brand-dark hover:text-white transition-all duration-500">
             Book Ride
           </button>
         </div>

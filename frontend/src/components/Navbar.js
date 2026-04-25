@@ -214,23 +214,30 @@ export const Navbar = () => {
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="flex flex-col justify-center items-center h-full px-8">
-          <div className="space-y-4 text-center">
+        <div className="flex flex-col h-full px-8 pt-24 pb-8 overflow-y-auto">
+          <div className="space-y-3 flex-1">
             {[...navLinks, ...authLinks].map((link, i) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`block font-display text-4xl font-bold text-white/80 hover:text-white transition-all duration-300 ${
+                className={`block font-display text-2xl sm:text-3xl font-bold text-white/80 hover:text-white transition-all duration-300 ${
                   mobileOpen ? 'animate-fade-up' : ''
-                }`}
-                style={{ animationDelay: `${i * 0.1}s` }}
+                } ${location.pathname === link.to ? 'text-brand-accent' : ''}`}
+                style={{ animationDelay: `${i * 0.07}s` }}
               >
-                {link.label}
+                <span className="flex items-center gap-3">
+                  {link.label}
+                  {link.badge > 0 && (
+                    <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full">
+                      {link.badge > 99 ? '99+' : link.badge}
+                    </span>
+                  )}
+                </span>
               </Link>
             ))}
           </div>
 
-          <div className="mt-12 space-y-3">
+          <div className="mt-8 space-y-3 flex-shrink-0">
             {user ? (
               <div className="text-center">
                 <p className="text-white/50 text-sm mb-2">{user.name} · {user.coins || 0} coins</p>

@@ -56,7 +56,7 @@ function Feedback() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex pt-20">
       {/* Left — Dark brand panel with text content (Logo removed) */}
       <div className="hidden lg:flex lg:w-1/2 section-dark relative overflow-hidden flex-col justify-between p-12 xl:p-16">
         <div className="noise-overlay absolute inset-0" />
@@ -109,7 +109,7 @@ function Feedback() {
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-8 text-sm text-white/30">
+        <div className="relative z-10 flex flex-wrap items-center gap-4 sm:gap-8 text-sm text-white/30">
           <span><strong className="text-white/60">10,000+</strong> feedback received</span>
           <span><strong className="text-white/60">95%</strong> implemented suggestions</span>
           <span><strong className="text-white/60">24h</strong> acknowledgment</span>
