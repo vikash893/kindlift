@@ -107,7 +107,7 @@ const AppLayout = () => {
   // Logged-out / Auth pages / Admin route → Classic top navbar layout
   return (
     <div className="min-h-screen bg-brand-light flex flex-col font-sans">
-      {!hideNav && <Navbar />}
+      {!hideNav && !isAdminRoute && <Navbar />}
       <main className="flex-1">
         {appRoutes}
       </main>

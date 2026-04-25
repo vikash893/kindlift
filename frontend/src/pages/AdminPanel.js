@@ -976,7 +976,7 @@ export const AdminPanel = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex pt-20">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -984,8 +984,8 @@ export const AdminPanel = () => {
 
       {/* ─── Sidebar ─────────────────────────────────────── */}
       <aside className={`
-        fixed top-20 left-0 bottom-0 z-[160] w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300
-        lg:translate-x-0 lg:sticky lg:top-20 lg:h-[calc(100vh-80px)]
+        fixed top-0 left-0 bottom-0 z-[160] w-64 bg-white border-r border-gray-100 flex flex-col transition-transform duration-300
+        lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen
         ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}
       `}>
         <div className="p-6 border-b border-gray-100">
@@ -1044,7 +1044,7 @@ export const AdminPanel = () => {
       {/* ─── Main Content ─────────────────────────────────── */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Top bar */}
-        <div className="sticky top-20 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4">
+        <div className="sticky top-0 z-[100] bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
