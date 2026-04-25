@@ -103,7 +103,7 @@ export const Footer = () => {
                   <p className="text-white/80 font-medium mb-1">Emails</p>
                   <div className="flex flex-col gap-1 text-white/50">
                     <span>rajputvishnu2513@gmail.com</span>
-                    <span>vikash.h24@gla.ac.in</span>
+                    <span>vikashbhardwaj430@gmail.com</span>
                     <span>yash.gupta_cs.h24@gla.ac.in</span>
                   </div>
                 </li>
