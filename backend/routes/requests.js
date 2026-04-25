@@ -66,12 +66,37 @@ router.post('/', authMiddleware, validateCreateRequest, async (req, res) => {
       return res.status(400).json({ message: 'Not enough seats available' });
     }
 
+    // ─── Coin Payment: 2 coins per km ─────────────────────
+    const tripDistance = calculateDistance(
+      source.lat, source.lng,
+      destination.lat, destination.lng
+    );
+    const coinsRequired = Math.max(1, Math.ceil(tripDistance * 2)); // 2 coins/km, min 1
+
+    // Fetch passenger and verify coin balance
+    const passenger = await User.findById(req.user.id).select('name coins');
+    if (!passenger) return res.status(404).json({ message: 'User not found' });
+
+    if (passenger.coins < coinsRequired) {
+      return res.status(402).json({
+        message: `You need at least ${coinsRequired} coins to book this ride (${tripDistance.toFixed(1)} km × 2 coins/km). Please add more coins.`,
+        insufficientCoins: true,
+        coinsRequired,
+        coinsAvailable: passenger.coins,
+        distanceKm: parseFloat(tripDistance.toFixed(1)),
+      });
+    }
+
+    // Atomically deduct coins from passenger
+    await User.updateOne({ _id: req.user.id }, { $inc: { coins: -coinsRequired } });
+
     const newRequest = new RideRequest({
       passengerId: req.user.id,
       offerId,
       seatsRequested,
       source,
-      destination
+      destination,
+      coinsCharged: coinsRequired,
     });
 
     await newRequest.save();
@@ -83,17 +108,16 @@ router.post('/', authMiddleware, validateCreateRequest, async (req, res) => {
     }
 
     // Persistent notification for driver
-    const passenger = await User.findById(req.user.id).select('name').lean();
     await sendNotification(io, {
       recipientId: offer.driverId,
       type: 'ride_request',
       title: '🚗 New Ride Request',
-      message: `${passenger?.name || 'Someone'} wants to join your ride from ${source?.name || 'unknown'} to ${destination?.name || 'unknown'}.`,
+      message: `${passenger?.name || 'Someone'} wants to join your ride from ${source?.name || 'unknown'} to ${destination?.name || 'unknown'}. (${coinsRequired} coins charged)`,
       metadata: { requestId: newRequest._id, offerId },
       actionUrl: `/ride/${offerId}`,
     });
 
-    res.status(201).json(newRequest);
+    res.status(201).json({ ...newRequest.toObject(), coinsCharged: coinsRequired });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
@@ -308,18 +332,18 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
       await offer.save();
     }
 
-    // Calculate coins based on distance (1 coin per km)
-    const distance = calculateDistance(
-      request.source.lat, request.source.lng,
-      request.destination.lat, request.destination.lng
-    );
-    const coinsAllocated = Math.max(1, Math.floor(distance));
+    // ─── Coin Reward: driver earns coins charged from passenger ───
+    // The passenger already paid coinsCharged at booking time.
+    // On completion, transfer those coins to the driver as reward.
+    const coinsAllocated = request.coinsCharged && request.coinsCharged > 0
+      ? request.coinsCharged
+      : Math.max(1, Math.ceil(calculateDistance(
+          request.source.lat, request.source.lng,
+          request.destination.lat, request.destination.lng
+        ) * 2));
 
-    // Atomic coin updates — much faster than find-then-save
-    await Promise.all([
-      User.updateOne({ _id: request.offerId.driverId }, { $inc: { coins: coinsAllocated } }),
-      User.updateOne({ _id: request.passengerId }, { $inc: { coins: Math.floor(coinsAllocated / 2) } }),
-    ]);
+    // Award coins to driver
+    await User.updateOne({ _id: request.offerId.driverId }, { $inc: { coins: coinsAllocated } });
 
     // Notify passenger in real-time
     const io = req.app.get('io');
@@ -333,7 +357,7 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
         recipientId: request.passengerId,
         type: 'ride_completed',
         title: '🎉 Ride Completed!',
-        message: `Your ride has been marked complete. You earned ${Math.floor(coinsAllocated / 2)} coins! Please rate your driver.`,
+        message: `Your ride has been marked complete. You paid ${coinsAllocated} coins for this trip. Please rate your driver.`,
         metadata: { requestId: request._id },
         actionUrl: '/dashboard',
       }),
@@ -341,7 +365,7 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
         recipientId: request.offerId.driverId,
         type: 'ride_completed',
         title: '🎉 Ride Completed!',
-        message: `Ride completed successfully! You earned ${coinsAllocated} coins.`,
+        message: `Ride completed successfully! You earned ${coinsAllocated} coins from this passenger.`,
         metadata: { requestId: request._id },
         actionUrl: '/dashboard',
       }),
