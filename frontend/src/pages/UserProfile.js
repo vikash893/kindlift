@@ -171,9 +171,9 @@ export const UserProfile = () => {
       </button>
 
       {/* ═══════ Profile Header Card ═══════ */}
-      <div className="bg-white rounded-3xl border border-brand-gray-light overflow-hidden mb-6">
+      <div className="bg-white rounded-3xl border border-brand-gray-light mb-6">
         {/* Banner */}
-        <div className="h-40 sm:h-48 relative overflow-hidden" style={{
+        <div className="h-40 sm:h-48 relative overflow-hidden rounded-t-3xl" style={{
           background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 40%, #16213e 70%, #0f3460 100%)',
         }}>
           {/* Animated gradient orbs */}

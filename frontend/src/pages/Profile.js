@@ -86,9 +86,9 @@ export const Profile = () => {
   return (
     <div className="max-w-4xl mx-auto px-6 lg:px-8 py-6 lg:py-8">
       {/* Profile Header */}
-      <div className="bg-white rounded-3xl border border-brand-gray-light overflow-hidden mb-8">
+      <div className="bg-white rounded-3xl border border-brand-gray-light mb-8">
         {/* ── Kindlift Profile Banner ── */}
-        <div className="h-44 sm:h-48 relative overflow-hidden" style={{
+        <div className="h-44 sm:h-48 relative overflow-hidden rounded-t-3xl" style={{
           background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 40%, #16213e 70%, #0f3460 100%)',
         }}>
           {/* Animated gradient orbs */}
@@ -197,7 +197,7 @@ export const Profile = () => {
             }
           `}</style>
         </div>
-        <div className="px-8 pb-8 -mt-14">
+        <div className="px-8 pb-8 -mt-14 relative z-10">
           <div className="flex flex-col sm:flex-row items-start gap-6">
             <div className="relative group flex flex-col items-center">
               <div className="h-28 w-28 rounded-3xl bg-white border-4 border-white shadow-lg overflow-hidden flex items-center justify-center cursor-pointer"
