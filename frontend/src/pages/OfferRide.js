@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ButtonLoader } from '../components/ButtonLoader';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -234,7 +235,7 @@ export const OfferRide = () => {
 
           <button type="submit" disabled={loading}
             className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 mt-4">
-            {loading ? (<><div className="loader-spinner !w-4 !h-4 !border-2" /> Publishing...</>) : (<>Publish Ride <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>)}
+            {loading ? (<ButtonLoader text="Publishing..." />) : (<>Publish Ride <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>)}
           </button>
         </form>
       </div>

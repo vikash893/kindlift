@@ -76,7 +76,9 @@ export const UserProfile = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="loader-spinner mx-auto mb-4" />
+          <div className="w-64 max-w-sm mx-auto mb-4">
+            <SkeletonLoader type="profile" />
+          </div>
           <p className="text-brand-muted text-sm">Loading profile...</p>
         </div>
       </div>

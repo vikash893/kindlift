@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ButtonLoader } from '../components/ButtonLoader';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAlert } from '../components/CustomAlert';
@@ -191,7 +192,7 @@ export const BookRide = () => {
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
-                  <div className="loader-spinner !w-4 !h-4 !border-2" />Searching...
+                  <ButtonLoader text="Searching..." />
                 </span>
               ) : (
                 <>Search <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
@@ -277,7 +278,7 @@ export const BookRide = () => {
                       >
                         {bookingId === ride._id ? (
                           <span className="inline-flex items-center gap-2">
-                            <div className="loader-spinner !w-3 !h-3 !border-2" /> Booking...
+                            <ButtonLoader text="Booking..." />
                           </span>
                         ) : 'Request Ride'}
                       </button>

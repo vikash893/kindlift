@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -174,7 +175,7 @@ const handleAddCoins = async () => {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="loader-spinner mx-auto mb-4" />
+          <div className="w-full max-w-2xl mx-auto"><SkeletonLoader type="card" count={3} /></div>
           <p className="text-brand-muted text-sm">Loading dashboard...</p>
         </div>
       </div>

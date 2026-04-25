@@ -250,7 +250,7 @@ export const RideDetails = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="text-center"><div className="loader-spinner mx-auto mb-4" /><p className="text-brand-muted text-sm">Loading ride details...</p></div>
+      <div className="text-center w-full max-w-md mx-auto py-12"><SkeletonLoader type="card" /><p className="text-brand-muted text-sm mt-4">Loading ride details...</p></div>
     </div>
   );
 

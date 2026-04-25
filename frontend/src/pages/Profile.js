@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { useAlert } from '../components/CustomAlert';
@@ -305,7 +306,7 @@ export const Profile = () => {
           <Star className="h-5 w-5 text-brand-accent" /> My Ratings ({ratings.length})
         </h2>
         {loading ? (
-          <div className="flex justify-center py-8"><div className="loader-spinner" /></div>
+          <div className="flex justify-center py-8 w-full max-w-sm mx-auto"><SkeletonLoader type="card" /></div>
         ) : ratings.length === 0 ? (
           <p className="text-brand-muted text-center py-8">No ratings received yet</p>
         ) : (

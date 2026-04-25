@@ -132,7 +132,7 @@ export const Friends = () => {
         <div className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <div className="text-center"><div className="loader-spinner mx-auto mb-4" /><p className="text-brand-muted text-sm">Loading...</p></div>
+              <div className="w-full max-w-sm mx-auto"><SkeletonLoader type="profile" count={3} /></div>
             </div>
           ) : friends.length === 0 ? (
             <div className="bg-white rounded-2xl border border-brand-gray-light p-16 text-center">
@@ -266,7 +266,7 @@ export const Friends = () => {
           </div>
           {searchLoading ? (
             <div className="flex items-center justify-center py-10">
-              <div className="loader-spinner" />
+              <div className="w-full max-w-sm mx-auto"><SkeletonLoader type="profile" count={3} /></div>
             </div>
           ) : searchResults.length === 0 ? (
             searchQuery.length >= 2 && (

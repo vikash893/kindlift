@@ -58,9 +58,10 @@ const AppLayout = () => {
 
   const hideNavOn = ['/login', '/register', '/forgot-password'];
   const hideNav = hideNavOn.includes(location.pathname);
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
-  // Logged-in → Sidebar layout
-  if (user && !hideNav) {
+  // Logged-in (but NOT admin route) → Sidebar layout
+  if (user && !hideNav && !isAdminRoute) {
     return (
       <div className="min-h-screen bg-brand-light font-sans">
         <Sidebar />

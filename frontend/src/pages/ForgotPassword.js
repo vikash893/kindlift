@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { ButtonLoader } from '../components/ButtonLoader';
+// import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Navbar } from '../components/Navbar';
 import api from '../lib/api';
@@ -169,7 +171,7 @@ export const ForgotPassword = () => {
                     className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Sending OTP...</span>
+                      <ButtonLoader text="Sending OTP..." />
                     ) : (
                       <>Send Reset OTP <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
                     )}
@@ -220,7 +222,7 @@ export const ForgotPassword = () => {
                     className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Verifying...</span>
+                      <ButtonLoader text="Verifying..." />
                     ) : (
                       <>Verify & Continue <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
                     )}
@@ -306,7 +308,7 @@ export const ForgotPassword = () => {
                     className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
-                      <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Resetting...</span>
+                      <ButtonLoader text="Resetting..." />
                     ) : (
                       <>Reset Password <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
                     )}

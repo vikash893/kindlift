@@ -299,7 +299,7 @@ const ConversationList = ({ onSelect, selectedId }) => {
 
   if (loading) return (
     <div className="flex items-center justify-center py-16">
-      <div className="loader-spinner" />
+      <div className="p-4 w-full"><SkeletonLoader type="profile" count={3} /></div>
     </div>
   );
 
@@ -578,7 +578,7 @@ const ChatView = ({ friendId, friend, onBack }) => {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-1" style={{ minHeight: 0 }}>
         {loading ? (
-          <div className="flex items-center justify-center py-16"><div className="loader-spinner" /></div>
+          <div className="flex items-center justify-center py-16 w-full max-w-md mx-auto"><SkeletonLoader type="text" count={3} /></div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center">
             <div>

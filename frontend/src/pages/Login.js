@@ -1,5 +1,6 @@
 import { signInWithGoogle, getGoogleRedirectResult } from "../auth";
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { ButtonLoader } from '../components/ButtonLoader';, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from '../components/Navbar'; // Import the Navbar component
@@ -148,7 +149,7 @@ export const Login = () => {
                 className="w-full group flex items-center justify-center gap-2 px-6 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Signing in...</span>
+                  <ButtonLoader text="Signing in..." />
                 ) : (
                   <>Sign In <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" /></>
                 )}
@@ -186,7 +187,7 @@ export const Login = () => {
                 className="w-full flex items-center justify-center gap-3 px-6 py-4 border border-gray-300 rounded-full bg-white hover:bg-gray-50 transition-all disabled:opacity-50"
               >
                 {googleLoading ? (
-                  <span className="inline-flex items-center gap-2"><div className="loader-spinner !w-5 !h-5 !border-2" />Connecting...</span>
+                  <ButtonLoader text="Connecting..." />
                 ) : (
                   <>
                     <img

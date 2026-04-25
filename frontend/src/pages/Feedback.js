@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ButtonLoader } from '../components/ButtonLoader';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Heart, MessageCircle, Star } from 'lucide-react';
 import api from '../lib/api';
@@ -186,7 +187,7 @@ function Feedback() {
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
-                  <div className="loader-spinner !w-5 !h-5 !border-2" />
+                  <ButtonLoader text="" />
                   Submitting...
                 </span>
               ) : (
