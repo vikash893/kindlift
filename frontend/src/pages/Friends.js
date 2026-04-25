@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';

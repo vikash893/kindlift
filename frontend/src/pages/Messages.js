@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import {
   MessageCircle, Send, ArrowLeft, Users, Shield, ChevronRight, SmilePlus, Smile, X
 } from 'lucide-react';

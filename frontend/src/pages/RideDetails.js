@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import { useAlert } from '../components/CustomAlert';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Send, MapPin, Navigation, ArrowLeft, Phone, Mail, User, Calendar, Clock, MessageCircle, Users, Star, CheckCircle } from 'lucide-react';

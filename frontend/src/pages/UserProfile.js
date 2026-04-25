@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import {
