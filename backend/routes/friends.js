@@ -302,6 +302,111 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 /**
+ * GET /profile/:userId — Get a user's public profile (Instagram-style)
+ *
+ * Returns: user info, friends count + list, ratings/reviews, ride stats,
+ * and the requesting user's friendship status with this user.
+ */
+router.get('/profile/:userId', authMiddleware, async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: 'Invalid user ID format' });
+    }
+
+    // Fetch user info (exclude sensitive fields)
+    const user = await User.findById(userId)
+      .select('name email profilePhoto isDriverVerified driverVerificationStatus coins ratingSum totalRatings createdAt phone')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get accepted friends of this user
+    const friendships = await Friendship.find({
+      $or: [
+        { requester: userId, status: 'accepted' },
+        { recipient: userId, status: 'accepted' }
+      ]
+    })
+      .populate('requester', 'name email profilePhoto isDriverVerified')
+      .populate('recipient', 'name email profilePhoto isDriverVerified')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    const friends = friendships.map(f => {
+      const friend = f.requester._id.toString() === userId ? f.recipient : f.requester;
+      return {
+        _id: friend._id,
+        name: friend.name,
+        profilePhoto: friend.profilePhoto,
+        isDriverVerified: friend.isDriverVerified,
+      };
+    });
+
+    // Get ratings/reviews for this user
+    const { Rating } = require('../models/Rating');
+    const ratings = await Rating.find({ ratedUserId: userId })
+      .populate('raterId', 'name profilePhoto')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Get ride stats
+    const { RideOffer } = require('../models/RideOffer');
+    const { RideRequest } = require('../models/RideRequest');
+
+    const [offersCount, completedOffersCount, requestsCount, completedRequestsCount] = await Promise.all([
+      RideOffer.countDocuments({ driverId: userId }),
+      RideOffer.countDocuments({ driverId: userId, status: 'completed' }),
+      RideRequest.countDocuments({ passengerId: userId }),
+      RideRequest.countDocuments({ passengerId: userId, status: 'completed' }),
+    ]);
+
+    // Get friendship status between current user and this user
+    let friendshipStatus = { status: 'none' };
+    if (req.user.id !== userId) {
+      const friendship = await Friendship.findOne({
+        $or: [
+          { requester: req.user.id, recipient: userId },
+          { requester: userId, recipient: req.user.id }
+        ]
+      });
+      if (friendship) {
+        friendshipStatus = {
+          friendshipId: friendship._id,
+          status: friendship.status,
+          isRequester: friendship.requester.toString() === req.user.id,
+        };
+      }
+    } else {
+      friendshipStatus = { status: 'self' };
+    }
+
+    res.json({
+      user: {
+        ...user,
+        avgRating: user.totalRatings > 0 ? (user.ratingSum / user.totalRatings).toFixed(1) : null,
+      },
+      friends,
+      friendsCount: friends.length,
+      ratings,
+      stats: {
+        ridesOffered: offersCount,
+        ridesCompleted: completedOffersCount,
+        requestsMade: requestsCount,
+        requestsCompleted: completedRequestsCount,
+      },
+      friendshipStatus,
+    });
+  } catch (err) {
+    console.error('Profile fetch error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * GET /status/:userId — Check friendship status with a specific user
  */
 router.get('/status/:userId', authMiddleware, async (req, res) => {

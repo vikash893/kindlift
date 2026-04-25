@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import {
@@ -146,18 +146,18 @@ export const Friends = () => {
           ) : (
             friends.map(f => (
               <div key={f.friendshipId} className="bg-white rounded-2xl border border-brand-gray-light p-5 flex items-center justify-between card-lift">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-lg overflow-hidden flex-shrink-0">
+                <Link to={`/user/${f._id}`} className="flex items-center gap-4 flex-1 min-w-0 group">
+                  <div className="h-12 w-12 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-lg overflow-hidden flex-shrink-0 group-hover:ring-2 group-hover:ring-brand-accent/30 transition-all">
                     {f.profilePhoto ? <img src={f.profilePhoto} alt="" className="h-full w-full object-cover" /> : f.name?.charAt(0)?.toUpperCase()}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-display font-bold text-brand-dark">{f.name}</p>
+                      <p className="font-display font-bold text-brand-dark group-hover:text-brand-accent transition-colors">{f.name}</p>
                       <VerifiedBadge verified={f.isDriverVerified} />
                     </div>
-                    <p className="text-xs text-brand-muted">{f.email}</p>
+                    <p className="text-xs text-brand-muted truncate">{f.email}</p>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-2">
                   <button onClick={() => navigate(`/messages/${f._id}`)} title="Message"
                     className="p-2.5 rounded-xl bg-brand-dark/5 hover:bg-brand-accent/10 text-brand-dark hover:text-brand-accent transition-all">
@@ -281,18 +281,18 @@ export const Friends = () => {
                 const fs = u.friendship;
                 return (
                   <div key={u._id} className="bg-white rounded-2xl border border-brand-gray-light p-5 flex items-center justify-between card-lift">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-lg overflow-hidden flex-shrink-0">
+                    <Link to={`/user/${u._id}`} className="flex items-center gap-4 flex-1 min-w-0 group">
+                      <div className="h-12 w-12 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-lg overflow-hidden flex-shrink-0 group-hover:ring-2 group-hover:ring-brand-accent/30 transition-all">
                         {u.profilePhoto ? <img src={u.profilePhoto} alt="" className="h-full w-full object-cover" /> : u.name?.charAt(0)?.toUpperCase()}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-display font-bold text-brand-dark">{u.name}</p>
+                          <p className="font-display font-bold text-brand-dark group-hover:text-brand-accent transition-colors">{u.name}</p>
                           <VerifiedBadge verified={u.isDriverVerified} />
                         </div>
-                        <p className="text-xs text-brand-muted">{u.email}</p>
+                        <p className="text-xs text-brand-muted truncate">{u.email}</p>
                       </div>
-                    </div>
+                    </Link>
                     <div>
                       {!fs ? (
                         <button onClick={() => sendRequest(u._id)}

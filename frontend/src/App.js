@@ -30,6 +30,7 @@ const Feedback = lazy(() => import('./pages/Feedback'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ default: m.ForgotPassword })));
 const Friends = lazy(() => import('./pages/Friends').then(m => ({ default: m.Friends })));
 const Messages = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -134,6 +135,12 @@ function App() {
       <Route path="/messages/:userId" element={
         <PrivateRoute>
           <Messages />
+        </PrivateRoute>
+      } />
+
+      <Route path="/user/:userId" element={
+        <PrivateRoute>
+          <UserProfile />
         </PrivateRoute>
       } />
 

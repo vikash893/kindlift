@@ -21,11 +21,11 @@ try {
   if (typeof window !== 'undefined') {
     import("firebase/analytics").then(({ getAnalytics }) => {
       getAnalytics(app);
-    }).catch(() => {});
+    }).catch(() => { });
   }
 } catch (e) {
   // Analytics is optional — don't crash if it fails
-  
+
 }
 
 export default app;
