@@ -47,7 +47,7 @@ const PublicRoute = ({ children }) => {
 /* Hide navbar on login/register pages */
 const ConditionalNavbar = () => {
   const location = useLocation();
-  const hideOn = ['/login', '/register', '/feedback', '/forgot-password'];
+  const hideOn = ['/login', '/register', '/forgot-password'];
   if (hideOn.includes(location.pathname)) return null;
   return <Navbar />;
 };

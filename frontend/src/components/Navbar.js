@@ -92,6 +92,7 @@ export const Navbar = () => {
         { to: '/friends', label: 'Friends' },
         { to: '/messages', label: 'Messages', badge: unreadDMs },
         { to: '/profile', label: 'Profile' },
+        { to: '/feedback', label: 'Feedback' },
         ...(user.isAdmin || user.role === 'admin' || user.role === 'superadmin'
           ? [{ to: '/admin', label: 'Admin' }]
           : []),
