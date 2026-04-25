@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { useLocationSearch } from '../lib/useLocationSearch';
+import { LocationInput } from '../components/LocationInput';
 import { MapPin, Users, Calendar, Clock, Save, FileText, Hash, Camera, XCircle, ArrowRight, ShieldCheck, AlertTriangle, Loader2 } from 'lucide-react';
 
 export const OfferRide = () => {
@@ -158,54 +159,23 @@ export const OfferRide = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-display font-semibold text-brand-dark mb-3">
-              <MapPin className="h-3.5 w-3.5 inline mr-1 text-brand-accent" /> Leaving from
-            </label>
-            <div className="relative">
-              <input type="text" required className="input-modern" placeholder="Enter pickup location"
-                value={source.query}
-                onChange={(e) => source.handleInputChange(e.target.value)}
-                onBlur={source.dismissSuggestions}
-              />
-              {source.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
-                    onMouseDown={(e) => e.preventDefault()}>
-                  {source.suggestions.map((item, index) => (
-                    <li key={`source-${index}-${item.place_id || index}`}
-                      className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onMouseDown={() => source.selectSuggestion(item)}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+            <LocationInput
+            field={source}
+            id="offer-source"
+            label="Leaving from"
+            placeholder="Type a city, village or landmark..."
+            icon={MapPin}
+            iconColor="text-brand-accent"
+          />
 
-          <div>
-            <label className="block text-sm font-display font-semibold text-brand-dark mb-3">
-              <MapPin className="h-3.5 w-3.5 inline mr-1 text-red-400" /> Going to
-            </label>
-            <div className="relative">
-              <input type="text" required className="input-modern" placeholder="Enter destination"
-                value={destination.query}
-                onChange={(e) => destination.handleInputChange(e.target.value)}
-                onBlur={destination.dismissSuggestions}
-              />
-              {destination.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
-                    onMouseDown={(e) => e.preventDefault()}>
-                  {destination.suggestions.map((item, index) => (
-                    <li key={`dest-${index}-${item.place_id || index}`}
-                      className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onMouseDown={() => destination.selectSuggestion(item)}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
+          <LocationInput
+            field={destination}
+            id="offer-destination"
+            label="Going to"
+            placeholder="Type your destination..."
+            icon={MapPin}
+            iconColor="text-red-400"
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <div>

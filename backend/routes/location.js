@@ -1,113 +1,121 @@
 /**
  * @fileoverview Location Search Routes
  *
- * Provides geocoding search using the Nominatim (OpenStreetMap) API.
- * Includes input validation, caching, rate limiting, request queuing,
- * and automatic retry on 429 responses.
+ * Dual-API geocoding: Photon (primary, fast, great India coverage) +
+ * Nominatim (fallback). Photon is powered by OpenStreetMap data and
+ * covers villages, small towns, and tier-2/3 Indian cities excellently.
+ * Results are normalized to a common shape regardless of which API was used.
  *
  * @requires express      - Router
- * @requires node-fetch   - HTTP client for Nominatim API
- * @requires node-cache   - In-memory caching
- * @requires express-rate-limit - Request rate limiting
- * @requires p-queue      - Request queue
+ * @requires node-fetch   - HTTP client
+ * @requires node-cache   - In-memory caching (1-hour TTL)
  */
 
 const express = require("express");
 const fetch = require("node-fetch");
 const NodeCache = require("node-cache");
 const rateLimit = require("express-rate-limit");
-const PQueue = require("p-queue").default;
 const { validateLocationSearch } = require('../middleware/validate');
 
 const router = express.Router();
 
-/** @type {NodeCache} In-memory cache with 1-hour TTL */
-const cache = new NodeCache({ stdTTL: 60 * 60 });
+/** @type {NodeCache} In-memory cache with 2-hour TTL */
+const cache = new NodeCache({ stdTTL: 2 * 60 * 60 });
 
-/** Rate limiter: 200 requests per IP per minute */
+/** Rate limiter: 300 requests per IP per minute */
 const limiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 200,
+  max: 300,
   message: { message: "Too many requests, please try again later" },
-});
-
-/** Request queue: 1 req/sec to Nominatim to prevent bans */
-const queue = new PQueue({
-  interval: 1000,
-  intervalCap: 1,
 });
 
 router.use(limiter);
 
-/**
- * GET /search — Search for locations by name (validated)
- */
-router.get("/search", validateLocationSearch, async (req, res) => {
-  const query = req.query.q;
+// ─── Shared fetch helper ─────────────────────────────────
+const HEADERS = {
+  "User-Agent": "KindLift/1.0 (vikashbhardwaj430@gmail.com)",
+  "Accept": "application/json",
+};
 
-  const key = query.toLowerCase();
-
-  // Return cached results if available
-  if (cache.has(key)) {
-    return res.json(cache.get(key));
-  }
-
+async function safeFetch(url, timeoutMs = 5000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=10`;
-
-    const data = await queue.add(() => fetchWithRetry(url));
-
-    if (!Array.isArray(data)) {
-      console.error("Invalid API response:", data);
-      return res.json([]);
-    }
-
-    cache.set(key, data);
-    res.json(data);
-
-  } catch (error) {
-    console.error("Server Error:", error.message);
-    res.json([]);
-  }
-});
-
-/**
- * Fetches a URL with automatic retry on 429 responses.
- *
- * @async
- * @param {string} url - URL to fetch
- * @param {number} [retries=3] - Retry attempts remaining
- * @returns {Promise<Array>} Parsed JSON or empty array
- */
-async function fetchWithRetry(url, retries = 3) {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "KindLift/1.0 (vikashbhardwaj430@gmail.com)",
-        "Accept": "application/json",
-      },
-    });
-
-    if (response.status === 429) {
-      if (retries > 0) {
-        console.log("Retrying due to 429...");
-        await new Promise((r) => setTimeout(r, 1000));
-        return fetchWithRetry(url, retries - 1);
-      }
-      return [];
-    }
-
-    if (!response.ok) {
-      console.error("API ERROR:", response.status);
-      return [];
-    }
-
-    return await response.json();
-
-  } catch (err) {
-    console.error("Fetch error:", err.message);
-    return [];
+    const res = await fetch(url, { headers: HEADERS, signal: controller.signal });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-module.exports = router;
+// ─── Photon API (primary) ─────────────────────────────────
+// Komoot Photon: fast, no auth, excellent India coverage, no strict rate limit
+async function searchPhoton(query) {
+  // bbox for India: lon_min,lat_min,lon_max,lat_max
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8&lang=en&bbox=68.1,6.5,97.4,35.5`;
+  const data = await safeFetch(url);
+  if (!data || !Array.isArray(data.features) || data.features.length === 0) return [];
+
+  return data.features
+    .filter(f => {
+      // Only include results within India
+      const [lon, lat] = f.geometry.coordinates;
+      return lon >= 68.1 && lon <= 97.4 && lat >= 6.5 && lat <= 35.5;
+    })
+    .map(f => {
+      const p = f.properties;
+      // Build a human-readable display name
+      const parts = [p.name, p.street, p.city || p.town || p.village || p.county, p.state, 'India']
+        .filter(Boolean)
+        .filter((v, i, a) => a.indexOf(v) === i); // deduplicate
+      return {
+        place_id: f.properties.osm_id || Math.random(),
+        display_name: parts.join(', '),
+        lat: String(f.geometry.coordinates[1]),
+        lon: String(f.geometry.coordinates[0]),
+        type: p.type || 'place',
+        source: 'photon',
+      };
+    });
+}
+
+// ─── Nominatim API (fallback) ─────────────────────────────
+async function searchNominatim(query) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=8&addressdetails=1`;
+  const data = await safeFetch(url, 8000);
+  if (!Array.isArray(data) || data.length === 0) return [];
+  return data.map(item => ({ ...item, source: 'nominatim' }));
+}
+
+/**
+ * GET /search — Location autocomplete with Photon primary + Nominatim fallback
+ */
+router.get("/search", validateLocationSearch, async (req, res) => {
+  const query = req.query.q?.trim();
+  if (!query) return res.json([]);
+
+  const cacheKey = query.toLowerCase();
+  if (cache.has(cacheKey)) return res.json(cache.get(cacheKey));
+
+  try {
+    // Try Photon first — fast and has great India coverage
+    let results = await searchPhoton(query);
+
+    // If Photon returns nothing, fall back to Nominatim
+    if (results.length === 0) {
+      console.log(`Photon returned 0 results for "${query}", trying Nominatim...`);
+      results = await searchNominatim(query);
+    }
+
+    cache.set(cacheKey, results);
+    return res.json(results);
+  } catch (error) {
+    console.error("Location search error:", error.message);
+    return res.json([]);
+  }
+});
+
+module.exports = router;

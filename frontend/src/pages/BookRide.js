@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAlert } from '../components/CustomAlert';
 import { useLocationSearch } from '../lib/useLocationSearch';
+import { LocationInput } from '../components/LocationInput';
 import { MapPin, Users, Calendar, Search, Navigation, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -155,52 +156,22 @@ export const BookRide = () => {
 
         <form onSubmit={handleSearch} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative">
-              <label className="block text-sm font-display font-semibold text-brand-dark mb-3">
-                <MapPin className="h-3.5 w-3.5 inline mr-1 text-brand-accent" /> Leaving from
-              </label>
-              <input
-                type="text" required className="input-modern" placeholder="Enter departure city..."
-                value={source.query}
-                onChange={(e) => source.handleInputChange(e.target.value)}
-                onBlur={source.dismissSuggestions}
-              />
-              {source.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
-                    onMouseDown={(e) => e.preventDefault()}>
-                  {source.suggestions.map((item, index) => (
-                    <li key={`source-${index}-${item.place_id || index}`}
-                      className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onMouseDown={() => source.selectSuggestion(item)}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div className="relative">
-              <label className="block text-sm font-display font-semibold text-brand-dark mb-3">
-                <MapPin className="h-3.5 w-3.5 inline mr-1 text-red-400" /> Going to
-              </label>
-              <input
-                type="text" required className="input-modern" placeholder="Enter destination city..."
-                value={destination.query}
-                onChange={(e) => destination.handleInputChange(e.target.value)}
-                onBlur={destination.dismissSuggestions}
-              />
-              {destination.suggestions.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-brand-gray-light rounded-xl mt-1 max-h-40 overflow-y-auto shadow-card"
-                    onMouseDown={(e) => e.preventDefault()}>
-                  {destination.suggestions.map((item, index) => (
-                    <li key={`dest-${index}-${item.place_id || index}`}
-                      className="p-3 hover:bg-brand-dark/5 cursor-pointer text-sm transition-colors"
-                      onMouseDown={() => destination.selectSuggestion(item)}>
-                      {item.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            <LocationInput
+              field={source}
+              id="book-source"
+              label="Leaving from"
+              placeholder="Type a city, village or landmark..."
+              icon={MapPin}
+              iconColor="text-brand-accent"
+            />
+            <LocationInput
+              field={destination}
+              id="book-destination"
+              label="Going to"
+              placeholder="Type your destination..."
+              icon={MapPin}
+              iconColor="text-red-400"
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 items-end">
