@@ -74,11 +74,7 @@ export const Sidebar = () => {
       : []),
   ];
 
-  const publicItems = [
-    { to: '/', label: 'Home', icon: Home },
-    { to: '/about', label: 'About', icon: Info },
-    { to: '/contact', label: 'Contact', icon: Phone },
-  ];
+
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -160,29 +156,6 @@ export const Sidebar = () => {
           );
         })}
 
-        {/* Divider */}
-        <div className="my-4 border-t border-white/[0.06]" />
-
-        <p className="px-3 mb-2 text-[10px] font-display font-bold text-white/20 uppercase tracking-widest">
-          Explore
-        </p>
-        {publicItems.map((item) => {
-          const isActive = location.pathname === item.to;
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-white/10 text-white font-bold'
-                  : 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'
-              }`}
-            >
-              <item.icon className={`h-[18px] w-[18px] flex-shrink-0 ${isActive ? 'text-white/60' : 'text-white/20 group-hover:text-white/40'}`} />
-              <span className="truncate">{item.label}</span>
-            </Link>
-          );
-        })}
       </nav>
 
       {/* Bottom Actions */}
@@ -228,7 +201,15 @@ export const Sidebar = () => {
             <span className="font-display font-bold text-sm text-white">Kindlift</span>
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
+            <Link to="/messages" className="relative p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors">
+              <MessageCircle className="h-[18px] w-[18px]" />
+              {unreadDMs > 0 && (
+                <span className="absolute top-1 right-1 flex items-center justify-center min-w-[14px] h-[14px] px-[3px] rounded-full bg-red-500 text-white text-[9px] font-bold">
+                  {unreadDMs > 99 ? '99+' : unreadDMs}
+                </span>
+              )}
+            </Link>
             <NotificationBell />
             <div
               className="h-8 w-8 rounded-full overflow-hidden border border-white/10 flex items-center justify-center bg-brand-accent/20 cursor-pointer"
