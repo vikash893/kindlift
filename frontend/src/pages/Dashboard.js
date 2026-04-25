@@ -119,6 +119,7 @@ const handleAddCoins = async () => {
   };
   const handleDemoCoins = async () => {
   const token = localStorage.getItem("token");
+  const amount = (coins / 1000) * 10; // same formula as handleAddCoins: 1000 coins = ₹10
 
   try {
     const res = await fetch("http://localhost:8000/api/payment/demo-add-coins", {
