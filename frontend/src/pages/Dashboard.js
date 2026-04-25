@@ -17,6 +17,72 @@ export const Dashboard = () => {
   const [savedRides, setSavedRides] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [coins, setCoins] = useState(1000);
+  
+const handleAddCoins = async () => {
+  try {
+    
+    const amount = (coins / 1000) * 10;
+    console.log("SENDING AMOUNT:", amount);
+
+    const res = await fetch("http://localhost:8000/api/payment/create-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ amount }), // ✅ now defined
+    });
+
+    const order = await res.json();
+
+    const options = {
+      key: process.env.REACT_APP_RAZORPAY_KEY,
+      amount: order.amount,
+      currency: "INR",
+      order_id: order.id,
+
+      handler: async function (response) {
+        try {
+          console.log("PAYMENT RESPONSE:", response);
+
+          const verifyRes = await fetch(
+            "http://localhost:8000/api/payment/verify-payment",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`, // if using auth
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            }
+          );
+
+          const data = await verifyRes.json();
+
+          if (data.success) {
+            alert("✅ Payment Verified & Coins Added");
+            window.location.reload();
+          } else {
+            alert("❌ Verification failed");
+          }
+        } catch (err) {
+          console.error(err);
+          alert("❌ Error verifying payment");
+        }
+      }
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   useEffect(() => {
     fetchData();
@@ -51,6 +117,33 @@ export const Dashboard = () => {
       setLoading(false);
     }
   };
+  const handleDemoCoins = async () => {
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await fetch("http://localhost:8000/api/payment/demo-add-coins", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ amount }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      toast("success", `+${data.coinsAdded} coins added 🎉`);
+      window.location.reload();
+    } else {
+      toast("error", "Demo failed ❌");
+    }
+
+  } catch (err) {
+    console.error(err);
+    toast("error", "Error ❌");
+  }
+};
 
   const handleRequestStatus = async (requestId, status) => {
     try {
@@ -134,15 +227,42 @@ export const Dashboard = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+
+          {/* 🪙 Coins Input */}
+          <input
+            type="number"
+            value={coins}
+            onChange={(e) => {
+              const value = Number(e.target.value);
+              console.log("INPUT COINS:", value);   // 👈 ADD THIS
+              setCoins(value);
+            }}
+            className="px-3 py-2 border rounded-lg w-32"
+            placeholder="Coins"
+          />
+
+          {/* 💰 Price Display */}
+          <span className="text-sm font-bold">
+            ₹{(coins / 1000) * 10}
+          </span>
+
+          {/* 🪙 Add Coins Button */}
+          <button
+            onClick={handleAddCoins}
+            className="px-5 py-2.5 bg-amber-400 text-black rounded-full text-sm font-display font-bold hover:bg-amber-500 transition-all duration-500"
+          >
+            + Add Coins
+          </button> 
           <button onClick={() => navigate('/offer-ride')} className="px-5 py-2.5 bg-brand-dark text-white rounded-full text-sm font-display font-bold hover:bg-brand-accent hover:text-brand-dark transition-all duration-500">
             + Offer Ride
           </button>
+
           <button onClick={() => navigate('/book-ride')} className="px-5 py-2.5 bg-brand-accent text-brand-dark rounded-full text-sm font-display font-bold hover:bg-brand-dark hover:text-white transition-all duration-500">
             Book Ride
           </button>
         </div>
-      </div>
+    </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

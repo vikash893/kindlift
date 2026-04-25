@@ -73,6 +73,8 @@ userSchema.index({ isAdmin: 1, role: 1 });                 // Admin role filter
 userSchema.index({ totalRatings: -1 });                    // Top rated users sort
 userSchema.index({ createdAt: -1 });                       // Recent users sort
 
-const User = mongoose.model('User', userSchema);
+//const User = mongoose.model('User', userSchema);
 
-module.exports = { User };
+const User = mongoose.model('User', userSchema);
+module.exports = User;
+module.exports.User = User; 
