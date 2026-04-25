@@ -273,7 +273,7 @@ export const UserProfile = () => {
             </div>
 
             {/* Info + Actions */}
-            <div className="flex-1 pt-16 sm:pt-4 w-full">
+            <div className="flex-1 pt-16 sm:pt-16 w-full">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
