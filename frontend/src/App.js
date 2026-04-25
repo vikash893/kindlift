@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AlertProvider } from './components/CustomAlert';
 import { Navbar } from './components/Navbar';
+import { Sidebar } from './components/Sidebar';
 import { Loader } from './components/Loader';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -45,116 +46,94 @@ const PublicRoute = ({ children }) => {
   return !user ? children : <Navigate to="/dashboard" />;
 };
 
-/* Hide navbar on login/register pages */
-const ConditionalNavbar = () => {
+/**
+ * AppLayout — Handles the conditional navigation:
+ *  - Logged OUT → Classic top Navbar
+ *  - Logged IN  → Left Sidebar + content shifted right
+ *  - Auth pages (login/register) → No navigation at all
+ */
+const AppLayout = () => {
+  const { user } = useAuth();
   const location = useLocation();
-  const hideOn = ['/login', '/register', '/forgot-password'];
-  if (hideOn.includes(location.pathname)) return null;
-  return <Navbar />;
+
+  const hideNavOn = ['/login', '/register', '/forgot-password'];
+  const hideNav = hideNavOn.includes(location.pathname);
+
+  // Logged-in → Sidebar layout
+  if (user && !hideNav) {
+    return (
+      <div className="min-h-screen bg-brand-light font-sans">
+        <Sidebar />
+        {/* Main content — offset by sidebar on desktop, offset by mobile top bar on mobile */}
+        <div className="lg:pl-64 pt-14 lg:pt-0 min-h-screen flex flex-col">
+          <main className="flex-1">
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/safety" element={<Safety />} />
+                <Route path="/faqs" element={<FAQs />} />
+                <Route path="/feedback" element={<Feedback />} />
+                <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                <Route path="/offer-ride" element={<PrivateRoute><OfferRide /></PrivateRoute>} />
+                <Route path="/book-ride" element={<PrivateRoute><BookRide /></PrivateRoute>} />
+                <Route path="/ride/:id" element={<PrivateRoute><RideDetails /></PrivateRoute>} />
+                <Route path="/admin" element={<PrivateRoute><AdminPanel /></PrivateRoute>} />
+                <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+                <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
+                <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
+                <Route path="/messages/:userId" element={<PrivateRoute><Messages /></PrivateRoute>} />
+                <Route path="/user/:userId" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged-out / Auth pages → Classic top navbar layout
+  return (
+    <div className="min-h-screen bg-brand-light flex flex-col font-sans">
+      {!hideNav && <Navbar />}
+      <main className="flex-1">
+        <Suspense fallback={<Loader />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/safety" element={<Safety />} />
+            <Route path="/faqs" element={<FAQs />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </main>
+    </div>
+  );
 };
 
 function App() {
-  return (<AuthProvider> <AlertProvider> <Router> <ScrollToTop /> <div className="min-h-screen bg-brand-light flex flex-col font-sans"> <NotificationProvider> <ConditionalNavbar />      <main className="flex-1">
-    <Suspense fallback={<Loader />}>
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/safety" element={<Safety />} />
-      <Route path="/faqs" element={<FAQs />} />
-      <Route path="/feedback" element={<Feedback />} />
-
-      <Route path="/login" element={
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
-      } />
-
-      <Route path="/register" element={
-        <PublicRoute>
-          <Register />
-        </PublicRoute>
-      } />
-
-      <Route path="/forgot-password" element={
-        <PublicRoute>
-          <ForgotPassword />
-        </PublicRoute>
-      } />
-
-      <Route path="/dashboard" element={
-        <PrivateRoute>
-          <Dashboard />
-        </PrivateRoute>
-      } />
-
-      <Route path="/offer-ride" element={
-        <PrivateRoute>
-          <OfferRide />
-        </PrivateRoute>
-      } />
-
-      <Route path="/book-ride" element={
-        <PrivateRoute>
-          <BookRide />
-        </PrivateRoute>
-      } />
-
-      <Route path="/ride/:id" element={
-        <PrivateRoute>
-          <RideDetails />
-        </PrivateRoute>
-      } />
-
-      <Route path="/admin" element={
-        <PrivateRoute>
-          <AdminPanel />
-        </PrivateRoute>
-      } />
-
-      <Route path="/profile" element={
-        <PrivateRoute>
-          <Profile />
-        </PrivateRoute>
-      } />
-
-      <Route path="/friends" element={
-        <PrivateRoute>
-          <Friends />
-        </PrivateRoute>
-      } />
-
-      <Route path="/messages" element={
-        <PrivateRoute>
-          <Messages />
-        </PrivateRoute>
-      } />
-
-      <Route path="/messages/:userId" element={
-        <PrivateRoute>
-          <Messages />
-        </PrivateRoute>
-      } />
-
-      <Route path="/user/:userId" element={
-        <PrivateRoute>
-          <UserProfile />
-        </PrivateRoute>
-      } />
-
-      {/* 404 Catch-all */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-    </Suspense>
-  </main>
-  </NotificationProvider>
-  </div>
-  </Router>
-  </AlertProvider>
-  </AuthProvider>
-
+  return (
+    <AuthProvider>
+      <AlertProvider>
+        <Router>
+          <ScrollToTop />
+          <NotificationProvider>
+            <AppLayout />
+          </NotificationProvider>
+        </Router>
+      </AlertProvider>
+    </AuthProvider>
   );
 }
 

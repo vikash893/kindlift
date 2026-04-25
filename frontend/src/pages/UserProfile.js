@@ -74,7 +74,7 @@ export const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-20">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="loader-spinner mx-auto mb-4" />
           <p className="text-brand-muted text-sm">Loading profile...</p>
@@ -85,7 +85,7 @@ export const UserProfile = () => {
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center pt-20">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <User className="h-12 w-12 mx-auto text-brand-muted/30 mb-4" />
           <p className="text-brand-muted mb-4">User not found</p>

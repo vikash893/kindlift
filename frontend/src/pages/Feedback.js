@@ -56,7 +56,7 @@ function Feedback() {
   };
 
   return (
-    <div className="min-h-screen flex pt-20">
+    <div className="min-h-screen flex">
       {/* Left — Dark brand panel with text content (Logo removed) */}
       <div className="hidden lg:flex lg:w-1/2 section-dark relative overflow-hidden flex-col justify-between p-12 xl:p-16">
         <div className="noise-overlay absolute inset-0" />

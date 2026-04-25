@@ -84,7 +84,7 @@ export const Profile = () => {
   const avgRating = user?.totalRatings > 0 ? (user.ratingSum / user.totalRatings).toFixed(1) : 'N/A';
 
   return (
-    <div className="max-w-4xl mx-auto px-6 lg:px-8 py-8 pt-28">
+    <div className="max-w-4xl mx-auto px-6 lg:px-8 py-6 lg:py-8">
       {/* Profile Header */}
       <div className="bg-white rounded-3xl border border-brand-gray-light overflow-hidden mb-8">
         {/* ── Kindlift Profile Banner ── */}

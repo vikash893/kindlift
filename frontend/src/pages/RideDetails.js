@@ -276,7 +276,7 @@ export const RideDetails = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 pt-28">
+    <div className="max-w-6xl mx-auto px-6 py-6 lg:py-8">
       <button onClick={() => navigate('/dashboard')} className="inline-flex items-center px-4 py-2 mb-8 text-brand-accent hover:text-brand-accent-hover font-display font-semibold transition-colors group text-sm">
         <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
       </button>

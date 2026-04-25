@@ -976,7 +976,7 @@ export const AdminPanel = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex pt-20">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-[150] bg-black/40 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />

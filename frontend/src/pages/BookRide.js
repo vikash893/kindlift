@@ -115,7 +115,7 @@ export const BookRide = () => {
   const estimatedCost = getEstimatedCost();
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 pt-28">
+    <div className="max-w-4xl mx-auto px-6 py-6 lg:py-8">
       <div className="mb-10">
         <h1 className="font-display text-3xl font-bold text-brand-dark mb-2 flex items-center gap-3">
           <div className="w-12 h-12 bg-brand-dark rounded-2xl flex items-center justify-center">

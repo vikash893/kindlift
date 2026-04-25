@@ -690,7 +690,7 @@ export const Messages = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8 pt-28">
+    <div className="max-w-6xl mx-auto px-6 py-6 lg:py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
