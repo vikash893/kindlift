@@ -19,6 +19,8 @@ export function useLocationSearch(initialValue = '') {
   const [suggestions, setSuggestions] = useState([]);
   const [coords, setCoords] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [locating, setLocating] = useState(false); // specifically for GPS location
+
 
   const debounceTimer = useRef(null);
   const abortController = useRef(null);
@@ -124,15 +126,59 @@ export function useLocationSearch(initialValue = '') {
     setTimeout(() => setSuggestions([]), 200);
   }, []);
 
+  /**
+   * Use HTML5 Geolocation to get current location
+   */
+  const useCurrentLocation = useCallback(async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLocating(true);
+    setQuery("Detecting location...");
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await api.get(`/location/reverse?lat=${latitude}&lon=${longitude}`);
+          if (res.data) {
+            setQuery(res.data.display_name);
+            setCoords({ lat: latitude, lng: longitude });
+          } else {
+            setQuery(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+            setCoords({ lat: latitude, lng: longitude });
+          }
+        } catch (error) {
+          console.error("Reverse geocode failed:", error);
+          setQuery(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          setCoords({ lat: latitude, lng: longitude });
+        } finally {
+          setLocating(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setQuery("");
+        setLocating(false);
+        alert("Failed to get your location. Please check browser permissions.");
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  }, []);
+
   return {
     query,
     setQuery,
     suggestions,
     coords,
     loading,
+    locating,
     handleInputChange,
     selectSuggestion,
     dismissSuggestions,
+    useCurrentLocation,
     cancel,
   };
 }

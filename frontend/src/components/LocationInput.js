@@ -10,7 +10,7 @@
  *   id          — id for the input element
  */
 import React from 'react';
-import { MapPin, Loader2 } from 'lucide-react';
+import { MapPin, Loader2, Navigation } from 'lucide-react';
 
 /**
  * Trims a Photon/Nominatim display_name to a sensible short form.
@@ -46,6 +46,7 @@ export function LocationInput({
   icon: Icon = MapPin,
   iconColor = 'text-brand-accent',
   id,
+  showCurrentLocation = false,
 }) {
   return (
     <div className="relative">
@@ -63,15 +64,33 @@ export function LocationInput({
           type="text"
           required
           autoComplete="off"
-          className="input-modern pr-10"
+          className={`input-modern ${showCurrentLocation ? 'pr-16' : 'pr-10'}`}
           placeholder={placeholder}
           value={field.query}
           onChange={(e) => field.handleInputChange(e.target.value)}
           onBlur={field.dismissSuggestions}
         />
+        
         {/* Loading spinner */}
-        {field.loading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-brand-muted animate-spin pointer-events-none" />
+        {field.loading && !field.locating && (
+          <Loader2 className={`absolute ${showCurrentLocation ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-brand-muted animate-spin pointer-events-none`} />
+        )}
+
+        {/* Current Location Button */}
+        {showCurrentLocation && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); field.useCurrentLocation(); }}
+            disabled={field.locating}
+            title="Use current location"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-brand-accent hover:bg-brand-accent/10 transition-colors disabled:opacity-50"
+          >
+            {field.locating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Navigation className="h-4 w-4" />
+            )}
+          </button>
         )}
       </div>
 

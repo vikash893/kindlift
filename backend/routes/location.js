@@ -118,4 +118,35 @@ router.get("/search", validateLocationSearch, async (req, res) => {
   }
 });
 
+/**
+ * GET /reverse — Reverse geocoding (lat/lon to address) using Photon
+ */
+router.get("/reverse", async (req, res) => {
+  const { lat, lon } = req.query;
+  if (!lat || !lon) return res.status(400).json({ message: "lat and lon required" });
+
+  try {
+    const url = `https://photon.komoot.io/reverse?lon=${lon}&lat=${lat}&lang=en`;
+    const data = await safeFetch(url);
+    if (!data || !Array.isArray(data.features) || data.features.length === 0) {
+      return res.json({ display_name: "Unknown Location", lat, lon });
+    }
+
+    const f = data.features[0];
+    const p = f.properties;
+    const parts = [p.name, p.street, p.city || p.town || p.village || p.county, p.state, 'India']
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i);
+
+    return res.json({
+      display_name: parts.join(', '),
+      lat,
+      lon,
+    });
+  } catch (error) {
+    console.error("Reverse geocoding error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;

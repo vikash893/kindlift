@@ -163,6 +163,7 @@ export const BookRide = () => {
               placeholder="Type a city, village or landmark..."
               icon={MapPin}
               iconColor="text-brand-accent"
+              showCurrentLocation={true}
             />
             <LocationInput
               field={destination}
