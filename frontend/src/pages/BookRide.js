@@ -114,8 +114,24 @@ export const BookRide = () => {
     setError('');
     setSearched(true);
     try {
-      if (!source.coords || !destination.coords) {
-        setError("Please select valid locations from the suggestions dropdown");
+      // If user typed a location but didn't pick from suggestions, geocode it now
+      let srcCoords = source.coords;
+      let destCoords = destination.coords;
+
+      if (!srcCoords && source.query.trim()) {
+        srcCoords = await source.geocodeQuery();
+      }
+      if (!destCoords && destination.query.trim()) {
+        destCoords = await destination.geocodeQuery();
+      }
+
+      if (!srcCoords || !destCoords) {
+        setError(!srcCoords && !destCoords
+          ? "We couldn't resolve your locations. Please select from suggestions or try different names."
+          : !srcCoords
+            ? "We couldn't find your pickup location. Please select from suggestions or try a different name."
+            : "We couldn't find your destination. Please select from suggestions or try a different name."
+        );
         setLoading(false);
         return;
       }
@@ -126,8 +142,8 @@ export const BookRide = () => {
       }
       const res = await api.get('/rides/search', {
         params: {
-          sourceLat: source.coords.lat, sourceLng: source.coords.lng,
-          destLat: destination.coords.lat, destLng: destination.coords.lng, seats
+          sourceLat: srcCoords.lat, sourceLng: srcCoords.lng,
+          destLat: destCoords.lat, destLng: destCoords.lng, seats
         },
         timeout: 15000
       });

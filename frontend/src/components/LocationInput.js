@@ -10,7 +10,7 @@
  *   id          — id for the input element
  */
 import React from 'react';
-import { MapPin, Loader2, Navigation } from 'lucide-react';
+import { MapPin, Loader2, Navigation, CheckCircle2 } from 'lucide-react';
 
 /**
  * Trims a Photon/Nominatim display_name to a sensible short form.
@@ -48,6 +48,10 @@ export function LocationInput({
   id,
   showCurrentLocation = false,
 }) {
+  const hasText = field.query.trim().length > 0;
+  const isResolved = !!field.coords;
+  const showHint = hasText && !isResolved && !field.loading && !field.locating && field.suggestions.length === 0;
+
   return (
     <div className="relative">
       {label && (
@@ -64,12 +68,17 @@ export function LocationInput({
           type="text"
           required
           autoComplete="off"
-          className={`input-modern ${showCurrentLocation ? 'pr-16' : 'pr-10'}`}
+          className={`input-modern ${showCurrentLocation ? 'pr-16' : 'pr-10'} ${isResolved ? 'border-emerald-300 bg-emerald-50/30' : ''}`}
           placeholder={placeholder}
           value={field.query}
           onChange={(e) => field.handleInputChange(e.target.value)}
           onBlur={field.dismissSuggestions}
         />
+
+        {/* Resolved checkmark */}
+        {isResolved && !field.loading && !field.locating && (
+          <CheckCircle2 className={`absolute ${showCurrentLocation ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500 pointer-events-none`} />
+        )}
         
         {/* Loading spinner */}
         {field.loading && !field.locating && (
@@ -93,6 +102,14 @@ export function LocationInput({
           </button>
         )}
       </div>
+
+      {/* Auto-resolve hint */}
+      {showHint && (
+        <p className="text-xs text-brand-muted/70 mt-1.5 ml-1 flex items-center gap-1">
+          <MapPin className="h-3 w-3" />
+          This location will be auto-resolved when you search
+        </p>
+      )}
 
       {/* Suggestions dropdown */}
       {field.suggestions.length > 0 && (

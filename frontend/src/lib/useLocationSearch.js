@@ -127,6 +127,37 @@ export function useLocationSearch(initialValue = '') {
   }, []);
 
   /**
+   * Forward-geocode the current query text to get coordinates.
+   * Used when the user typed a location but didn't pick from suggestions.
+   * Returns { lat, lng } on success, or null on failure.
+   */
+  const geocodeQuery = useCallback(async () => {
+    // Already have coordinates — nothing to do
+    if (coords) return coords;
+
+    const q = query.trim();
+    if (!q || q.length < MIN_QUERY_LENGTH) return null;
+
+    try {
+      const res = await api.get(`/location/search?q=${encodeURIComponent(q)}`, {
+        timeout: 8000,
+      });
+
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        const best = res.data[0];
+        const resolved = { lat: Number(best.lat), lng: Number(best.lon) };
+        setQuery(best.display_name);
+        setCoords(resolved);
+        setSuggestions([]);
+        return resolved;
+      }
+    } catch (err) {
+      console.warn('Geocode fallback failed:', err.message);
+    }
+    return null;
+  }, [coords, query]);
+
+  /**
    * Use HTML5 Geolocation to get current location
    */
   const useCurrentLocation = useCallback(async () => {
@@ -173,12 +204,14 @@ export function useLocationSearch(initialValue = '') {
     setQuery,
     suggestions,
     coords,
+    setCoords,
     loading,
     locating,
     handleInputChange,
     selectSuggestion,
     dismissSuggestions,
     useCurrentLocation,
+    geocodeQuery,
     cancel,
   };
 }
