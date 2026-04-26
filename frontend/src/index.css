@@ -996,4 +996,125 @@ aside::-webkit-scrollbar-thumb {
   .emoji-kb-emoji {
     font-size: 18px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Ride Search — Dynamic Loading Animation
+   ═══════════════════════════════════════════════════════ */
+
+/* Phase entrance (slide up + fade in) */
+.ride-search-phase-enter {
+  animation: rideSearchPhaseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rideSearchPhaseIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pulsing radar rings */
+.ride-search-ping {
+  animation: rideSearchPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes rideSearchPing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  70% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* Center icon gentle pulse */
+.ride-search-icon-pulse {
+  animation: rideSearchIconPulse 2s ease-in-out infinite;
+}
+
+@keyframes rideSearchIconPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(232, 168, 56, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(232, 168, 56, 0);
+  }
+}
+
+/* Rotating navigation icon */
+.ride-search-rotate {
+  animation: rideSearchRotate 3s linear infinite;
+}
+
+@keyframes rideSearchRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Cycling search message fade */
+.ride-search-message-fade {
+  animation: rideSearchMsgFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes rideSearchMsgFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Progress bar glow effect */
+.ride-search-progress-glow {
+  box-shadow: 0 0 8px rgba(232, 168, 56, 0.4),
+              0 0 16px rgba(232, 168, 56, 0.15);
+}
+
+/* Background sweep animation */
+.ride-search-bg-sweep {
+  animation: rideSearchBgSweep 4s ease-in-out infinite alternate;
+}
+
+@keyframes rideSearchBgSweep {
+  0% {
+    opacity: 0.3;
+    transform: translateX(-10%) rotate(-1deg);
+  }
+  100% {
+    opacity: 0.7;
+    transform: translateX(10%) rotate(1deg);
+  }
+}
+
+/* No-results icon pop-in */
+.ride-search-result-pop {
+  animation: rideSearchResultPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes rideSearchResultPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-10deg);
+  }
+  60% {
+    transform: scale(1.1) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
 }
