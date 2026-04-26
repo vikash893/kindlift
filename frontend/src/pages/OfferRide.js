@@ -48,15 +48,32 @@ export const OfferRide = () => {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      if (!source.coords || !destination.coords) {
-        setError("Please select valid locations from the suggestions dropdown");
+      // If user typed a location but didn't pick from suggestions, geocode it now
+      let srcCoords = source.coords;
+      let destCoords = destination.coords;
+
+      if (!srcCoords && source.query.trim()) {
+        srcCoords = await source.geocodeQuery();
+      }
+      if (!destCoords && destination.query.trim()) {
+        destCoords = await destination.geocodeQuery();
+      }
+
+      if (!srcCoords || !destCoords) {
+        setError(!srcCoords && !destCoords
+          ? "We couldn't resolve your locations. Please select from suggestions or try different names."
+          : !srcCoords
+            ? "We couldn't find your pickup location. Please select from suggestions or try a different name."
+            : "We couldn't find your destination. Please select from suggestions or try a different name."
+        );
         setLoading(false);
         return;
       }
+
       const departureTime = new Date(`${date}T${time}`).toISOString();
       const payload = {
-        source: { name: source.query, lat: parseFloat(source.coords.lat), lng: parseFloat(source.coords.lng) },
-        destination: { name: destination.query, lat: parseFloat(destination.coords.lat), lng: parseFloat(destination.coords.lng) },
+        source: { name: source.query, lat: parseFloat(srcCoords.lat), lng: parseFloat(srcCoords.lng) },
+        destination: { name: destination.query, lat: parseFloat(destCoords.lat), lng: parseFloat(destCoords.lng) },
         seatsAvailable: seats,
         departureTime
       };
@@ -73,7 +90,15 @@ export const OfferRide = () => {
       }
 
       if (!user?.isDriverVerified && response.data) updateUser({ isDriverVerified: true, driverVerificationStatus: 'approved' });
-      if (saveRoute) await api.post('/saved-rides', { sourceName: source.query, destinationName: destination.query, seats });
+      if (saveRoute) {
+        await api.post('/saved-rides', { 
+          sourceName: source.query, 
+          destinationName: destination.query, 
+          sourceCoords: srcCoords,
+          destCoords: destCoords,
+          seats 
+        });
+      }
       navigate('/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to create ride offer';

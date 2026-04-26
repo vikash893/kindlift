@@ -25,10 +25,17 @@ const router = express.Router();
  */
 router.post('/', authMiddleware, validateCreateSavedRide, async (req, res) => {
   try {
-    const { sourceName, destinationName, seats } = req.body;
+    const { sourceName, destinationName, seats, sourceCoords: clientSourceCoords, destCoords: clientDestCoords } = req.body;
 
-    const sourceCoords = await geocode(sourceName);
-    const destCoords = await geocode(destinationName);
+    let sourceCoords = clientSourceCoords;
+    let destCoords = clientDestCoords;
+
+    if (!sourceCoords) {
+      sourceCoords = await geocode(sourceName);
+    }
+    if (!destCoords) {
+      destCoords = await geocode(destinationName);
+    }
 
     if (!sourceCoords || !destCoords) {
       return res.status(400).json({ message: 'Could not resolve coordinates' });
