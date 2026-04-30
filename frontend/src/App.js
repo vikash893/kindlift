@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { AlertProvider } from './components/CustomAlert';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
@@ -117,16 +118,18 @@ const AppLayout = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <AlertProvider>
-        <Router>
-          <ScrollToTop />
-          <NotificationProvider>
-            <AppLayout />
-          </NotificationProvider>
-        </Router>
-      </AlertProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AlertProvider>
+          <Router>
+            <ScrollToTop />
+            <NotificationProvider>
+              <AppLayout />
+            </NotificationProvider>
+          </Router>
+        </AlertProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

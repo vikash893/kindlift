@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, User as UserIcon, Menu, X, Users, MessageCircle } from 'lucide-react';
+import { LogOut, User as UserIcon, Menu, X, Users, MessageCircle, Sun, Moon } from 'lucide-react';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import { NotificationBell } from './NotificationBell';
+import { useTheme } from '../context/ThemeContext';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isDark, toggle } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -171,6 +173,21 @@ export const Navbar = () => {
                   </div>
                   {/* Notification Bell */}
                   <NotificationBell />
+                  {/* Day / Night toggle */}
+                  <button
+                    onClick={toggle}
+                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    className="theme-toggle-btn"
+                    aria-label="Toggle theme"
+                  >
+                    <span className="theme-toggle-track">
+                      <span className="theme-toggle-thumb">
+                        {isDark
+                          ? <Moon className="h-3 w-3 text-brand-accent" />
+                          : <Sun className="h-3 w-3 text-amber-500" />}
+                      </span>
+                    </span>
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="p-2 rounded-full transition-all text-brand-muted hover:text-red-500 hover:bg-red-50"
@@ -238,6 +255,14 @@ export const Navbar = () => {
           </div>
 
           <div className="mt-8 space-y-3 flex-shrink-0">
+            {/* Theme toggle in mobile menu */}
+            <button
+              onClick={toggle}
+              className="flex items-center gap-3 w-full text-white/60 hover:text-white transition-colors py-2"
+            >
+              {isDark ? <Sun className="h-5 w-5 text-brand-accent" /> : <Moon className="h-5 w-5 text-white/60" />}
+              <span className="text-sm font-medium">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
             {user ? (
               <div className="text-center">
                 <p className="text-white/50 text-sm mb-2">{user.name} · {user.coins || 0} coins</p>

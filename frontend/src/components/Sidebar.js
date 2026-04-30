@@ -10,16 +10,18 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Car, Search, Users, MessageCircle,
   User as UserIcon, MessageSquare, Shield, LogOut, Menu, X,
-  Coins, Home, Info, Phone, ChevronLeft,
+  Coins, Home, Info, Phone, ChevronLeft, Sun, Moon,
 } from 'lucide-react';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import { NotificationBell } from './NotificationBell';
+import { useTheme } from '../context/ThemeContext';
 
 export const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isDark, toggle } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unreadDMs, setUnreadDMs] = useState(0);
 
@@ -163,8 +165,17 @@ export const Sidebar = () => {
 
       </nav>
 
-      {/* Bottom Actions */}
-      <div className="p-3 border-t border-white/[0.06] space-y-2">
+        {/* Theme Toggle */}
+        <button
+          onClick={toggle}
+          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          className="theme-toggle-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
+        >
+          {isDark
+            ? <Sun className="h-[18px] w-[18px] text-brand-accent" />
+            : <Moon className="h-[18px] w-[18px] text-white/40" />}
+          <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+        </button>
 
         {/* Logout */}
         <button
@@ -211,6 +222,14 @@ export const Sidebar = () => {
               )}
             </Link>
             <NotificationBell />
+            {/* Theme toggle — mobile top bar */}
+            <button
+              onClick={toggle}
+              aria-label="Toggle theme"
+              className="p-2 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            >
+              {isDark ? <Sun className="h-[18px] w-[18px] text-brand-accent" /> : <Moon className="h-[18px] w-[18px]" />}
+            </button>
             <div
               className="h-8 w-8 rounded-full overflow-hidden border border-white/10 flex items-center justify-center bg-brand-accent/20 cursor-pointer"
               onClick={() => navigate('/profile')}
