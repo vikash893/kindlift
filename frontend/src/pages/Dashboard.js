@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
 import { useAlert } from '../components/CustomAlert';
-import { MapPin, Users, Calendar, Clock, CheckCircle, XCircle, User, ArrowRight, Coins } from 'lucide-react';
+import { MapPin, Users, Calendar, Clock, CheckCircle, XCircle, User, ArrowRight, Coins, History } from 'lucide-react';
 import { format } from 'date-fns';
 
 export const Dashboard = () => {
@@ -16,7 +16,9 @@ export const Dashboard = () => {
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [myRequests, setMyRequests] = useState([]);
   const [savedRides, setSavedRides] = useState([]);
+  const [rideHistory, setRideHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const navigate = useNavigate();
   const [coins, setCoins] = useState(1000);
   
@@ -102,6 +104,20 @@ const handleAddCoins = async () => {
       setLoading(false);
     }
   };
+
+  // Fetch ride history when the history tab is selected
+  const fetchHistory = async () => {
+    if (rideHistory.length > 0) return; // already loaded
+    setHistoryLoading(true);
+    try {
+      const res = await api.get('/requests/history');
+      setRideHistory(res.data);
+    } catch (err) {
+      console.error('Error fetching ride history', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
   const handleDemoCoins = async () => {
   const amount = (coins / 1000) * 10; // 1000 coins = ₹10
 
@@ -157,6 +173,7 @@ const handleAddCoins = async () => {
     { key: 'passenger', label: 'My Bookings' },
     { key: 'driver', label: 'My Offers' },
     { key: 'saved', label: 'Saved Rides' },
+    { key: 'history', label: '🕒 History' },
   ];
 
   const statusBadge = (status) => {
@@ -173,11 +190,8 @@ const handleAddCoins = async () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="w-full max-w-2xl mx-auto"><SkeletonLoader type="card" count={3} /></div>
-          <p className="text-brand-muted text-sm">Loading dashboard...</p>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        <SkeletonLoader type="dashboard" />
       </div>
     );
   }
@@ -273,7 +287,10 @@ const handleAddCoins = async () => {
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => {
+              setActiveTab(tab.key);
+              if (tab.key === 'history') fetchHistory();
+            }}
             className={`px-6 py-3 text-sm font-display font-semibold transition-all duration-300 border-b-2 -mb-px whitespace-nowrap ${
               activeTab === tab.key
                 ? 'text-brand-dark border-brand-accent'
@@ -580,6 +597,113 @@ const handleAddCoins = async () => {
                         className="px-4 py-3 bg-red-50 text-red-600 rounded-full text-sm font-display font-bold hover:bg-red-100 transition-all"
                       >
                         Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* HISTORY TAB */}
+      {activeTab === 'history' && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <History className="h-5 w-5 text-brand-accent" />
+            <h2 className="font-display text-lg font-bold text-brand-dark">Ride History</h2>
+          </div>
+          {historyLoading ? (
+            <SkeletonLoader type="history" count={3} />
+          ) : rideHistory.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-brand-gray-light p-16 text-center">
+              <CheckCircle className="h-10 w-10 mx-auto text-brand-muted/30 mb-4" />
+              <p className="text-brand-muted mb-2">No completed rides yet.</p>
+              <p className="text-brand-muted/60 text-sm">Once you complete a ride as a passenger or driver, it will appear here.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {rideHistory.map((ride) => (
+                <div key={ride._id + ride.role} className="bg-white rounded-2xl border border-brand-gray-light overflow-hidden card-lift">
+                  <div className="p-6">
+                    {/* Header */}
+                    <div className="flex justify-between items-start mb-5">
+                      <span className={`px-3 py-1 text-xs rounded-full font-display font-bold border ${
+                        ride.role === 'driver'
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                          : 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                      }`}>
+                        {ride.role === 'driver' ? '🚗 DRIVER' : '🧑‍🤝‍🧑 PASSENGER'}
+                      </span>
+                      <span className="text-xs text-brand-muted flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {format(new Date(ride.updatedAt || ride.createdAt), 'MMM d, h:mm a')}
+                      </span>
+                    </div>
+
+                    {/* Route */}
+                    <div className="space-y-3 mb-5">
+                      <div className="flex items-start gap-3 text-sm">
+                        <div className="w-2 h-2 rounded-full bg-brand-accent mt-1.5 flex-shrink-0" />
+                        <span className="text-brand-dark">{ride.source?.name}</span>
+                      </div>
+                      <div className="flex items-start gap-3 text-sm">
+                        <div className="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0" />
+                        <span className="text-brand-dark">{ride.destination?.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-brand-muted ml-5">
+                        <Users className="h-3.5 w-3.5" />
+                        {ride.seatsRequested} seat(s)
+                      </div>
+                    </div>
+
+                    {/* Person info */}
+                    <div className="pt-5 border-t border-brand-gray-light">
+                      {ride.role === 'passenger' && ride.offerId?.driverId && (
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center text-white text-sm font-display font-bold overflow-hidden">
+                            {ride.offerId.driverId.profilePhoto
+                              ? <img src={ride.offerId.driverId.profilePhoto} alt="" className="h-full w-full object-cover" />
+                              : ride.offerId.driverId.name?.charAt(0)?.toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-display font-bold text-brand-dark">{ride.offerId.driverId.name}</p>
+                            <p className="text-xs text-brand-muted">Driver</p>
+                          </div>
+                          {ride.coinsCharged > 0 && (
+                            <span className="ml-auto px-2.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-display font-bold flex items-center gap-1">
+                              <Coins className="h-3 w-3" />
+                              {ride.coinsCharged}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {ride.role === 'driver' && ride.passengerId && (
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-xl bg-blue-500 flex items-center justify-center text-white text-sm font-display font-bold overflow-hidden">
+                            {ride.passengerId.profilePhoto
+                              ? <img src={ride.passengerId.profilePhoto} alt="" className="h-full w-full object-cover" />
+                              : ride.passengerId.name?.charAt(0)?.toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-display font-bold text-brand-dark">{ride.passengerId.name}</p>
+                            <p className="text-xs text-brand-muted">Passenger</p>
+                          </div>
+                          {ride.coinsCharged > 0 && (
+                            <span className="ml-auto px-2.5 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700 font-display font-bold flex items-center gap-1">
+                              <Coins className="h-3 w-3" />
+                              +{ride.coinsCharged}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => navigate(`/ride/${ride._id}`)}
+                        className="w-full mt-4 px-4 py-3 bg-brand-dark/5 text-brand-dark rounded-full text-sm font-display font-bold hover:bg-brand-dark hover:text-white transition-all duration-500 flex items-center justify-center gap-2"
+                      >
+                        View Details <ArrowRight className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
