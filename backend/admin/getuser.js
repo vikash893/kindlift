@@ -83,15 +83,38 @@ const adminMiddleware = async (req, res, next) => {
  */
 router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    // Check server-side cache first
     const cached = getCachedResponse('admin_stats');
     if (cached) return res.json(cached);
+
+    const now = new Date();
+    const weekAgo   = new Date(now - 7  * 24 * 60 * 60 * 1000);
+    const monthAgo  = new Date(now - 30 * 24 * 60 * 60 * 1000);
+    const yearAgo   = new Date(now - 365 * 24 * 60 * 60 * 1000);
 
     const [
       totalUsers, activeUsers, verifiedDrivers, pendingVerifications,
       totalRides, activeRides, completedRides,
       totalRequests, pendingRequests, acceptedRequests, completedRequests,
+      rejectedRequests,
       totalRatings, totalMessages,
+      newUsersThisWeek, newRidesThisWeek,
+      // Time-series aggregations
+      usersByDay,       // last 30 days daily
+      usersByWeek,      // last 12 weeks weekly
+      usersByMonth,     // last 12 months monthly
+      ridesByDay,
+      ridesByWeek,
+      ridesByMonth,
+      // Ride status distribution
+      rideStatusDist,
+      requestStatusDist,
+      // Rating stats
+      ratingAgg,
+      // Rating trend — weekly avg for platform
+      ratingTrendWeekly,
+      // Per-user rating trends (users with ≥2 ratings, showing their last 8 weeks)
+      usersForRatingTrend,
+      topUsers, recentUsers, recentRides,
     ] = await Promise.all([
       User.countDocuments(),
       User.countDocuments({ isActive: { $ne: false } }),
@@ -104,29 +127,103 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
       RideRequest.countDocuments({ status: 'pending' }),
       RideRequest.countDocuments({ status: 'accepted' }),
       RideRequest.countDocuments({ status: 'completed' }),
+      RideRequest.countDocuments({ status: 'rejected' }),
       Rating.countDocuments(),
       Message.countDocuments(),
-    ]);
-
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
-    const [newUsersThisWeek, newRidesThisWeek, userGrowth, rideGrowth, ratingAgg, topUsers, recentUsers, recentRides] = await Promise.all([
       User.countDocuments({ createdAt: { $gte: weekAgo } }),
       RideOffer.countDocuments({ createdAt: { $gte: weekAgo } }),
+
+      // Users by day (last 30 days)
       User.aggregate([
-        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $match: { createdAt: { $gte: monthAgo } } },
         { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]),
+      // Users by week (last 12 weeks)
+      User.aggregate([
+        { $match: { createdAt: { $gte: new Date(now - 84 * 24 * 60 * 60 * 1000) } } },
+        { $group: { _id: { $dateToString: { format: '%Y-W%V', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      // Users by month (last 12 months)
+      User.aggregate([
+        { $match: { createdAt: { $gte: yearAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+
+      // Rides by day
       RideOffer.aggregate([
-        { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+        { $match: { createdAt: { $gte: monthAgo } } },
         { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, count: { $sum: 1 } } },
         { $sort: { _id: 1 } },
       ]),
+      // Rides by week
+      RideOffer.aggregate([
+        { $match: { createdAt: { $gte: new Date(now - 84 * 24 * 60 * 60 * 1000) } } },
+        { $group: { _id: { $dateToString: { format: '%Y-W%V', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+      // Rides by month
+      RideOffer.aggregate([
+        { $match: { createdAt: { $gte: yearAgo } } },
+        { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, count: { $sum: 1 } } },
+        { $sort: { _id: 1 } },
+      ]),
+
+      // Ride offer status distribution
+      RideOffer.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      // Ride request status distribution
+      RideRequest.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+
+      // Overall rating aggregate
       Rating.aggregate([
         { $group: { _id: null, avg: { $avg: '$rating' }, total: { $sum: 1 } } },
       ]),
+
+      // Platform-wide weekly rating trend (last 12 weeks)
+      Rating.aggregate([
+        { $match: { createdAt: { $gte: new Date(now - 84 * 24 * 60 * 60 * 1000) } } },
+        { $group: {
+          _id: { $dateToString: { format: '%Y-W%V', date: '$createdAt' } },
+          avgRating: { $avg: '$rating' },
+          count: { $sum: 1 },
+        }},
+        { $sort: { _id: 1 } },
+      ]),
+
+      // Per-user rating trend: last 8 weeks per user (top 20 users with most ratings)
+      Rating.aggregate([
+        { $match: { createdAt: { $gte: new Date(now - 56 * 24 * 60 * 60 * 1000) } } },
+        { $group: {
+          _id: {
+            user: '$ratedUserId',
+            week: { $dateToString: { format: '%Y-W%V', date: '$createdAt' } },
+          },
+          avgRating: { $avg: '$rating' },
+          count: { $sum: 1 },
+        }},
+        { $group: {
+          _id: '$_id.user',
+          trend: { $push: { week: '$_id.week', avg: '$avgRating', count: '$count' } },
+          totalRatings: { $sum: '$count' },
+          overallAvg: { $avg: '$avgRating' },
+        }},
+        { $match: { totalRatings: { $gte: 2 } } },
+        { $sort: { overallAvg: 1 } }, // lowest rated first — most at-risk
+        { $limit: 20 },
+        { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'user' } },
+        { $unwind: '$user' },
+        { $project: {
+          'user.name': 1, 'user.email': 1, 'user.profilePhoto': 1,
+          trend: 1, totalRatings: 1, overallAvg: 1,
+        }},
+      ]),
+
       User.find({ totalRatings: { $gt: 0 } })
         .select('name email profilePhoto ratingSum totalRatings coins isDriverVerified')
         .sort({ totalRatings: -1 }).limit(5).lean(),
@@ -143,14 +240,23 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
         totalUsers, activeUsers, verifiedDrivers, pendingVerifications,
         totalRides, activeRides, completedRides,
         totalRequests, pendingRequests, acceptedRequests, completedRequests,
+        rejectedRequests,
         totalRatings, totalMessages,
         newUsersThisWeek, newRidesThisWeek,
         averageRating: ratingAgg[0]?.avg?.toFixed(1) || '0.0',
       },
-      userGrowth, rideGrowth, topUsers, recentUsers, recentRides,
+      // Time-series
+      userGrowth: { daily: usersByDay, weekly: usersByWeek, monthly: usersByMonth },
+      rideGrowth: { daily: ridesByDay, weekly: ridesByWeek, monthly: ridesByMonth },
+      // Distributions
+      rideStatusDist,
+      requestStatusDist,
+      // Rating analytics
+      ratingTrendWeekly,
+      userRatingTrends: usersForRatingTrend,
+      topUsers, recentUsers, recentRides,
     };
 
-    // Cache the response
     setCachedResponse('admin_stats', response);
     res.json(response);
   } catch (err) {
