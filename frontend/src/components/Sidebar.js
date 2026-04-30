@@ -10,7 +10,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, Car, Search, Users, MessageCircle,
   User as UserIcon, MessageSquare, Shield, LogOut, Menu, X,
-  Coins, Home, Info, Phone, ChevronLeft, Sun, Moon,
+  Coins, Home, Info, Phone, ChevronLeft, Sun, Moon, Gift,
 } from 'lucide-react';
 import api from '../lib/api';
 import { socket } from '../lib/socket';
@@ -70,6 +70,7 @@ export const Sidebar = () => {
     { to: '/friends', label: 'Friends', icon: Users },
     { to: '/messages', label: 'Messages', icon: MessageCircle, badge: unreadDMs },
     { to: '/profile', label: 'Profile', icon: UserIcon },
+    { to: '/gifts', label: 'Gifts', icon: Gift },
     { to: '/feedback', label: 'Feedback', icon: MessageSquare },
     ...(user?.isAdmin || user?.role === 'admin' || user?.role === 'superadmin'
       ? [{ to: '/admin', label: 'Admin', icon: Shield }]

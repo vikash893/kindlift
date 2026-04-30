@@ -40,6 +40,8 @@ const notificationSchema = new mongoose.Schema({
       'friend_request',    // User: someone sent you a friend request
       'friend_accepted',   // User: someone accepted your friend request
       'dm_message',        // User: new direct message
+      'gift_received',     // User: someone sent you a gift
+      'gift_reaction',     // User: someone reacted to your gift
       'system',            // System-wide announcement
     ],
     required: true,

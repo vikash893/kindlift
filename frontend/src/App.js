@@ -33,6 +33,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(m => ({ 
 const Friends = lazy(() => import('./pages/Friends').then(m => ({ default: m.Friends })));
 const Messages = lazy(() => import('./pages/Messages').then(m => ({ default: m.Messages })));
 const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
+const Gifts = lazy(() => import('./pages/Gifts').then(m => ({ default: m.Gifts })));
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -82,6 +83,7 @@ const AppLayout = () => {
         <Route path="/messages" element={<PrivateRoute><Messages /></PrivateRoute>} />
         <Route path="/messages/:userId" element={<PrivateRoute><Messages /></PrivateRoute>} />
         <Route path="/user/:userId" element={<PrivateRoute><UserProfile /></PrivateRoute>} />
+        <Route path="/gifts" element={<PrivateRoute><Gifts /></PrivateRoute>} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
         <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />

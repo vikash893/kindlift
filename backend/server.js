@@ -43,6 +43,7 @@ const statsRoutes = require('./routes/stats');
 const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payment');
 const contactRoutes = require('./routes/contact');
+const giftRoutes = require('./routes/gifts');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -337,6 +338,7 @@ async function startServer() {
   app.use('/api/notifications', notificationRoutes);         // Notification system
   app.use('/api/payment', paymentRoutes);
   app.use('/api/contact', contactRoutes);                  // Public contact form
+  app.use('/api/gifts', giftRoutes);                       // Gifting system
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
