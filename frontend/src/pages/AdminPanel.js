@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Trash2, UserCheck, UserX, Eye, X,
   TrendingUp, Activity, Award, MapPin, Clock, CheckCircle, XCircle,
   BarChart3, Coins, AlertTriangle, User as UserIcon, ArrowUpRight, RefreshCw,
-  ShieldAlert, FileText, Image, Menu, ShieldOff,
+  ShieldAlert, FileText, Image, Menu, ShieldOff, Inbox, Mail, MailOpen,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAlert } from '../components/CustomAlert';
@@ -965,6 +965,183 @@ const FeedbackTab = () => {
   );
 };
 
+// ─── CONTACT MESSAGES TAB ────────────────────────────
+const ContactMessagesTab = () => {
+  const { toast, confirm: confirmAlert } = useAlert();
+  const [messages, setMessages] = useState([]);
+  const [pagination, setPagination] = useState({});
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/admin/contact-messages?page=${page}&filter=${filter}&limit=15`);
+      setMessages(res.data.messages);
+      setPagination(res.data.pagination);
+      setUnreadCount(res.data.unreadCount);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  }, [page, filter]);
+
+  useEffect(() => { fetchMessages(); }, [fetchMessages]);
+
+  const handleToggleRead = async (id, currentRead) => {
+    try {
+      await api.put(`/admin/contact-messages/${id}/read`, { read: !currentRead });
+      toast('success', `Message marked as ${currentRead ? 'unread' : 'read'}`);
+      fetchMessages();
+    } catch (err) { toast('error', 'Failed to update message'); }
+  };
+
+  const handleDelete = async (id) => {
+    const confirmed = await confirmAlert('Delete this contact message?', 'Delete Message');
+    if (!confirmed) return;
+    try {
+      await api.delete(`/admin/contact-messages/${id}`);
+      toast('success', 'Message deleted');
+      fetchMessages();
+    } catch (err) { toast('error', 'Failed to delete message'); }
+  };
+
+  const handleExpand = async (msg) => {
+    if (expandedId === msg._id) {
+      setExpandedId(null);
+      return;
+    }
+    setExpandedId(msg._id);
+    // Auto-mark as read when expanded
+    if (!msg.read) {
+      try {
+        await api.put(`/admin/contact-messages/${msg._id}/read`, { read: true });
+        fetchMessages();
+      } catch (err) { /* silent */ }
+    }
+  };
+
+  const filters = ['all', 'unread', 'read'];
+
+  return (
+    <div className="space-y-6">
+      {/* Stats bar */}
+      {unreadCount > 0 && (
+        <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-5">
+          <div className="h-10 w-10 rounded-xl bg-blue-500 flex items-center justify-center">
+            <Inbox className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-blue-900 text-sm">You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-blue-600">From the public contact form</p>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex gap-2 flex-wrap">
+        {filters.map(f => (
+          <button key={f} onClick={() => { setFilter(f); setPage(1); }}
+            className={`px-4 py-2 text-xs font-display font-bold rounded-full capitalize transition-all ${filter === f ? 'bg-brand-dark text-white' : 'bg-white text-brand-muted border border-brand-gray-light hover:border-brand-dark'}`}>
+            {f}{f === 'unread' && unreadCount > 0 ? ` (${unreadCount})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {loading ? <LoadingSpinner /> : messages.length === 0 ? <EmptyState icon={Inbox} text="No contact messages found" /> : (
+        <div className="space-y-3">
+          {messages.map(msg => (
+            <div
+              key={msg._id}
+              className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
+                !msg.read ? 'border-blue-200 shadow-sm' : 'border-brand-gray-light'
+              }`}
+            >
+              {/* Header row */}
+              <div
+                className="flex items-center gap-4 p-5 cursor-pointer hover:bg-brand-dark/[0.02] transition-colors"
+                onClick={() => handleExpand(msg)}
+              >
+                {/* Unread indicator */}
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                  !msg.read ? 'bg-blue-500' : 'bg-transparent'
+                }`} />
+
+                {/* Avatar */}
+                <div className="h-10 w-10 rounded-full bg-brand-accent/10 flex items-center justify-center text-brand-accent font-bold text-sm flex-shrink-0">
+                  {msg.firstName?.charAt(0)?.toUpperCase()}{msg.lastName?.charAt(0)?.toUpperCase()}
+                </div>
+
+                {/* Name & preview */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className={`text-sm truncate ${!msg.read ? 'font-bold text-brand-dark' : 'font-semibold text-brand-dark/80'}`}>
+                      {msg.firstName} {msg.lastName}
+                    </p>
+                    <span className="text-xs text-brand-muted hidden sm:inline">·</span>
+                    <p className="text-xs text-brand-muted truncate hidden sm:block">{msg.email}</p>
+                  </div>
+                  <p className={`text-xs truncate mt-0.5 ${!msg.read ? 'text-brand-dark/70' : 'text-brand-muted'}`}>
+                    {msg.message}
+                  </p>
+                </div>
+
+                {/* Date & actions */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-brand-muted hidden md:block">
+                    {format(new Date(msg.createdAt), 'MMM d, h:mm a')}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleRead(msg._id, msg.read); }}
+                    title={msg.read ? 'Mark as unread' : 'Mark as read'}
+                    className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors"
+                  >
+                    {msg.read ? <Mail className="h-4 w-4" /> : <MailOpen className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(msg._id); }}
+                    title="Delete"
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Expanded body */}
+              {expandedId === msg._id && (
+                <div className="px-5 pb-5 pt-0 border-t border-brand-gray-light">
+                  <div className="bg-brand-dark/[0.02] rounded-xl p-4 mt-4 space-y-3">
+                    <div className="flex items-center gap-6 text-xs flex-wrap">
+                      <span className="flex items-center gap-1.5 text-brand-muted">
+                        <UserIcon className="h-3.5 w-3.5" />
+                        {msg.firstName} {msg.lastName}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-brand-muted">
+                        <Mail className="h-3.5 w-3.5" />
+                        <a href={`mailto:${msg.email}`} className="text-blue-600 hover:underline">{msg.email}</a>
+                      </span>
+                      <span className="flex items-center gap-1.5 text-brand-muted">
+                        <Clock className="h-3.5 w-3.5" />
+                        {format(new Date(msg.createdAt), 'MMMM d, yyyy · h:mm a')}
+                      </span>
+                    </div>
+                    <p className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap">
+                      {msg.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          <Pagination pagination={pagination} page={page} setPage={setPage} />
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ═══════════════════ MAIN ADMIN PANEL ═══════════════════
 export const AdminPanel = () => {
   const { user } = useAuth();
@@ -1001,6 +1178,7 @@ export const AdminPanel = () => {
     { key: 'ratings', label: 'Ratings', icon: Star, description: 'Review & AI sentiment analysis' },
     { key: 'verifications', label: 'Verifications', icon: ShieldAlert, description: 'Driver verification queue', badge: stats?.overview?.pendingVerifications },
     { key: 'feedback', label: 'Feedback', icon: FileText, description: 'Manage user feedback' },
+    { key: 'contact', label: 'Messages', icon: Inbox, description: 'Contact form submissions' },
   ];
 
   return (
@@ -1125,6 +1303,7 @@ export const AdminPanel = () => {
           {activeTab === 'ratings' && <RatingsTab />}
           {activeTab === 'verifications' && <VerificationsTab />}
           {activeTab === 'feedback' && <FeedbackTab />}
+          {activeTab === 'contact' && <ContactMessagesTab />}
         </div>
       </div>
 

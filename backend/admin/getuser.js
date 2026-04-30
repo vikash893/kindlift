@@ -21,6 +21,7 @@ const { Message } = require('../models/Message');
 const { authMiddleware } = require('../middleware/auth');
 const { Notification } = require('../models/Notification');
 const Feedback = require('../models/Feedback');
+const ContactMessage = require('../models/ContactMessage');
 
 // ─── Notification Helper ─────────────────────────────
 async function sendNotification(io, { recipientId, recipientRole, type, title, message, metadata, actionUrl }) {
@@ -693,6 +694,78 @@ router.delete('/feedback/:id', authMiddleware, adminMiddleware, async (req, res)
     const feedback = await Feedback.findByIdAndDelete(req.params.id);
     if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
     res.json({ message: 'Feedback deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ═══════════════════ CONTACT MESSAGES MANAGEMENT ═══════════════════
+
+/**
+ * GET /contact-messages — List all contact form submissions with pagination
+ */
+router.get('/contact-messages', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const filter = req.query.filter || 'all'; // all, unread, read
+
+    let query = {};
+    if (filter === 'unread') query.read = false;
+    if (filter === 'read') query.read = true;
+
+    const [total, unreadCount, messages] = await Promise.all([
+      ContactMessage.countDocuments(query),
+      ContactMessage.countDocuments({ read: false }),
+      ContactMessage.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    res.json({
+      messages,
+      unreadCount,
+      pagination: {
+        current: page,
+        total: Math.ceil(total / limit),
+        count: total,
+        limit,
+      },
+    });
+  } catch (err) {
+    console.error('Admin contact messages error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * PUT /contact-messages/:id/read — Toggle read status of a contact message
+ */
+router.put('/contact-messages/:id/read', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { read } = req.body;
+    const message = await ContactMessage.findByIdAndUpdate(
+      req.params.id,
+      { read: typeof read === 'boolean' ? read : true },
+      { new: true }
+    );
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    res.json({ message: 'Message updated', contactMessage: message });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
+ * DELETE /contact-messages/:id — Delete a contact message
+ */
+router.delete('/contact-messages/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const message = await ContactMessage.findByIdAndDelete(req.params.id);
+    if (!message) return res.status(404).json({ message: 'Message not found' });
+    res.json({ message: 'Contact message deleted successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
