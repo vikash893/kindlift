@@ -165,11 +165,13 @@ export const Sidebar = () => {
 
       </nav>
 
+      {/* Bottom Actions */}
+      <div className="p-3 border-t border-white/[0.06] space-y-2">
         {/* Theme Toggle */}
         <button
           onClick={toggle}
           title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className="theme-toggle-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-white/50 hover:text-white hover:bg-white/[0.08] transition-all duration-200"
         >
           {isDark
             ? <Sun className="h-[18px] w-[18px] text-brand-accent" />

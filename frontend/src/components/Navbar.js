@@ -75,7 +75,7 @@ export const Navbar = () => {
   const isHome = location.pathname === '/';
   // Always use dark text on feedback page since it has light background on the right
   const shouldUseDarkText = isHome ? !scrolled : true;
-  const isDark = isHome && !scrolled;
+  const isHeroDark = isHome && !scrolled;
 
   const navLinks = !user
     ? [
