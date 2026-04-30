@@ -111,11 +111,20 @@ export const NotificationProvider = ({ children }) => {
     } catch {}
   }, []);
 
-  // ─── Open panel (lazy fetch if stale) ────────────────
-  const openPanel = useCallback(() => {
+  // ─── Open panel & mark all as read ───────────────────
+  const openPanel = useCallback(async () => {
     setPanelOpen(true);
-    fetchNotifications();
-  }, [fetchNotifications]);
+    // Fetch latest notifications first
+    await fetchNotifications();
+    // Auto-mark all as read when user opens the bell
+    if (unreadCount > 0) {
+      try {
+        await api.put('/notifications/read-all');
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        setUnreadCount(0);
+      } catch {}
+    }
+  }, [fetchNotifications, unreadCount]);
 
   return (
     <NotificationContext.Provider value={{
