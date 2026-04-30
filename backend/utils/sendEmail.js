@@ -74,7 +74,8 @@ const sendEmail = async (to, subject, text) => {
   // Priority 1: Use Resend API only if a verified domain is configured
   // (Free tier Resend can only send to the account owner's email)
   if (process.env.RESEND_API_KEY && process.env.RESEND_FROM) {
-    return sendViaResend(to, subject, `<p>${text}</p>`);
+    const html = text.trim().startsWith('<') ? text : `<p>${text}</p>`;
+    return sendViaResend(to, subject, html);
   }
 
   // Priority 2: Use SMTP (Brevo/SendGrid/Gmail)
@@ -84,11 +85,13 @@ const sendEmail = async (to, subject, text) => {
 
   const fromAddress = process.env.SMTP_FROM || process.env.EMAIL_USER;
 
+  const html = text.trim().startsWith('<') ? text : `<p>${text}</p>`;
+
   const mailOptions = {
     from: `"Kindlift" <${fromAddress}>`,
     to,
     subject,
-    html: `<p>${text}</p>`,
+    html,
   };
 
   try {
