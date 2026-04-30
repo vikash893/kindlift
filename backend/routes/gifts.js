@@ -17,7 +17,6 @@
  */
 
 const express = require('express');
-const mongoose = require('mongoose');
 const { authMiddleware } = require('../middleware/auth');
 const { Gift } = require('../models/Gift');
 const { GiftType } = require('../models/GiftType');
@@ -334,42 +333,46 @@ router.post('/send', authMiddleware, async (req, res) => {
     const receiver = await User.findById(receiver_id);
     if (!receiver) return res.status(404).json({ status: 'error', message: 'Receiver not found' });
 
-    // ─── Atomic Transaction ────────────────────────────
-    const session = await mongoose.startSession();
-    let gift;
-
-    try {
-      await session.withTransaction(async () => {
-        // Debit sender
-        const debitResult = await User.findOneAndUpdate(
-          { _id: senderId, coins: { $gte: coin_value } },
-          { $inc: { coins: -coin_value } },
-          { session, new: true }
-        );
-        if (!debitResult) throw new Error('Insufficient funds during transaction');
-
-        // Credit receiver
-        await User.findByIdAndUpdate(
-          receiver_id,
-          { $inc: { coins: coin_value } },
-          { session }
-        );
-
-        // Create gift record
-        gift = new Gift({
-          senderId,
-          receiverId: receiver_id,
-          giftTypeId: giftType._id,
-          coinValue: coin_value,
-          message: (message || '').substring(0, 500),
-          moodTag: mood_tag || null,
-          isAnonymous: is_anonymous || false,
-          isPublic: is_public !== false,
-        });
-        await gift.save({ session });
+    // ─── Atomic Debit + Credit (no session required) ───
+    // Step 1: Atomically debit sender (only if they have enough coins)
+    const debitResult = await User.findOneAndUpdate(
+      { _id: senderId, coins: { $gte: coin_value } },
+      { $inc: { coins: -coin_value } },
+      { new: true }
+    );
+    if (!debitResult) {
+      return res.status(400).json({
+        status: 'error',
+        code: 'INSUFFICIENT_FUNDS',
+        message: `Not enough coins. You have ${sender.coins} coins.`,
       });
-    } finally {
-      await session.endSession();
+    }
+
+    let gift;
+    try {
+      // Step 2: Credit receiver
+      await User.findByIdAndUpdate(
+        receiver_id,
+        { $inc: { coins: coin_value } }
+      );
+
+      // Step 3: Create gift record
+      gift = new Gift({
+        senderId,
+        receiverId: receiver_id,
+        giftTypeId: giftType._id,
+        coinValue: coin_value,
+        message: (message || '').substring(0, 500),
+        moodTag: mood_tag || null,
+        isAnonymous: is_anonymous || false,
+        isPublic: is_public !== false,
+      });
+      await gift.save();
+    } catch (innerErr) {
+      // Rollback: refund sender if credit or gift creation failed
+      console.error('🎁 Gift creation failed, rolling back debit:', innerErr.message);
+      await User.findByIdAndUpdate(senderId, { $inc: { coins: coin_value } });
+      throw innerErr;
     }
 
     // ─── Post-commit side effects ──────────────────────
