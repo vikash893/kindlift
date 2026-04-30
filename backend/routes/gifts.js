@@ -154,9 +154,32 @@ async function processReputation(senderId, receiverId, giftType, coinValue) {
  */
 router.get('/types', async (req, res) => {
   try {
-    const types = await GiftType.find({ isActive: true })
+    let types = await GiftType.find({ isActive: true })
       .sort({ sortOrder: 1 })
       .lean();
+
+    // Auto-seed if DB has no gift types (first deploy / no seed script run)
+    if (types.length === 0) {
+      console.log('🎁 No gift types in DB — auto-seeding...');
+      const SEED = [
+        { key: 'thank_you',   category: 'Appreciation', displayName: 'Thank You',          icon: '🤍', colorHex: '#D4A038', minCoins: 5,   maxCoins: 50,   baseWeightBonus: 2,  sortOrder: 1 },
+        { key: 'respect',     category: 'Appreciation', displayName: 'Deep Respect',       icon: '🌿', colorHex: '#2D6A4F', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 5,  sortOrder: 2 },
+        { key: 'recognition', category: 'Appreciation', displayName: 'Recognition',        icon: '⭐', colorHex: '#F59E0B', minCoins: 20,  maxCoins: 200,  baseWeightBonus: 8,  sortOrder: 3 },
+        { key: 'congrats',    category: 'Celebration',  displayName: 'Congrats',            icon: '🎊', colorHex: '#7C3AED', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 4,  sortOrder: 4 },
+        { key: 'achievement', category: 'Celebration',  displayName: 'Achievement Unlocked',icon: '🏆', colorHex: '#B8860B', minCoins: 50,  maxCoins: 500,  baseWeightBonus: 15, sortOrder: 5 },
+        { key: 'milestone',   category: 'Celebration',  displayName: 'Milestone',           icon: '🎯', colorHex: '#1E40AF', minCoins: 25,  maxCoins: 250,  baseWeightBonus: 10, sortOrder: 6 },
+        { key: 'stay_strong', category: 'Support',      displayName: 'Stay Strong',         icon: '💙', colorHex: '#4682B4', minCoins: 5,   maxCoins: 50,   baseWeightBonus: 6,  sortOrder: 7 },
+        { key: 'we_got_you',  category: 'Support',      displayName: 'We Got You',          icon: '🤝', colorHex: '#C07850', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 5,  sortOrder: 8 },
+        { key: 'believe',     category: 'Support',      displayName: 'I Believe In You',    icon: '🌱', colorHex: '#6B8E23', minCoins: 10,  maxCoins: 75,   baseWeightBonus: 5,  sortOrder: 9 },
+        { key: 'hype',        category: 'Playful',      displayName: 'Hype Train',          icon: '🚀', colorHex: '#FF6B35', minCoins: 5,   maxCoins: 30,   baseWeightBonus: 1,  sortOrder: 10 },
+        { key: 'vibes',       category: 'Playful',      displayName: 'Good Vibes',          icon: '🌊', colorHex: '#06B6D4', minCoins: 5,   maxCoins: 25,   baseWeightBonus: 1,  sortOrder: 11 },
+        { key: 'legendary',   category: 'Exclusive',    displayName: 'Legendary',           icon: '👑', colorHex: '#9333EA', minCoins: 500, maxCoins: null,  baseWeightBonus: 50, sortOrder: 12 },
+      ];
+      await GiftType.insertMany(SEED.map(s => ({ ...s, isActive: true, emotionalWeight: 'Medium' })));
+      types = await GiftType.find({ isActive: true }).sort({ sortOrder: 1 }).lean();
+      console.log(`🎁 Auto-seeded ${types.length} gift types`);
+    }
+
     res.json({ status: 'success', data: types });
   } catch (err) {
     console.error('Gift types fetch error:', err);
@@ -247,10 +270,35 @@ router.post('/send', authMiddleware, async (req, res) => {
       });
     }
 
-    // Validate gift type exists
-    const giftType = await GiftType.findOne({ key: gift_type_key, isActive: true });
+    // Validate gift type exists — auto-seed if known key is missing from DB
+    let giftType = await GiftType.findOne({ key: gift_type_key, isActive: true });
     if (!giftType) {
-      return res.status(400).json({ status: 'error', message: 'Invalid gift type' });
+      // Attempt to auto-create from known catalog
+      const KNOWN_TYPES = {
+        thank_you:    { category: 'Appreciation', displayName: 'Thank You',          icon: '🤍', colorHex: '#D4A038', minCoins: 5,   maxCoins: 50,   baseWeightBonus: 2,  emotionalWeight: 'Medium' },
+        respect:      { category: 'Appreciation', displayName: 'Deep Respect',       icon: '🌿', colorHex: '#2D6A4F', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 5,  emotionalWeight: 'High' },
+        recognition:  { category: 'Appreciation', displayName: 'Recognition',        icon: '⭐', colorHex: '#F59E0B', minCoins: 20,  maxCoins: 200,  baseWeightBonus: 8,  emotionalWeight: 'High' },
+        congrats:     { category: 'Celebration',  displayName: 'Congrats',            icon: '🎊', colorHex: '#7C3AED', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 4,  emotionalWeight: 'Medium' },
+        achievement:  { category: 'Celebration',  displayName: 'Achievement Unlocked',icon: '🏆', colorHex: '#B8860B', minCoins: 50,  maxCoins: 500,  baseWeightBonus: 15, emotionalWeight: 'Very High' },
+        milestone:    { category: 'Celebration',  displayName: 'Milestone',           icon: '🎯', colorHex: '#1E40AF', minCoins: 25,  maxCoins: 250,  baseWeightBonus: 10, emotionalWeight: 'High' },
+        stay_strong:  { category: 'Support',      displayName: 'Stay Strong',         icon: '💙', colorHex: '#4682B4', minCoins: 5,   maxCoins: 50,   baseWeightBonus: 6,  emotionalWeight: 'Very High' },
+        we_got_you:   { category: 'Support',      displayName: 'We Got You',          icon: '🤝', colorHex: '#C07850', minCoins: 10,  maxCoins: 100,  baseWeightBonus: 5,  emotionalWeight: 'High' },
+        believe:      { category: 'Support',      displayName: 'I Believe In You',    icon: '🌱', colorHex: '#6B8E23', minCoins: 10,  maxCoins: 75,   baseWeightBonus: 5,  emotionalWeight: 'High' },
+        hype:         { category: 'Playful',      displayName: 'Hype Train',          icon: '🚀', colorHex: '#FF6B35', minCoins: 5,   maxCoins: 30,   baseWeightBonus: 1,  emotionalWeight: 'Low' },
+        vibes:        { category: 'Playful',      displayName: 'Good Vibes',          icon: '🌊', colorHex: '#06B6D4', minCoins: 5,   maxCoins: 25,   baseWeightBonus: 1,  emotionalWeight: 'Low' },
+        legendary:    { category: 'Exclusive',    displayName: 'Legendary',           icon: '👑', colorHex: '#9333EA', minCoins: 500, maxCoins: null,  baseWeightBonus: 50, emotionalWeight: 'Maximum' },
+      };
+      const known = KNOWN_TYPES[gift_type_key];
+      if (known) {
+        giftType = await GiftType.findOneAndUpdate(
+          { key: gift_type_key },
+          { $setOnInsert: { key: gift_type_key, ...known, isActive: true, sortOrder: 0 } },
+          { upsert: true, new: true }
+        );
+        console.log(`🎁 Auto-seeded gift type: ${gift_type_key}`);
+      } else {
+        return res.status(400).json({ status: 'error', message: `Unknown gift type: "${gift_type_key}"` });
+      }
     }
 
     // Validate coin range

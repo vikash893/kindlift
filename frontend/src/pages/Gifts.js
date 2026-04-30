@@ -79,7 +79,9 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess, giftTypes }) => {
       setStep(4);
       onSuccess?.();
     } catch (e) {
-      setError(e.response?.data?.message || 'Failed to send gift');
+      const errData = e.response?.data;
+      console.error('Gift send failed:', e.response?.status, errData);
+      setError(errData?.message || errData?.errors?.[0]?.message || 'Failed to send gift');
     } finally { setLoading(false); }
   };
 
