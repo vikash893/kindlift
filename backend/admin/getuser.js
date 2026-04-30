@@ -394,6 +394,46 @@ router.put('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 /**
+ * POST /users/:id/remove-admin — Demote an admin back to regular user (superadmin only)
+ */
+router.post('/users/:id/remove-admin', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    // Only superadmins can demote admins
+    if (req.adminUser.role !== 'superadmin') {
+      return res.status(403).json({ message: 'Only superadmins can remove admin privileges.' });
+    }
+
+    const target = await User.findById(req.params.id);
+    if (!target) return res.status(404).json({ message: 'User not found' });
+
+    // Cannot demote another superadmin
+    if (target.role === 'superadmin') {
+      return res.status(403).json({ message: 'Cannot remove privileges from a superadmin.' });
+    }
+
+    // Cannot demote yourself
+    if (target._id.toString() === req.adminUser._id.toString()) {
+      return res.status(400).json({ message: 'You cannot remove your own admin privileges.' });
+    }
+
+    // Must actually be an admin
+    if (!target.isAdmin && target.role !== 'admin') {
+      return res.status(400).json({ message: 'User is not an admin.' });
+    }
+
+    target.isAdmin = false;
+    target.role = 'user';
+    await target.save();
+
+    res.json({ message: `${target.name} has been demoted to a regular user.`, user: target });
+    invalidateStatsCache();
+  } catch (err) {
+    console.error('Remove admin error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * DELETE /users/:id — Delete a user
  */
 router.delete('/users/:id', authMiddleware, adminMiddleware, async (req, res) => {

@@ -7,7 +7,7 @@ import {
   ChevronLeft, ChevronRight, Trash2, UserCheck, UserX, Eye, X,
   TrendingUp, Activity, Award, MapPin, Clock, CheckCircle, XCircle,
   BarChart3, Coins, AlertTriangle, User as UserIcon, ArrowUpRight, RefreshCw,
-  ShieldAlert, FileText, Image, Menu,
+  ShieldAlert, FileText, Image, Menu, ShieldOff,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAlert } from '../components/CustomAlert';
@@ -161,7 +161,7 @@ const DashboardTab = ({ stats, loading }) => {
 };
 
 // ─── USERS TAB ──────────────────────────────────────
-const UsersTab = ({ onViewUser }) => {
+const UsersTab = ({ onViewUser, currentUser }) => {
   const { toast, confirm: confirmAlert } = useAlert();
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({});
@@ -206,6 +206,21 @@ const UsersTab = ({ onViewUser }) => {
       toast('success', 'User promoted to admin');
       fetchUsers();
     } catch (err) { toast('error', 'Failed to update user role'); }
+  };
+
+  const handleRemoveAdmin = async (id, name) => {
+    const confirmed = await confirmAlert(
+      `Remove admin privileges from "${name}"? They will become a regular user.`,
+      'Remove Admin'
+    );
+    if (!confirmed) return;
+    try {
+      await api.post(`/admin/users/${id}/remove-admin`);
+      toast('success', `"${name}" has been demoted to a regular user.`);
+      fetchUsers();
+    } catch (err) {
+      toast('error', err.response?.data?.message || 'Failed to remove admin privileges');
+    }
   };
 
   const filters = ['all', 'drivers', 'admins', 'inactive'];
@@ -277,7 +292,18 @@ const UsersTab = ({ onViewUser }) => {
                         <button onClick={() => handleToggleActive(u._id, u.isActive !== false)} title={u.isActive !== false ? 'Deactivate' : 'Activate'} className="p-1.5 rounded-lg hover:bg-amber-50 text-amber-600 transition-colors">
                           {u.isActive !== false ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
                         </button>
+                        {/* Promote to admin — only if not already admin */}
                         {!u.isAdmin && <button onClick={() => handleMakeAdmin(u._id)} title="Make Admin" className="p-1.5 rounded-lg hover:bg-violet-50 text-violet-600 transition-colors"><Shield className="h-4 w-4" /></button>}
+                        {/* Remove admin — superadmin only, only on admin (not superadmin) users */}
+                        {currentUser?.role === 'superadmin' && u.isAdmin && u.role !== 'superadmin' && u._id !== currentUser?.id && (
+                          <button
+                            onClick={() => handleRemoveAdmin(u._id, u.name)}
+                            title="Remove Admin Privileges"
+                            className="p-1.5 rounded-lg hover:bg-orange-50 text-orange-500 transition-colors"
+                          >
+                            <ShieldOff className="h-4 w-4" />
+                          </button>
+                        )}
                         <button onClick={() => handleDelete(u._id, u.name)} title="Delete" className="p-1.5 rounded-lg hover:bg-red-50 text-red-600 transition-colors"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </td>
@@ -1093,7 +1119,7 @@ export const AdminPanel = () => {
         <div className="flex-1 p-6 lg:p-8">
           {activeTab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
           {activeTab === 'analytics' && <AnalyticsTab stats={stats} />}
-          {activeTab === 'users' && <UsersTab onViewUser={setViewUserId} />}
+          {activeTab === 'users' && <UsersTab onViewUser={setViewUserId} currentUser={user} />}
           {activeTab === 'rides' && <RidesTab />}
           {activeTab === 'requests' && <RequestsTab />}
           {activeTab === 'ratings' && <RatingsTab />}
