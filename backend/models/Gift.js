@@ -62,12 +62,11 @@ const giftSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Prevent self-gifting at schema level
-giftSchema.pre('validate', function (next) {
+giftSchema.pre('validate', function () {
   if (this.senderId && this.receiverId &&
       this.senderId.toString() === this.receiverId.toString()) {
-    return next(new Error('Cannot send a gift to yourself'));
+    throw new Error('Cannot send a gift to yourself');
   }
-  next();
 });
 
 // Performance indexes
