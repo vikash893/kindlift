@@ -7,14 +7,29 @@ import {
   Sparkles, ChevronRight, X, Search, Loader2, ExternalLink
 } from 'lucide-react';
 
-// ─── Gift Type Color Map ────────────────────────────
+// ─── Constants ──────────────────────────────────────
 const MOOD_EMOJI = { joyful: '😄', grateful: '🙏', proud: '💪', supportive: '🤗', playful: '😜' };
 const REACTION_EMOJI = { loved: '❤️', moved: '🥺', laughing: '😂' };
 
+// Hardcoded gift catalog — instant load, no API wait
+const BUILTIN_GIFT_TYPES = [
+  { key: 'thank_you', category: 'Appreciation', displayName: 'Thank You', icon: '🤍', colorHex: '#D4A038', minCoins: 5, maxCoins: 50 },
+  { key: 'respect', category: 'Appreciation', displayName: 'Deep Respect', icon: '🌿', colorHex: '#2D6A4F', minCoins: 10, maxCoins: 100 },
+  { key: 'recognition', category: 'Appreciation', displayName: 'Recognition', icon: '⭐', colorHex: '#F59E0B', minCoins: 20, maxCoins: 200 },
+  { key: 'congrats', category: 'Celebration', displayName: 'Congrats', icon: '🎊', colorHex: '#7C3AED', minCoins: 10, maxCoins: 100 },
+  { key: 'achievement', category: 'Celebration', displayName: 'Achievement Unlocked', icon: '🏆', colorHex: '#B8860B', minCoins: 50, maxCoins: 500 },
+  { key: 'milestone', category: 'Celebration', displayName: 'Milestone', icon: '🎯', colorHex: '#1E40AF', minCoins: 25, maxCoins: 250 },
+  { key: 'stay_strong', category: 'Support', displayName: 'Stay Strong', icon: '💙', colorHex: '#4682B4', minCoins: 5, maxCoins: 50 },
+  { key: 'we_got_you', category: 'Support', displayName: 'We Got You', icon: '🤝', colorHex: '#C07850', minCoins: 10, maxCoins: 100 },
+  { key: 'believe', category: 'Support', displayName: 'I Believe In You', icon: '🌱', colorHex: '#6B8E23', minCoins: 10, maxCoins: 75 },
+  { key: 'hype', category: 'Playful', displayName: 'Hype Train', icon: '🚀', colorHex: '#FF6B35', minCoins: 5, maxCoins: 30 },
+  { key: 'vibes', category: 'Playful', displayName: 'Good Vibes', icon: '🌊', colorHex: '#06B6D4', minCoins: 5, maxCoins: 25 },
+  { key: 'legendary', category: 'Exclusive', displayName: 'Legendary', icon: '👑', colorHex: '#9333EA', minCoins: 500, maxCoins: null },
+];
+
 // ─── Send Gift Modal ────────────────────────────────
-const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
+const SendGiftModal = ({ show, onClose, targetUser, onSuccess, giftTypes }) => {
   const [step, setStep] = useState(1);
-  const [types, setTypes] = useState([]);
   const [selected, setSelected] = useState(null);
   const [coins, setCoins] = useState(10);
   const [message, setMessage] = useState('');
@@ -22,10 +37,13 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
   const [isAnon, setIsAnon] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchId, setSearchId] = useState(targetUser?.id || '');
+  const [searchId, setSearchId] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [receiver, setReceiver] = useState(targetUser || null);
   const [result, setResult] = useState(null);
+
+  // Use passed-in types (pre-loaded at page level)
+  const types = giftTypes.length > 0 ? giftTypes : BUILTIN_GIFT_TYPES;
 
   useEffect(() => {
     if (!show) return;
@@ -33,16 +51,6 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
     setSelected(null); setCoins(10); setMessage(''); setMood(null);
     setError(''); setResult(null); setReceiver(targetUser || null);
     setSearchId(''); setSearchResults([]);
-    // Fetch gift types catalog
-    api.get('/gifts/types')
-      .then(r => {
-        const data = r.data?.data || r.data || [];
-        setTypes(Array.isArray(data) ? data : []);
-      })
-      .catch((err) => {
-        console.error('Failed to load gift types:', err);
-        setError('Could not load gift types. Please try again.');
-      });
   }, [show, targetUser]);
 
   const searchUsers = async (q) => {
@@ -316,6 +324,17 @@ export const Gifts = () => {
   const [rep, setRep] = useState(null);
   const [filter, setFilter] = useState('all');
   const [page, setPage] = useState(1);
+  const [giftTypes, setGiftTypes] = useState(BUILTIN_GIFT_TYPES); // instant fallback
+
+  // Pre-fetch gift types once when page loads (merge with DB types if available)
+  useEffect(() => {
+    api.get('/gifts/types')
+      .then(r => {
+        const data = r.data?.data || r.data || [];
+        if (Array.isArray(data) && data.length > 0) setGiftTypes(data);
+      })
+      .catch(() => {}); // silently use built-in fallback
+  }, []);
   const [hasMore, setHasMore] = useState(false);
 
   const fetchGifts = useCallback(async () => {
@@ -458,7 +477,7 @@ export const Gifts = () => {
         </div>
       )}
 
-      <SendGiftModal show={showSend} onClose={() => setShowSend(false)} onSuccess={() => { fetchGifts(); fetchRep(); updateUser({ coins: user.coins }); }} />
+      <SendGiftModal show={showSend} onClose={() => setShowSend(false)} giftTypes={giftTypes} onSuccess={() => { fetchGifts(); fetchRep(); updateUser({ coins: user.coins }); }} />
     </div>
   );
 };
