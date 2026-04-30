@@ -32,14 +32,26 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
     setStep(targetUser ? 2 : 1);
     setSelected(null); setCoins(10); setMessage(''); setMood(null);
     setError(''); setResult(null); setReceiver(targetUser || null);
-    api.get('/gifts/types').then(r => setTypes(r.data.data || [])).catch(() => {});
+    setSearchId(''); setSearchResults([]);
+    // Fetch gift types catalog
+    api.get('/gifts/types')
+      .then(r => {
+        const data = r.data?.data || r.data || [];
+        setTypes(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => {
+        console.error('Failed to load gift types:', err);
+        setError('Could not load gift types. Please try again.');
+      });
   }, [show, targetUser]);
 
   const searchUsers = async (q) => {
     if (q.length < 2) { setSearchResults([]); return; }
     try {
       const r = await api.get(`/friends/search?q=${encodeURIComponent(q)}`);
-      setSearchResults(r.data.users || r.data || []);
+      // The friends search API returns a flat array directly
+      const results = Array.isArray(r.data) ? r.data : (r.data?.users || r.data?.data || []);
+      setSearchResults(results);
     } catch { setSearchResults([]); }
   };
 
@@ -47,8 +59,9 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
     if (!receiver || !selected) return;
     setLoading(true); setError('');
     try {
+      const receiverId = receiver._id || receiver.id;
       const r = await api.post('/gifts/send', {
-        receiver_id: receiver.id || receiver._id,
+        receiver_id: receiverId,
         coin_value: coins,
         gift_type_key: selected.key,
         message, mood_tag: mood,
@@ -100,7 +113,7 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
                   onChange={e => { setSearchId(e.target.value); searchUsers(e.target.value); }} />
               </div>
               {searchResults.map(u => (
-                <button key={u._id} onClick={() => { setReceiver({ id: u._id, name: u.name, profilePhoto: u.profilePhoto }); setStep(2); }}
+                <button key={u._id} onClick={() => { setReceiver({ _id: u._id, name: u.name, profilePhoto: u.profilePhoto }); setStep(2); }}
                   className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-amber-50 border border-gray-100 transition-colors">
                   <div className="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center overflow-hidden">
                     {u.profilePhoto ? <img src={u.profilePhoto} alt="" className="h-full w-full object-cover" /> : <span className="text-lg">{u.name?.[0]}</span>}
@@ -109,6 +122,9 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
                   <ChevronRight className="h-4 w-4 ml-auto text-gray-300" />
                 </button>
               ))}
+              {searchId.length >= 2 && searchResults.length === 0 && (
+                <p className="text-sm text-gray-400 text-center py-4">No users found</p>
+              )}
             </div>
           )}
 
@@ -118,9 +134,16 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
               {receiver && (
                 <div className="flex items-center gap-2 p-2 bg-amber-50 rounded-xl">
                   <span className="text-xs text-amber-700">To: <b>{receiver.name}</b></span>
+                  <button onClick={() => setStep(1)} className="ml-auto text-[10px] text-amber-600 hover:underline">Change</button>
                 </div>
               )}
-              {Object.entries(grouped).map(([cat, items]) => (
+              {types.length === 0 ? (
+                <div className="text-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-amber-500 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Loading gift types...</p>
+                </div>
+              ) : (
+                Object.entries(grouped).map(([cat, items]) => (
                 <div key={cat}>
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{cat}</p>
                   <div className="grid grid-cols-3 gap-2">
@@ -134,7 +157,8 @@ const SendGiftModal = ({ show, onClose, targetUser, onSuccess }) => {
                     ))}
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           )}
 
