@@ -243,6 +243,51 @@ router.put('/:id/status', authMiddleware, validateUpdateStatus, async (req, res)
 });
 
 /**
+ * GET /history — Get completed ride history for the current user
+ * Returns rides where the user was either the passenger or driver,
+ * sorted by most recent first.
+ */
+router.get('/history', authMiddleware, async (req, res) => {
+  try {
+    // Get all completed requests where user is the passenger
+    const passengerRides = await RideRequest.find({
+      passengerId: req.user.id,
+      status: 'completed',
+    })
+      .populate({
+        path: 'offerId',
+        populate: { path: 'driverId', select: 'name email phone profilePhoto' },
+      })
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Get all offers by this user (as driver) that have completed requests
+    const driverOffers = await RideOffer.find({ driverId: req.user.id }).select('_id').lean();
+    const driverOfferIds = driverOffers.map(o => o._id);
+
+    const driverRides = await RideRequest.find({
+      offerId: { $in: driverOfferIds },
+      status: 'completed',
+    })
+      .populate('passengerId', 'name email phone profilePhoto')
+      .populate('offerId', 'source destination departureTime seatsAvailable')
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Merge and tag with role
+    const history = [
+      ...passengerRides.map(r => ({ ...r, role: 'passenger' })),
+      ...driverRides.map(r => ({ ...r, role: 'driver' })),
+    ].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+    res.json(history);
+  } catch (err) {
+    console.error('History fetch error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * GET /:id — Get specific request details (validated ID)
  * Authorization: only the passenger or driver involved can view.
  */
@@ -377,5 +422,6 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 module.exports = router;
