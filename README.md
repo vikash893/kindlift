@@ -6,6 +6,7 @@
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4.8-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+![Razorpay](https://img.shields.io/badge/Razorpay-Payments-0C2451?style=for-the-badge&logo=razorpay&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
@@ -59,9 +60,13 @@
 - 🔔 **Notification Center** — Role-based notifications with real-time delivery and badge counts
 - 🔒 **Secure Completion** — 4-digit OTP codes ensure verified ride completion
 - 🪙 **Coin Rewards** — Gamified incentive system rewarding both drivers and passengers
+- 💳 **Razorpay Payments** — Purchase coins with secure Razorpay payment gateway integration
 - ⭐ **Rating System** — Mutual driver/passenger ratings build trust and accountability
 - 🤖 **AI Sentiment Analysis** — ML-powered review classification (positive/neutral/negative)
+- 👤 **Public User Profiles** — Instagram-style profile view with stats, reviews, and friend lists
+- 📊 **Admin Analytics** — Interactive Recharts dashboards with growth trends, status distributions, and rating analysis
 - 🛡 **Admin Dashboard** — Full platform management with analytics, user/ride/rating oversight
+- 📬 **Contact Form** — Persistent contact submissions with rate limiting and admin triage
 
 ---
 
@@ -88,17 +93,21 @@
 | **Add Friends** | Search users, send/accept friend requests, manage connections          |
 | **Direct Messages** | Private DM conversations with friends (separate from ride chat)    |
 | **Emoji Reactions** | React to DMs with emojis — double-click for ❤️, long-press for picker |
+| **View Profiles** | Visit Instagram-style public profiles of other users                 |
+| **Buy Coins** | Purchase coins via Razorpay payment gateway (₹10 = 1000 coins)          |
 | **Submit Feedback** | Provide general platform feedback via the dedicated feedback page |
 
 ### For Admins
 | Feature | Description |
 |---------|-------------|
 | **Analytics Dashboard** | Platform-wide statistics — users, rides, requests, ratings, messages |
+| **Interactive Charts** | Recharts-powered analytics: user growth, ride trends, rating analysis  |
 | **User Management** | Search, filter, activate/deactivate, promote to admin, delete users    |
 | **Ride Management** | View all rides, change status, delete rides and related requests        |
 | **Request Oversight** | Browse all ride requests with status filtering and pagination          |
 | **Rating Moderation** | View, delete ratings; AI sentiment analysis on review text             |
 | **AI Sentiment Analysis** | Analyze review sentiments in bulk using the ML microservice         |
+| **Contact Messages** | View and manage contact form submissions from the public contact page  |
 
 ### General
 | Feature | Description |
@@ -112,9 +121,15 @@
 | **Notification Bell** | Real-time notification badge with dynamic dropdown positioning     |
 | **Skeleton Loaders** | Futuristic shimmer skeleton animations for seamless page data loading |
 | **Button Loaders** | Clean pulse-bounce animations for all form submissions and actions |
+| **Page Transitions** | Cinematic entrance animations, staggered reveals, typewriter text  |
+| **Particle Field** | Interactive canvas-based particle system with mouse reactivity       |
+| **Aurora Backgrounds** | Animated gradient mesh backgrounds for premium visual depth       |
+| **3D Tilt Cards** | Perspective-based hover tilt effect with inner glow following cursor  |
+| **Location Autocomplete** | Reusable location input with geocoding, GPS, and auto-resolve  |
 | **Responsive Design** | Fully responsive UI with mobile-first approach                    |
 | **Custom Cursor** | Cuberto-style custom cursor for premium feel                          |
 | **Custom Alert System** | Toast notifications and modal dialogs replacing native `alert()`  |
+| **Contact Form** | Working contact form with backend persistence and rate limiting        |
 | **SEO Optimization** | Comprehensive Meta tags, Open Graph data, and Schema.org JSON-LD  |
 | **Code Splitting** | Lazy-loaded pages with React Suspense for faster initial loads       |
 | **Static Pages** | Privacy Policy, Terms of Service, Safety Guidelines, FAQs             |
@@ -137,6 +152,7 @@
 | **Firebase Auth** | Google OAuth sign-in integration |
 | **Axios** | HTTP client with JWT auth interceptors |
 | **Lucide React** | Modern icon library |
+| **Recharts** | Interactive data visualization (Area, Bar, Line, Pie charts) |
 | **date-fns** | Date formatting utilities |
 
 ### Backend
@@ -153,10 +169,11 @@
 | **hpp** | HTTP Parameter Pollution protection |
 | **xss** | XSS sanitization of all request inputs |
 | **express-validator** | Request body/query/param validation |
-| **express-rate-limit** | API rate limiting (300/min global, 20/15min auth, 60/min location) |
+| **express-rate-limit** | API rate limiting (300/min global, 20/15min auth, 60/min location, 5/15min contact) |
 | **compression** | Gzip/Brotli response compression (50-70% payload reduction) |
 | **node-cache** | In-memory caching for geocoding results (1 hour TTL) |
 | **p-queue** | Request queuing for Nominatim API (1 req/sec) |
+| **Razorpay** | Payment gateway SDK for coin purchases |
 
 ### ML Service
 | Technology | Purpose |
@@ -180,7 +197,7 @@
 │                                                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │  Pages   │  │Components│  │ Context  │  │  Code Split  │  │
-│  │(20 pages)│  │(14 comps)│  │(AuthCtx) │  │ (lazy load)  │  │
+│  │(21 pages)│  │(20 comps)│  │(3 ctxts) │  │ (lazy load)  │  │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────────┘  │
 │       │              │             │                            │
 │  ┌────┴──────────────┴─────────────┴──────┐                    │
@@ -215,6 +232,10 @@
 │  │  │ Admin   │  │Feedback │  │ Stats  │        │               │
 │  │  │ Routes  │  │ Routes  │  │ Routes │        │               │
 │  │  └─────────┘  └─────────┘  └────────┘        │               │
+│  │  ┌─────────┐  ┌─────────┐                    │               │
+│  │  │Payment  │  │Contact  │                    │               │
+│  │  │ Routes  │  │ Routes  │                    │               │
+│  │  └─────────┘  └─────────┘                    │               │
 │  └────────────────┬──────────────────────────────┘               │
 │                   │                                               │
 │  ┌────────────────┼───────────────────────┐                      │
@@ -243,6 +264,8 @@
 │ │SavedRides│ │
 │ │Notificatn│ │
 │ │ Feedback │ │
+│ │ContactMsg│ │
+│ │Transactn │ │
 │ │  OTPs    │ │
 │ └──────────┘ │
 └──────────────┘
@@ -274,6 +297,8 @@ kindlift/
 │   │   ├── Rating.js               # Rating schema (1-5 stars, reviews, duplicate prevention)
 │   │   ├── SavedRide.js            # Saved ride/route schema
 │   │   ├── Feedback.js             # General platform feedback schema
+│   │   ├── ContactMessage.js       # Contact form submission schema (name, email, message, read)
+│   │   ├── Transaction.js          # Razorpay payment transaction schema (coins, orderId)
 │   │   └── OTP.js                  # OTP schema (registration + password reset, auto-expiry)
 │   ├── routes/
 │   │   ├── auth.js                 # Auth routes (register, login, OTP, Google OAuth, forgot/reset password)
@@ -281,11 +306,13 @@ kindlift/
 │   │   ├── requests.js             # Request handling (create, accept/reject, complete, messages)
 │   │   ├── ratings.js              # Rating submission, retrieval, and ML sentiment proxy
 │   │   ├── savedRides.js           # Saved routes CRUD operations
-│   │   ├── friends.js              # Friend system (send, accept, reject, search, status)
+│   │   ├── friends.js              # Friend system (send, accept, reject, search, status, profile)
 │   │   ├── dm.js                   # Direct messaging with emoji reactions
 │   │   ├── notifications.js        # Notification management (CRUD, read/unread, broadcast)
 │   │   ├── stats.js                # Public platform statistics
 │   │   ├── location.js             # Location search with Nominatim geocoding
+│   │   ├── payment.js              # Razorpay payment (create order, verify, add coins)
+│   │   ├── contact.js              # Contact form submission (rate-limited, validated)
 │   │   └── Feedback.js             # Feedback submission route
 │   ├── tests/                      # Unit tests
 │   │   ├── middleware/             # Middleware tests (sanitize, etc.)
@@ -302,29 +329,39 @@ kindlift/
 │   ├── public/                     # Static assets
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── AdminAnalytics.js   # Recharts analytics (user growth, ride trends, ratings)
 │   │   │   ├── CustomAlert.js      # Toast + modal alert system (replaces native alerts)
 │   │   │   ├── CustomCursor.js     # Cuberto-style animated cursor
 │   │   │   ├── Footer.js           # Global footer component
+│   │   │   ├── GradientMesh.js     # Aurora gradient backgrounds and floating orbs
 │   │   │   ├── HeroCar3D.js        # Three.js 3D car hero section
+│   │   │   ├── InteractiveCards.js  # 3D tilt cards, morphing borders, number tickers
 │   │   │   ├── Loader.js           # Loading spinner component
 │   │   │   ├── ButtonLoader.js     # Button bounce loading animation
+│   │   │   ├── LocationInput.js    # Reusable location autocomplete with GPS
 │   │   │   ├── SkeletonLoader.js   # Shimmer loading skeleton UI
 │   │   │   ├── MagneticButton.js   # Magnetic hover effect button
 │   │   │   ├── MarqueeText.js      # Scrolling marquee text
 │   │   │   ├── Navbar.js           # Responsive top navigation bar (for guests)
 │   │   │   ├── Sidebar.js          # Persistent left navigation (for logged-in users)
 │   │   │   ├── NotificationBell.js # Notification bell with dropdown panel
+│   │   │   ├── PageTransitions.js  # Cinematic page reveals, stagger, typewriter
+│   │   │   ├── ParticleField.js    # Interactive canvas particle system
 │   │   │   ├── ScrollToTop.js      # Route-change scroll restoration
 │   │   │   └── TextReveal.js       # Scroll-triggered text animation
 │   │   ├── context/
-│   │   │   └── AuthContext.js      # React Context for auth state management
+│   │   │   ├── AuthContext.js      # React Context for auth state management
+│   │   │   ├── NotificationContext.js # Real-time notification state + Socket.IO integration
+│   │   │   └── ThemeContext.js     # Theme/dark-mode context provider
 │   │   ├── lib/
 │   │   │   ├── api.js              # Axios instance with JWT interceptor
-│   │   │   └── socket.js           # Socket.IO client configuration
+│   │   │   ├── apiCache.js         # Client-side API response caching layer
+│   │   │   ├── socket.js           # Socket.IO client configuration
+│   │   │   └── useLocationSearch.js # Location autocomplete hook (debounce, cache, GPS, geocode fallback)
 │   │   ├── pages/
 │   │   │   ├── Home.js             # Landing page with 3D hero
 │   │   │   ├── About.js            # About page
-│   │   │   ├── Contact.js          # Contact form page
+│   │   │   ├── Contact.js          # Contact form page (with backend submission)
 │   │   │   ├── Login.js            # Login page (email + Google OAuth)
 │   │   │   ├── Register.js         # Registration page with OTP verification
 │   │   │   ├── ForgotPassword.js   # Multi-step password reset (email → OTP → new password)
@@ -333,6 +370,7 @@ kindlift/
 │   │   │   ├── BookRide.js         # Search and book rides
 │   │   │   ├── RideDetails.js      # Ride details with chat and map
 │   │   │   ├── Profile.js          # User profile management
+│   │   │   ├── UserProfile.js      # Public user profile (Instagram-style, stats, reviews)
 │   │   │   ├── Friends.js          # Friend system (search, send, accept, manage)
 │   │   │   ├── Messages.js         # Direct messaging with emoji reactions
 │   │   │   ├── AdminPanel.js       # Admin dashboard with analytics + CRUD management
@@ -459,6 +497,10 @@ PORT=8000
 
 # ─── ML Service (optional) ──────────────────────────
 ML_SERVICE_URL=http://localhost:5001
+
+# ─── Razorpay Payments (optional) ───────────────────
+RAZORPAY_KEY_ID=rzp_test_your_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 ```
 
 > **Note:** For Gmail, you must generate an **App Password** (not your regular password). Enable 2FA on your Google account first, then go to *Security → App Passwords → Generate*.
@@ -827,6 +869,65 @@ Proxies the request to the Python ML microservice.
 
 ---
 
+### 📬 Contact (`/api/contact`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/` | ❌ | Submit a contact form message |
+
+**Rate Limiting:** 5 submissions per 15 minutes per IP
+
+**Request Body:**
+```json
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "message": "I have a question about..."
+}
+```
+
+**Validation:**
+- All fields required (`firstName`, `lastName`, `email`, `message`)
+- Valid email format required
+- Message must be at least 10 characters
+- Messages stored in DB with `read` status for admin triage
+
+---
+
+### 💳 Payments (`/api/payment`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/create-order` | ❌ | Create a Razorpay order for coin purchase |
+| `POST` | `/verify-payment` | ✅ | Verify payment signature and credit coins |
+
+**Payment Flow:**
+1. Frontend calls `/create-order` with `{ amount }` (in ₹)
+2. Razorpay checkout opens in the browser
+3. On success, frontend sends payment details to `/verify-payment`
+4. Backend verifies HMAC-SHA256 signature against Razorpay secret
+5. On valid signature: credits coins to user, saves transaction record
+6. Duplicate payment detection via `paymentId` uniqueness check
+
+**Coin Rate:** ₹10 = 1,000 coins (dynamic calculation)
+
+---
+
+### 👤 User Profile (`/api/friends/profile`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/profile/:userId` | ✅ | Get Instagram-style public profile for a user |
+
+**Response includes:**
+- User info (name, email, photo, coins, avg rating, member since)
+- Friends list with count
+- All ratings/reviews received
+- Ride statistics (offered, completed, requested, booked)
+- Friendship status with the requesting user (`none`, `pending`, `accepted`, `self`)
+
+
 ### 👥 Friends (`/api/friends`)
 
 | Method | Endpoint | Auth | Description |
@@ -838,6 +939,7 @@ Proxies the request to the Python ML microservice.
 | `GET` | `/sent` | ✅ | Get outgoing pending friend requests |
 | `GET` | `/search?q=<query>` | ✅ | Search users to add as friends |
 | `GET` | `/status/:userId` | ✅ | Check friendship status with a user |
+| `GET` | `/profile/:userId` | ✅ | Get public user profile (stats, reviews, friends) |
 | `DELETE` | `/:id` | ✅ | Remove a friend or cancel a request |
 
 **Features:**
@@ -1036,6 +1138,25 @@ All admin endpoints require JWT authentication **and** admin privileges.
 | `name` | String | Submitter's name (required) |
 | `email` | String | Submitter's email (required) |
 | `message` | String | Feedback message (required) |
+
+### ContactMessage
+| Field | Type | Description |
+|-------|------|-------------|
+| `firstName` | String | Submitter's first name (required, max 100) |
+| `lastName` | String | Submitter's last name (required, max 100) |
+| `email` | String | Submitter's email (required, max 254) |
+| `message` | String | Contact message (required, max 5000) |
+| `read` | Boolean | Whether an admin has read the message (default: false) |
+
+### Transaction
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | ObjectId → User | User who made the payment |
+| `amount` | Number | Payment amount in ₹ |
+| `coins` | Number | Coins credited to user |
+| `paymentId` | String | Razorpay payment ID (unique) |
+| `orderId` | String | Razorpay order ID |
+| `status` | String | Transaction status (default: `success`) |
 
 ### OTP
 | Field | Type | Description |
@@ -1260,7 +1381,7 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 
 <div align="center">
 
-**Built with ❤️ by Team T11**
+**Built with ❤️ by Team Kindlift**
 
 [⬆ Back to top](#-kindlift--personalized-travel-companion-platform)
 
