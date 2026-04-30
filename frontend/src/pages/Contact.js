@@ -1,16 +1,45 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, ArrowUpRight } from 'lucide-react';
+import { Mail, Phone, MapPin, ArrowUpRight, Loader2, AlertCircle } from 'lucide-react';
 import { RevealSection } from '../components/TextReveal';
 import { Footer } from '../components/Footer';
+import api from '../lib/api';
 
 export const Contact = () => {
-  const [sent, setSent] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    message: '',
+  });
+  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [feedback, setFeedback] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSent(true);
-    setTimeout(() => setSent(false), 5000);
+  const handleChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus('loading');
+    setFeedback('');
+
+    try {
+      const res = await api.post('/contact', formData);
+      setStatus('success');
+      setFeedback(res.data.message || 'Message sent successfully!');
+      setFormData({ firstName: '', lastName: '', email: '', message: '' });
+      // Reset back to idle after 6 seconds
+      setTimeout(() => { setStatus('idle'); setFeedback(''); }, 6000);
+    } catch (err) {
+      setStatus('error');
+      const msg =
+        err.response?.data?.message ||
+        'Failed to send message. Please try again later.';
+      setFeedback(msg);
+    }
+  };
+
+  const isLoading = status === 'loading';
 
   return (
     <div className="overflow-x-hidden">
@@ -83,7 +112,11 @@ export const Contact = () => {
                     <label className="block text-sm font-display font-semibold text-brand-dark mb-3">First Name</label>
                     <input
                       type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
                       required
+                      disabled={isLoading}
                       className="input-underline"
                       placeholder="John"
                     />
@@ -92,7 +125,11 @@ export const Contact = () => {
                     <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Last Name</label>
                     <input
                       type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
                       required
+                      disabled={isLoading}
                       className="input-underline"
                       placeholder="Doe"
                     />
@@ -103,7 +140,11 @@ export const Contact = () => {
                   <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Email Address</label>
                   <input
                     type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     required
+                    disabled={isLoading}
                     className="input-underline"
                     placeholder="you@example.com"
                   />
@@ -113,20 +154,44 @@ export const Contact = () => {
                   <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Message</label>
                   <textarea
                     rows="4"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
                     required
+                    minLength={10}
+                    disabled={isLoading}
                     className="input-underline resize-none"
                     placeholder="How can we help you?"
                   />
                 </div>
 
+                {/* Feedback banner */}
+                {feedback && (
+                  <div
+                    className={`flex items-center gap-3 px-5 py-3.5 rounded-xl text-sm font-medium transition-all ${
+                      status === 'success'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-red-50 text-red-700 border border-red-200'
+                    }`}
+                  >
+                    {status === 'success' ? (
+                      <span className="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0">✓</span>
+                    ) : (
+                      <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    )}
+                    {feedback}
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  className="group inline-flex items-center gap-3 px-8 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500"
+                  disabled={isLoading}
+                  className="group inline-flex items-center gap-3 px-8 py-4 bg-brand-dark text-white font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-500 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {sent ? (
+                  {isLoading ? (
                     <span className="flex items-center gap-2">
-                      <span className="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center text-white text-xs">✓</span>
-                      Message Sent!
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Sending…
                     </span>
                   ) : (
                     <>

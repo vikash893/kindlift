@@ -42,6 +42,7 @@ const dmRoutes = require('./routes/dm');
 const statsRoutes = require('./routes/stats');
 const notificationRoutes = require('./routes/notifications');
 const paymentRoutes = require('./routes/payment');
+const contactRoutes = require('./routes/contact');
 
 /**
  * Allowed CORS origins for frontend clients.
@@ -335,6 +336,7 @@ async function startServer() {
   app.use('/api/stats', statsRoutes);                      // Public stats segment
   app.use('/api/notifications', notificationRoutes);         // Notification system
   app.use('/api/payment', paymentRoutes);
+  app.use('/api/contact', contactRoutes);                  // Public contact form
   // Location with stricter limit
 
   // ─── Global Error Handler ─────────────────────────────
