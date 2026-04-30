@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAlert } from '../components/CustomAlert';
+import { AnalyticsTab } from '../components/AdminAnalytics';
 
 // ─── ADMIN DASHBOARD TAB ────────────────────────────
 const DashboardTab = ({ stats, loading }) => {
@@ -966,7 +967,8 @@ export const AdminPanel = () => {
   };
 
   const tabs = [
-    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Platform overview & analytics' },
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, description: 'Platform overview & stats' },
+    { key: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Charts, trends & predictions' },
     { key: 'users', label: 'Users', icon: Users, description: 'Manage all registered users' },
     { key: 'rides', label: 'Rides', icon: Car, description: 'Manage ride offers' },
     { key: 'requests', label: 'Requests', icon: MessageSquare, description: 'Manage ride requests' },
@@ -1090,6 +1092,7 @@ export const AdminPanel = () => {
         {/* Content */}
         <div className="flex-1 p-6 lg:p-8">
           {activeTab === 'dashboard' && <DashboardTab stats={stats} loading={statsLoading} />}
+          {activeTab === 'analytics' && <AnalyticsTab stats={stats} />}
           {activeTab === 'users' && <UsersTab onViewUser={setViewUserId} />}
           {activeTab === 'rides' && <RidesTab />}
           {activeTab === 'requests' && <RequestsTab />}
