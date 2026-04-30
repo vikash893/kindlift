@@ -375,78 +375,78 @@ router.post('/send', authMiddleware, async (req, res) => {
       throw innerErr;
     }
 
-    // ─── Post-commit side effects ──────────────────────
+    // ─── Post-commit side effects (non-blocking) ───────
+    const senderName = req.body.is_anonymous ? 'Someone' : sender.name;
+    let repData = { totalReputation: 0 };
+    let progressData = { current: 'Bronze Giver', next: 'Silver Giver', progressPct: 0 };
 
     // Update daily limits
     const dailyStats = getDailyStats(senderId);
     dailyStats.count += 1;
     dailyStats.spend += coin_value;
 
-    // Process reputation
-    const rep = await processReputation(senderId, receiver_id, giftType, coin_value);
-    const progress = SenderReputation.computeProgress(rep.totalReputation);
-
-    // Create notification for receiver
-    const senderName = req.body.is_anonymous ? 'Someone' : sender.name;
-    const notif = new Notification({
-      recipientId: receiver_id,
-      type: 'gift_received',
-      title: `${senderName} sent you a gift!`,
-      message: `You received a ${giftType.displayName} ${giftType.icon} gift!`,
-      metadata: {
-        giftId: gift._id,
-        giftTypeKey: giftType.key,
-        giftTypeIcon: giftType.icon,
-        giftTypeColor: giftType.colorHex,
-        coinValue: coin_value,
-        senderName: senderName,
-        senderAvatar: req.body.is_anonymous ? null : sender.profilePhoto,
-        isAnonymous: req.body.is_anonymous || false,
-      },
-      actionUrl: `/gifts/${gift._id}`,
-    });
-    await notif.save();
-
-    // Socket.IO real-time notification
-    const io = req.app.get('io');
-    if (io) {
-      io.to(receiver_id).emit('notification', notif);
-      io.to(receiver_id).emit('gift_received', {
-        giftId: gift._id,
-        senderName,
-        senderAvatar: req.body.is_anonymous ? null : sender.profilePhoto,
-        giftType: giftType.displayName,
-        giftTypeIcon: giftType.icon,
-        giftTypeColor: giftType.colorHex,
-        coinValue: coin_value,
-        messagePreview: message ? message.substring(0, 60) : '',
-        timestamp: gift.createdAt,
-      });
+    // Process reputation (non-fatal if fails)
+    try {
+      const rep = await processReputation(senderId, receiver_id, giftType, coin_value);
+      repData = rep;
+      progressData = SenderReputation.computeProgress(rep.totalReputation);
+    } catch (repErr) {
+      console.error('🎁 Reputation update failed (non-fatal):', repErr.message);
     }
 
-    // ─── Email notification (fire-and-forget) ──────────
+    // Create notification (non-fatal if fails)
+    try {
+      const notif = new Notification({
+        recipientId: receiver_id,
+        type: 'gift_received',
+        title: `${senderName} sent you a gift!`,
+        message: `You received a ${giftType.displayName} ${giftType.icon} gift!`,
+        metadata: {
+          giftId: gift._id,
+          giftTypeKey: giftType.key,
+          giftTypeIcon: giftType.icon,
+          giftTypeColor: giftType.colorHex,
+          coinValue: coin_value,
+          senderName: senderName,
+          senderAvatar: req.body.is_anonymous ? null : sender.profilePhoto,
+          isAnonymous: req.body.is_anonymous || false,
+        },
+        actionUrl: `/gifts/${gift._id}`,
+      });
+      await notif.save();
+
+      // Socket.IO real-time notification
+      const io = req.app.get('io');
+      if (io) {
+        io.to(receiver_id).emit('notification', notif);
+        io.to(receiver_id).emit('gift_received', {
+          giftId: gift._id,
+          senderName,
+          giftType: giftType.displayName,
+          giftTypeIcon: giftType.icon,
+          coinValue: coin_value,
+        });
+      }
+    } catch (notifErr) {
+      console.error('🎁 Notification failed (non-fatal):', notifErr.message);
+    }
+
+    // Email (fire-and-forget)
     if (receiver.email) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const emailSubject = `${senderName} sent you a gift 🎁`;
-      const emailHtml = `
-        <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #f0f0f0">
-          <div style="background:linear-gradient(135deg,${giftType.colorHex},${giftType.colorHex}cc);padding:32px;text-align:center">
-            <span style="font-size:48px;display:block;margin-bottom:8px">${giftType.icon}</span>
-            <h1 style="color:#fff;font-size:22px;margin:0">${senderName} sent you a gift!</h1>
-          </div>
-          <div style="padding:32px;text-align:center">
-            <p style="font-size:16px;color:#333;margin:0 0 8px">You received a <b style="color:${giftType.colorHex}">${giftType.displayName}</b> gift</p>
-            <p style="font-size:28px;font-weight:bold;color:#d4a038;margin:16px 0">${coin_value} 🪙 coins</p>
-            ${message ? `<div style="background:#fafafa;border-radius:12px;padding:16px;margin:16px 0;text-align:left"><p style="font-size:14px;color:#555;margin:0;font-style:italic">"${message.substring(0, 200)}"</p></div>` : ''}
-            <a href="${frontendUrl}/gifts" style="display:inline-block;margin-top:20px;padding:14px 32px;background:${giftType.colorHex};color:#fff;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px">Open your gift 🎁</a>
-          </div>
-          <div style="background:#fafafa;padding:16px;text-align:center;border-top:1px solid #f0f0f0">
-            <p style="font-size:12px;color:#999;margin:0">KindLift — Spread kindness, one gift at a time</p>
-          </div>
-        </div>
-      `;
-      sendEmail(receiver.email, emailSubject, emailHtml)
-        .catch(err => console.error('Gift email failed:', err.message));
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        sendEmail(receiver.email, `${senderName} sent you a gift 🎁`,
+          `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;text-align:center;padding:32px">
+            <p style="font-size:48px;margin:0">${giftType.icon}</p>
+            <h2>${senderName} sent you a ${giftType.displayName} gift!</h2>
+            <p style="font-size:24px;color:#d4a038;font-weight:bold">${coin_value} coins</p>
+            ${message ? `<p style="color:#555;font-style:italic">"${message.substring(0, 200)}"</p>` : ''}
+            <a href="${frontendUrl}/gifts" style="display:inline-block;margin-top:16px;padding:12px 24px;background:${giftType.colorHex};color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">Open your gift 🎁</a>
+          </div>`
+        ).catch(err => console.error('Gift email failed:', err.message));
+      } catch (emailErr) {
+        console.error('🎁 Email setup failed:', emailErr.message);
+      }
     }
 
     // Remaining balance
@@ -456,20 +456,20 @@ router.post('/send', authMiddleware, async (req, res) => {
       status: 'success',
       data: {
         gift_id: gift._id,
-        sender_new_reputation: rep.totalReputation,
-        badge_progress: progress,
-        wallet_balance_remaining: updatedSender.coins,
+        sender_new_reputation: repData.totalReputation || 0,
+        badge_progress: progressData,
+        wallet_balance_remaining: updatedSender?.coins ?? debitResult.coins,
         gift_type: {
           key: giftType.key,
           displayName: giftType.displayName,
           icon: giftType.icon,
           colorHex: giftType.colorHex,
-          animation: giftType.animation,
+          animation: giftType.animation || '',
         },
       },
     });
   } catch (err) {
-    console.error('Gift send error:', err);
+    console.error('Gift send error:', err.message, err.stack);
     res.status(500).json({ status: 'error', message: 'Failed to send gift' });
   }
 });
