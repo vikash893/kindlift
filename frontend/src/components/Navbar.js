@@ -198,6 +198,21 @@ export const Navbar = () => {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
+                  {/* Day / Night toggle — guest */}
+                  <button
+                    onClick={toggle}
+                    title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    className="theme-toggle-btn"
+                    aria-label="Toggle theme"
+                  >
+                    <span className="theme-toggle-track">
+                      <span className="theme-toggle-thumb">
+                        {isDark
+                          ? <Moon className="h-3 w-3 text-brand-accent" />
+                          : <Sun className="h-3 w-3 text-amber-500" />}
+                      </span>
+                    </span>
+                  </button>
                   <Link
                     to="/login"
                     className="px-4 py-2 text-sm font-medium transition-all link-hover text-brand-dark/60 hover:text-brand-dark"
