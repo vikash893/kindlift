@@ -470,7 +470,7 @@ router.post('/send', authMiddleware, async (req, res) => {
     });
   } catch (err) {
     console.error('Gift send error:', err.message, err.stack);
-    res.status(500).json({ status: 'error', message: 'Failed to send gift' });
+    res.status(500).json({ status: 'error', message: 'Failed to send gift', debug: err.message });
   }
 });
 
