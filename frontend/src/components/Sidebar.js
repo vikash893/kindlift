@@ -142,10 +142,10 @@ export const Sidebar = () => {
             <Link
               key={item.to}
               to={item.to}
-              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
                 isActive
-                  ? 'bg-brand-accent text-brand-dark font-bold shadow-lg shadow-brand-accent/20'
-                  : 'text-white/50 hover:text-white hover:bg-white/[0.06]'
+                  ? 'bg-brand-accent text-brand-dark font-bold shadow-lg shadow-brand-accent/30 sidebar-glow-active'
+                  : 'text-white/50 hover:text-white hover:bg-white/[0.08] hover:translate-x-1'
               }`}
             >
               <item.icon className={`h-[18px] w-[18px] flex-shrink-0 ${isActive ? 'text-brand-dark' : 'text-white/30 group-hover:text-white/60'}`} />
