@@ -1,5 +1,6 @@
 const express = require('express');
 const Feedback = require('../models/Feedback');
+const { User } = require('../models/User');
 
 const router = express.Router();
 
@@ -10,6 +11,16 @@ router.post("/feedback", async (req, res) => {
         if (!name || !email || !message) {
             return res.status(400).json({ 
                 message: "All fields are required" 
+            });
+        }
+
+        // ── Registered-user validation ───────────────────────────
+        // Only users with an account in our DB can submit feedback.
+        const registeredUser = await User.findOne({ email: email.toLowerCase().trim() });
+        if (!registeredUser) {
+            return res.status(403).json({
+                message: "NOT_REGISTERED",
+                detail: "This email is not registered on KindLift. Please create an account or log in first to submit genuine feedback."
             });
         }
 
@@ -32,6 +43,7 @@ router.post("/feedback", async (req, res) => {
         });
     }
 });
+
 
 // Get featured feedback for Home page
 router.get("/feedback/featured", async (req, res) => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ButtonLoader } from '../components/ButtonLoader';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Heart, MessageCircle, Star } from 'lucide-react';
+import { ArrowRight, Heart, MessageCircle, Star, Lock } from 'lucide-react';
 import api from '../lib/api';
 
 function Feedback() {
@@ -13,10 +13,13 @@ function Feedback() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [notRegistered, setNotRegistered] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setNotRegistered(false);   // reset on any change
+    setError('');
     setFeedback((prev) => ({
       ...prev,
       [name]: value
@@ -28,20 +31,22 @@ function Feedback() {
     setLoading(true);
     setError('');
     setSuccess('');
+    setNotRegistered(false);
 
     try {
-      // Use centralized api instance — auto-selects localhost or production
       const response = await api.post('/feedback', feedback);
-      
-      console.log('Response:', response.data);
-      
       setSuccess("Thank you for your genuine feedback! Redirecting to home page...");
       setFeedback({ name: "", email: "", message: "" });
-      
       setTimeout(() => { navigate('/'); }, 2000);
     } catch (err) {
       console.error('Full error:', err);
-      
+
+      // ── Registered-user gate ──────────────────────────────────
+      if (err.response?.status === 403 && err.response?.data?.message === 'NOT_REGISTERED') {
+        setNotRegistered(true);
+        return;
+      }
+
       if (err.code === 'ERR_NETWORK') {
         setError("Cannot connect to backend. Please check if the server is running.");
       } else if (err.response?.status === 404) {
@@ -55,6 +60,7 @@ function Feedback() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex">
@@ -127,6 +133,37 @@ function Feedback() {
           <p className="text-xs text-brand-muted/70 mb-10">Please visit our website to share authentic experiences</p>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* ── Not-Registered Gate Banner ─────────────────── */}
+            {notRegistered && (
+              <div className="p-5 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                    <Lock className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-display font-bold text-amber-900 text-sm">Account Not Found</p>
+                    <p className="text-amber-700 text-xs mt-0.5">
+                      This email is not registered on KindLift. Please log in or create an account first to submit genuine feedback.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <Link
+                    to="/login"
+                    className="flex-1 text-center px-4 py-2.5 bg-brand-dark text-white text-sm font-display font-bold rounded-full hover:bg-brand-accent hover:text-brand-dark transition-all duration-300"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex-1 text-center px-4 py-2.5 border-2 border-amber-300 text-amber-800 text-sm font-display font-bold rounded-full hover:bg-amber-100 transition-all duration-300"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex items-center gap-2">
                 <span className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center text-xs font-bold">!</span>
@@ -140,6 +177,7 @@ function Feedback() {
                 {success}
               </div>
             )}
+
 
             <div>
               <label className="block text-sm font-display font-semibold text-brand-dark mb-3">Full Name</label>
