@@ -250,13 +250,17 @@ router.get('/reputation', authMiddleware, async (req, res) => {
 router.post('/send', authMiddleware, async (req, res) => {
   try {
     const senderId = req.user.id;
-    const { receiver_id, coin_value, gift_type_key, message, mood_tag, is_anonymous, is_public } = req.body;
+    const { receiver_id, gift_type_key, message, mood_tag, is_anonymous, is_public } = req.body;
+    const coin_value = parseInt(req.body.coin_value) || 0;
+
+    console.log('🎁 Gift send request:', { senderId, receiver_id, coin_value, gift_type_key, hasMessage: !!message });
 
     // Validate required fields
-    if (!receiver_id || !coin_value || !gift_type_key) {
+    if (!receiver_id || coin_value <= 0 || !gift_type_key) {
+      console.log('🎁 Validation failed — missing fields:', { receiver_id: !!receiver_id, coin_value, gift_type_key: !!gift_type_key });
       return res.status(400).json({
         status: 'error',
-        message: 'receiver_id, coin_value, and gift_type_key are required',
+        message: `Missing required fields: ${!receiver_id ? 'receiver_id ' : ''}${coin_value <= 0 ? 'coin_value ' : ''}${!gift_type_key ? 'gift_type_key' : ''}`.trim(),
       });
     }
 
