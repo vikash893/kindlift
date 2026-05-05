@@ -64,6 +64,8 @@
 - ⭐ **Rating System** — Mutual driver/passenger ratings build trust and accountability
 - 🤖 **AI Sentiment Analysis** — ML-powered review classification (positive/neutral/negative)
 - 👤 **Public User Profiles** — Instagram-style profile view with stats, reviews, and friend lists
+- 🎁 **Social Gifting** — Send themed gifts to friends, earn reputation badges, build gifting streaks
+- 🏆 **Gifting Leaderboard** — Reputation tiers (Bronze → Diamond), public gift walls, and badge progression
 - 📊 **Admin Analytics** — Interactive Recharts dashboards with growth trends, status distributions, and rating analysis
 - 🛡 **Admin Dashboard** — Full platform management with analytics, user/ride/rating oversight
 - 📬 **Contact Form** — Persistent contact submissions with rate limiting and admin triage
@@ -94,6 +96,9 @@
 | **Direct Messages** | Private DM conversations with friends (separate from ride chat)    |
 | **Emoji Reactions** | React to DMs with emojis — double-click for ❤️, long-press for picker |
 | **View Profiles** | Visit Instagram-style public profiles of other users                 |
+| **Send Gifts** | Send themed gifts (12 types across 5 categories) to any user with coins  |
+| **Gift Wall** | Showcase received gifts on your public profile for others to see          |
+| **Reputation Badge** | Earn reputation points and climb badge tiers from Bronze to Diamond |
 | **Buy Coins** | Purchase coins via Razorpay payment gateway (₹10 = 1000 coins)          |
 | **Submit Feedback** | Provide general platform feedback via the dedicated feedback page |
 
@@ -197,7 +202,7 @@
 │                                                                │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │  Pages   │  │Components│  │ Context  │  │  Code Split  │  │
-│  │(21 pages)│  │(20 comps)│  │(3 ctxts) │  │ (lazy load)  │  │
+│  │(23 pages)│  │(20 comps)│  │(3 ctxts) │  │ (lazy load)  │  │
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────────┘  │
 │       │              │             │                            │
 │  ┌────┴──────────────┴─────────────┴──────┐                    │
@@ -236,6 +241,10 @@
 │  │  │Payment  │  │Contact  │                    │               │
 │  │  │ Routes  │  │ Routes  │                    │               │
 │  │  └─────────┘  └─────────┘                    │               │
+│  │  ┌─────────┐                                    │               │
+│  │  │ Gifts   │                                    │               │
+│  │  │ Routes  │                                    │               │
+│  │  └─────────┘                                    │               │
 │  └────────────────┬──────────────────────────────┘               │
 │                   │                                               │
 │  ┌────────────────┼───────────────────────┐                      │
@@ -243,6 +252,7 @@
 │  │  • join room  • send_message           │                      │
 │  │  • dm_message • dm_reaction            │                      │
 │  │  • friend_request • notification       │                      │
+│  │  • gift_received                      │                      │
 │  └────────────────┬───────────────────────┘                      │
 └───────────────────┼──────────────────────────────────────────────┘
                     │
@@ -266,6 +276,9 @@
 │ │ Feedback │ │
 │ │ContactMsg│ │
 │ │Transactn │ │
+│ │  Gifts   │ │
+│ │GiftTypes │ │
+│ │SenderRep │ │
 │ │  OTPs    │ │
 │ └──────────┘ │
 └──────────────┘
@@ -299,6 +312,9 @@ kindlift/
 │   │   ├── Feedback.js             # General platform feedback schema
 │   │   ├── ContactMessage.js       # Contact form submission schema (name, email, message, read)
 │   │   ├── Transaction.js          # Razorpay payment transaction schema (coins, orderId)
+│   │   ├── Gift.js                 # Gift record schema (sender, receiver, type, mood, reactions)
+│   │   ├── GiftType.js             # Gift type catalog schema (categories, icons, coin bounds)
+│   │   ├── SenderReputation.js     # Gifting reputation schema (badges, streaks, perks)
 │   │   └── OTP.js                  # OTP schema (registration + password reset, auto-expiry)
 │   ├── routes/
 │   │   ├── auth.js                 # Auth routes (register, login, OTP, Google OAuth, forgot/reset password)
@@ -313,6 +329,7 @@ kindlift/
 │   │   ├── location.js             # Location search with Nominatim geocoding
 │   │   ├── payment.js              # Razorpay payment (create order, verify, add coins)
 │   │   ├── contact.js              # Contact form submission (rate-limited, validated)
+│   │   ├── gifts.js               # Social gifting system (send, receive, react, leaderboard)
 │   │   └── Feedback.js             # Feedback submission route
 │   ├── tests/                      # Unit tests
 │   │   ├── middleware/             # Middleware tests (sanitize, etc.)
@@ -374,6 +391,7 @@ kindlift/
 │   │   │   ├── Friends.js          # Friend system (search, send, accept, manage)
 │   │   │   ├── Messages.js         # Direct messaging with emoji reactions
 │   │   │   ├── AdminPanel.js       # Admin dashboard with analytics + CRUD management
+│   │   │   ├── Gifts.js            # Social gifting page (send, receive, reputation, reactions)
 │   │   │   ├── Feedback.js         # Platform feedback submission page
 │   │   │   ├── FAQs.js             # Frequently asked questions
 │   │   │   ├── Safety.js           # Safety guidelines page
@@ -914,6 +932,94 @@ Proxies the request to the Python ML microservice.
 
 ---
 
+### 🎁 Gifts (`/api/gifts`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/send` | ✅ | Send a gift to another user (atomic wallet debit + credit) |
+| `GET` | `/received` | ✅ | Get paginated received gifts (filters: bookmarked, showcased, unopened) |
+| `GET` | `/sent` | ✅ | Get paginated sent gifts |
+| `GET` | `/types` | ❌ | Get gift type catalog (auto-seeds 12 types on first access) |
+| `GET` | `/:giftId` | ✅ | Get single gift details (sender or receiver only) |
+| `PATCH` | `/:giftId/open` | ✅ | Mark a received gift as opened |
+| `PATCH` | `/:giftId/bookmark` | ✅ | Toggle bookmark on a received gift |
+| `PATCH` | `/:giftId/showcase` | ✅ | Toggle showcase on a received gift (public gift wall) |
+| `POST` | `/:giftId/react` | ✅ | Add receiver reaction (loved, moved, laughing) |
+| `GET` | `/wall/:userId` | ❌ | Get public gift wall (showcased gifts) for a user |
+| `GET` | `/leaderboard` | ❌ | Top givers ranked by reputation |
+| `GET` | `/reputation` | ✅ | Current user's reputation, badge tier, and progress |
+
+<details>
+<summary><strong>POST /send</strong> — Send a gift</summary>
+
+**Request Body:**
+```json
+{
+  "receiver_id": "60f7b2c...",
+  "coin_value": 25,
+  "gift_type_key": "thank_you",
+  "message": "Thanks for the ride!",
+  "mood_tag": "grateful",
+  "is_anonymous": false,
+  "is_public": true
+}
+```
+
+**Response (201):**
+```json
+{
+  "status": "success",
+  "data": {
+    "gift_id": "60f7d4e...",
+    "sender_new_reputation": 42,
+    "badge_progress": {
+      "current": "Bronze Giver",
+      "next": "Silver Giver",
+      "progressPct": 42,
+      "auraColor": "#CD7F32"
+    },
+    "wallet_balance_remaining": 975,
+    "gift_type": {
+      "key": "thank_you",
+      "displayName": "Thank You",
+      "icon": "🤍",
+      "colorHex": "#D4A038"
+    }
+  }
+}
+```
+
+**Anti-Abuse Rules:**
+- Self-gifting blocked at schema and route level
+- Minimum gift value: 5 coins
+- Daily send limit: 20 gifts per day
+- Daily spend limit: 2,000 coins per day
+- Velocity limit: Max 5 gifts to the same receiver per hour
+- Atomic debit/credit with rollback on failure
+</details>
+
+**Gift Types (12 built-in, auto-seeded):**
+
+| Category | Types |
+|----------|-------|
+| Appreciation | Thank You 🤍, Deep Respect 🌿, Recognition ⭐ |
+| Celebration | Congrats 🎊, Achievement Unlocked 🏆, Milestone 🎯 |
+| Support | Stay Strong 💙, We Got You 🤝, I Believe In You 🌱 |
+| Playful | Hype Train 🚀, Good Vibes 🌊 |
+| Exclusive | Legendary 👑 (500+ coins) |
+
+**Reputation & Badge Tiers:**
+
+| Tier | Min Reputation | Perks |
+|------|---------------|-------|
+| Bronze Giver | 0 | — |
+| Silver Giver | 100 | Animated border |
+| Gold Giver | 500 | Profile highlight, priority suggestions |
+| Platinum Giver | 2,000 | Exclusive skins |
+| Diamond Giver | 10,000 | Legendary gift type unlock |
+
+---
+
 ### 👤 User Profile (`/api/friends/profile`)
 
 | Method | Endpoint | Auth | Description |
@@ -982,7 +1088,7 @@ Proxies the request to the Python ML microservice.
 | `DELETE` | `/:id` | ✅ | Delete a notification |
 | `POST` | `/` | ✅ 🔒 | Create broadcast/targeted notification (admin only) |
 
-**Notification Types:** `ride_accepted`, `ride_rejected`, `ride_completed`, `ride_request`, `verification_approved`, `verification_rejected`, `new_verification`, `new_user`, `new_feedback`, `new_rating`, `friend_request`, `friend_accepted`, `dm_message`, `system`
+**Notification Types:** `ride_accepted`, `ride_rejected`, `ride_completed`, `ride_request`, `verification_approved`, `verification_rejected`, `new_verification`, `new_user`, `new_feedback`, `new_rating`, `friend_request`, `friend_accepted`, `dm_message`, `gift_received`, `gift_reaction`, `system`
 
 **Features:**
 - Role-based targeting: specific user, all admins, all users, or broadcast
@@ -1038,6 +1144,8 @@ All admin endpoints require JWT authentication **and** admin privileges.
 | `isAdmin` | Boolean | Whether the user has admin privileges (default: false) |
 | `role` | Enum | `user` · `admin` · `superadmin` (default: user) |
 | `isDriverVerified` | Boolean | Whether driver verification is complete |
+| `driverVerificationStatus` | Enum | `none` · `pending` · `approved` · `rejected` (default: none) |
+| `driverVerificationNote` | String | Admin feedback on verification decision |
 | `vehicleNumber` | String | Registered vehicle number |
 | `licenseNumber` | String | Driver's license number |
 | `vehiclePhoto` | String | Base64-encoded vehicle photo |
@@ -1066,6 +1174,7 @@ All admin endpoints require JWT authentication **and** admin privileges.
 | `source` | `{ name, lat, lng }` | Passenger's pickup location |
 | `destination` | `{ name, lat, lng }` | Passenger's drop-off location |
 | `completionCode` | String | 4-digit OTP for ride completion verification |
+| `coinsCharged` | Number | Coins deducted from passenger at booking time (2 coins/km) |
 | `isRatedByPassenger` | Boolean | Whether passenger has rated the driver |
 | `isRatedByDriver` | Boolean | Whether driver has rated the passenger |
 
@@ -1101,7 +1210,7 @@ All admin endpoints require JWT authentication **and** admin privileges.
 |-------|------|-------------|
 | `recipientId` | ObjectId → User | Target user (null for broadcasts) |
 | `recipientRole` | Enum | `user` · `admin` · `all` · `null` (role-based targeting) |
-| `type` | Enum | Notification type (14 types — see API docs) |
+| `type` | Enum | Notification type (16 types — see API docs) |
 | `title` | String | Notification title (required) |
 | `message` | String | Notification body (required) |
 | `metadata` | Mixed | Optional context data (ride ID, user ID, etc.) |
@@ -1157,6 +1266,56 @@ All admin endpoints require JWT authentication **and** admin privileges.
 | `paymentId` | String | Razorpay payment ID (unique) |
 | `orderId` | String | Razorpay order ID |
 | `status` | String | Transaction status (default: `success`) |
+
+### Gift
+| Field | Type | Description |
+|-------|------|-------------|
+| `senderId` | ObjectId → User | User who sent the gift |
+| `receiverId` | ObjectId → User | User who received the gift |
+| `giftTypeId` | ObjectId → GiftType | Reference to the gift type catalog |
+| `coinValue` | Number | Coin amount of the gift (min: 5) |
+| `message` | String | Optional personal message (max 500 chars) |
+| `moodTag` | Enum | `joyful` · `grateful` · `proud` · `supportive` · `playful` · `null` |
+| `isPublic` | Boolean | Whether the gift is visible publicly (default: true) |
+| `isAnonymous` | Boolean | Whether sender identity is hidden (default: false) |
+| `receiverReaction` | Enum | `loved` · `moved` · `laughing` · `null` |
+| `openedAt` | Date | When the receiver opened the gift |
+| `bookmarkedAt` | Date | When the receiver bookmarked the gift |
+| `showcasedAt` | Date | When the gift was added to the public gift wall |
+| `showcaseOrder` | Number | Display order on the gift wall |
+
+> **Validation:** Self-gifting is blocked at the schema level via a `pre('validate')` hook.
+
+### GiftType
+| Field | Type | Description |
+|-------|------|-------------|
+| `key` | String | Unique identifier (e.g., `thank_you`, `legendary`) |
+| `category` | Enum | `Appreciation` · `Celebration` · `Support` · `Playful` · `Exclusive` |
+| `displayName` | String | Human-readable name |
+| `icon` | String | Display emoji |
+| `colorHex` | String | Primary accent color |
+| `minCoins` | Number | Minimum coin value (default: 5) |
+| `maxCoins` | Number | Maximum coin value (null = unlimited) |
+| `baseWeightBonus` | Number | Extra reputation points per gift of this type |
+| `emotionalWeight` | Enum | `Low` · `Medium` · `High` · `Very High` · `Maximum` |
+| `isPremium` | Boolean | Whether unlocking is required |
+| `isActive` | Boolean | Whether type is available in the catalog |
+
+> **Auto-seeding:** Gift types are auto-seeded on first access if the database is empty.
+
+### SenderReputation
+| Field | Type | Description |
+|-------|------|-------------|
+| `userId` | ObjectId → User | User whose reputation this tracks (unique) |
+| `totalReputation` | Number | Cumulative reputation points |
+| `badgeTier` | String | Current badge (Bronze/Silver/Gold/Platinum/Diamond Giver) |
+| `giftsSentCount` | Number | Total number of gifts sent |
+| `uniqueReceiversCount` | Number | Number of distinct recipients |
+| `giftingStreakDays` | Number | Consecutive days of gift sending (max: 30) |
+| `lastGiftDate` | Date | When the last gift was sent |
+| `perksUnlocked` | [String] | Unlocked perks (e.g., `animated_border`, `exclusive_skins`) |
+
+> **Reputation formula:** `(ceil(coinValue / 10) + typeBonus) × streakMultiplier + noveltyBonus`
 
 ### OTP
 | Field | Type | Description |
@@ -1253,6 +1412,12 @@ Client connects → emits 'join' with userId → Server joins user to their room
 | `friend_request` | Server → Client | `{ _id, requester, status }` | New friend request received |
 | `friend_response` | Server → Client | `{ _id, responderId, responderName, status }` | Friend request accepted/rejected |
 | `notification` | Server → Client | Notification object | Real-time notification delivery |
+
+### Gifting Events
+
+| Event | Direction | Payload | Description |
+|-------|-----------|---------|-------------|
+| `gift_received` | Server → Client | `{ giftId, senderName, giftType, giftTypeIcon, coinValue }` | Real-time gift received notification |
 
 > **Validation:** Socket messages are validated for required fields and text is limited to 2000 characters. DM socket events verify friendship status before persisting.
 
