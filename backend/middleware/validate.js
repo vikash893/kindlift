@@ -83,7 +83,8 @@ const validateVerifyOtp = [
   body('email')
     .trim()
     .notEmpty().withMessage('Email is required')
-    .isEmail().withMessage('Invalid email format'),
+    .isEmail().withMessage('Invalid email format')
+    .normalizeEmail(),
   body('otp')
     .trim()
     .notEmpty().withMessage('OTP is required')
