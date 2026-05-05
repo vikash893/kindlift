@@ -19,7 +19,16 @@ import joblib
 import os
 
 app = Flask(__name__)
-CORS(app)  # Allow requests from your React frontend & Express backend
+
+# Allow requests from your Express backend (local + deployed)
+CORS(app, origins=[
+    'http://localhost:8000',
+    'http://localhost:3000',
+    'https://kindlift-1.onrender.com',
+    'https://kindlift.onrender.com',
+    'https://kindlift.in',
+    'https://www.kindlift.in',
+])
 
 # --- Load Model & Encoders ---
 MODEL_DIR = os.path.join(os.path.dirname(__file__), 'models')
@@ -101,8 +110,11 @@ def predict():
 # --- Main ---
 
 if __name__ == '__main__':
-    port = int(os.environ.get('ML_PORT', 5001))
+    # Render sets PORT env var; fall back to ML_PORT or 5001 for local dev
+    port = int(os.environ.get('PORT', os.environ.get('ML_PORT', 5001)))
+    is_production = os.environ.get('RENDER', '') == 'true' or os.environ.get('PORT')
     print(f"\nKindLift ML Service running on http://localhost:{port}")
     print(f"   POST /predict  - Predict sentiment from review text")
-    print(f"   GET  /health   - Health check\n")
-    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)
+    print(f"   GET  /health   - Health check")
+    print(f"   Environment: {'production' if is_production else 'development'}\n")
+    app.run(host='0.0.0.0', port=port, debug=not is_production, use_reloader=False)
