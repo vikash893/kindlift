@@ -87,19 +87,41 @@ router.post('/', authMiddleware, validateCreateRequest, async (req, res) => {
       });
     }
 
-    // Atomically deduct coins from passenger
-    await User.updateOne({ _id: req.user.id }, { $inc: { coins: -coinsRequired } });
+    // Atomically deduct coins from passenger, but only if they still have
+    // enough — guards against a race where two bookings are submitted
+    // back-to-back and both pass the balance check above before either
+    // debit lands.
+    const debited = await User.updateOne(
+      { _id: req.user.id, coins: { $gte: coinsRequired } },
+      { $inc: { coins: -coinsRequired } }
+    );
 
-    const newRequest = new RideRequest({
-      passengerId: req.user.id,
-      offerId,
-      seatsRequested,
-      source,
-      destination,
-      coinsCharged: coinsRequired,
-    });
+    if (debited.matchedCount === 0) {
+      return res.status(402).json({
+        message: 'Insufficient coins to book this ride. Please add more coins.',
+        insufficientCoins: true,
+        coinsRequired,
+      });
+    }
 
-    await newRequest.save();
+    let newRequest;
+    try {
+      newRequest = new RideRequest({
+        passengerId: req.user.id,
+        offerId,
+        seatsRequested,
+        source,
+        destination,
+        coinsCharged: coinsRequired,
+      });
+
+      await newRequest.save();
+    } catch (saveErr) {
+      // Refund the debit if request creation failed for any reason,
+      // so coins are never silently lost.
+      await User.updateOne({ _id: req.user.id }, { $inc: { coins: coinsRequired } });
+      throw saveErr;
+    }
 
     // Notify driver in real-time
     const io = req.app.get('io');
@@ -175,24 +197,44 @@ router.put('/:id/status', authMiddleware, validateUpdateStatus, async (req, res)
     if (!request) return res.status(404).json({ message: 'Request not found' });
 
     const offer = request.offerId;
+    if (!offer) return res.status(400).json({ message: 'Associated ride offer no longer exists' });
 
     // Authorization: only the driver of this ride can accept/reject
     if (offer.driverId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Forbidden: only the driver can update request status' });
     }
 
+    // Only allow transitioning out of 'pending' — guards against
+    // double-accept / accept-after-reject races and against re-running
+    // this handler on an already-decided request.
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: `Request is already ${request.status}` });
+    }
+
     if (status === 'accepted') {
-      if (offer.seatsAvailable < request.seatsRequested) {
+      // Atomically reserve the seats: only succeeds if enough seats are
+      // still available at the moment of the update. Prevents two
+      // concurrent accepts from both decrementing seatsAvailable past 0.
+      const seatUpdate = await RideOffer.findOneAndUpdate(
+        { _id: offer._id, seatsAvailable: { $gte: request.seatsRequested } },
+        [
+          {
+            $set: {
+              seatsAvailable: { $subtract: ['$seatsAvailable', request.seatsRequested] },
+            },
+          },
+          {
+            $set: {
+              status: { $cond: [{ $eq: ['$seatsAvailable', 0] }, 'ongoing', '$status'] },
+            },
+          },
+        ],
+        { new: true }
+      );
+
+      if (!seatUpdate) {
         return res.status(400).json({ message: 'Not enough seats available' });
       }
-
-      offer.seatsAvailable -= request.seatsRequested;
-
-      if (offer.seatsAvailable === 0) {
-        offer.status = 'ongoing';
-      }
-
-      await offer.save();
 
       // Reject other pending requests from same passenger
       await RideRequest.updateMany(
@@ -351,19 +393,41 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     const request = await RideRequest.findById(req.params.id).populate('offerId');
 
     if (!request) return res.status(404).json({ message: 'Request not found' });
-    if (request.status !== 'accepted') return res.status(400).json({ message: 'Request is not currently active' });
+    if (!request.offerId) return res.status(400).json({ message: 'Associated ride offer no longer exists' });
 
     // Authorization: only the driver can complete
     if (request.offerId.driverId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Forbidden: only the driver can complete this ride' });
     }
 
-    if (request.completionCode !== code) {
+    if (request.status !== 'accepted') {
+      return res.status(400).json({ message: 'Request is not currently active' });
+    }
+
+    if (!request.completionCode) {
+      return res.status(400).json({ message: 'No completion code found for this request' });
+    }
+
+    // Normalize both sides before comparing: `code` may arrive as a
+    // number, or with surrounding whitespace, and would otherwise fail
+    // a strict `!==` comparison against the stored string.
+    const suppliedCode = code === undefined || code === null ? '' : String(code).trim();
+    if (request.completionCode !== suppliedCode) {
       return res.status(400).json({ message: 'Invalid completion code! Please ask passenger for the 4-digit code.' });
     }
 
-    request.status = 'completed';
-    await request.save();
+    // Atomically transition accepted -> completed. If two completion
+    // requests race (e.g. a double-tap or retry), only one will match
+    // status: 'accepted' and the coin payout below only runs once.
+    const updatedRequest = await RideRequest.findOneAndUpdate(
+      { _id: request._id, status: 'accepted' },
+      { $set: { status: 'completed' } },
+      { new: true }
+    );
+
+    if (!updatedRequest) {
+      return res.status(400).json({ message: 'Ride was already completed' });
+    }
 
     // Check if all requests for this offer are now complete
     const pendingReqs = await RideRequest.countDocuments({
@@ -372,9 +436,10 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     });
 
     if (pendingReqs === 0) {
-      const offer = await RideOffer.findById(request.offerId._id);
-      offer.status = 'completed';
-      await offer.save();
+      await RideOffer.updateOne(
+        { _id: request.offerId._id, status: { $ne: 'completed' } },
+        { $set: { status: 'completed' } }
+      );
     }
 
     // ─── Coin Reward: driver earns coins charged from passenger ───
@@ -393,7 +458,7 @@ router.put('/:id/complete', authMiddleware, validateCompleteRequest, async (req,
     // Notify passenger in real-time
     const io = req.app.get('io');
     if (io) {
-      io.to(request.passengerId.toString()).emit('request_updated', request);
+      io.to(request.passengerId.toString()).emit('request_updated', updatedRequest);
     }
 
     // Persistent completion notification for both parties
